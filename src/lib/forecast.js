@@ -1,4 +1,48 @@
-import { addMonths, getDaysInMonth, startOfMonth, format } from 'date-fns';
+import { addMonths, addWeeks, getDaysInMonth, startOfDay, startOfMonth, format } from 'date-fns';
+
+/**
+ * Inline pay cycle stepping — returns array of cycle start dates.
+ * Avoids circular import with payday.js.
+ */
+function computePayCycles(user, count = 16) {
+  const freq = user?.pay_frequency || 'monthly';
+  const today = startOfDay(new Date());
+
+  let anchor;
+  if (user?.pay_start_date) {
+    anchor = startOfDay(new Date(user.pay_start_date));
+  } else {
+    const payDay = Math.min(parseInt(user?.pay_day) || 1, 28);
+    anchor = startOfDay(new Date(today.getFullYear(), today.getMonth(), payDay));
+  }
+
+  function step(d, forward = true) {
+    const n = forward ? 1 : -1;
+    switch (freq) {
+      case 'weekly':      return addWeeks(d, n);
+      case 'fortnightly': return addWeeks(d, n * 2);
+      case 'four_weekly': return addWeeks(d, n * 4);
+      case 'annually':    return addMonths(d, n * 12);
+      default:            return addMonths(d, n);
+    }
+  }
+
+  // Walk to most recent payday <= today
+  if (anchor > today) {
+    while (anchor > today) anchor = step(anchor, false);
+  } else {
+    let next = step(anchor);
+    while (next <= today) { anchor = next; next = step(anchor); }
+  }
+
+  const starts = [];
+  let cur = anchor;
+  for (let i = 0; i < count; i++) {
+    starts.push(new Date(cur));
+    cur = step(cur);
+  }
+  return starts;
+}
 
 /**
  * Convert a bill to its monthly equivalent cost.
@@ -104,10 +148,34 @@ export function getIncomeStreamAmountForMonth(stream, month, year) {
 
 /**
  * Generate a 12-month forecast.
+ * When user has a non-monthly pay frequency, income per month is calculated by
+ * counting actual paydays that fall in each calendar month.
  */
-export function generateForecast(bills, monthlyIncome, startDate = new Date(), incomeStreams = []) {
+export function generateForecast(bills, monthlyIncome, startDate = new Date(), incomeStreams = [], user = null) {
   const start = startOfMonth(startDate);
   const months = [];
+
+  // Pre-compute payday-aware income per month if user has non-monthly pay frequency
+  let paydayIncomeByMonth = null;
+  if (user?.pay_frequency && user.pay_frequency !== 'monthly' && monthlyIncome > 0) {
+    const FREQ_MULTIPLIER = {
+      weekly: 52 / 12,
+      fortnightly: 26 / 12,
+      four_weekly: 13 / 12,
+      annually: 1 / 12,
+    };
+    const multiplier = FREQ_MULTIPLIER[user.pay_frequency];
+    if (multiplier) {
+      const cycleIncome = monthlyIncome / multiplier;
+      // Inline payday stepping to avoid circular import with payday.js
+      const payCycles = computePayCycles(user, 16);
+      paydayIncomeByMonth = {};
+      payCycles.forEach(cycleStart => {
+        const key = `${cycleStart.getFullYear()}-${cycleStart.getMonth()}`;
+        paydayIncomeByMonth[key] = (paydayIncomeByMonth[key] || 0) + cycleIncome;
+      });
+    }
+  }
 
   for (let i = 0; i < 12; i++) {
     const date = addMonths(start, i);
@@ -133,7 +201,12 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date(), i
       extraIncome += getIncomeStreamAmountForMonth(stream, month, year);
     });
 
-    const totalIncome = monthlyIncome + extraIncome;
+    // Use payday-accurate income if available, otherwise flat monthly
+    const baseIncome = paydayIncomeByMonth
+      ? (paydayIncomeByMonth[`${year}-${month}`] || 0)
+      : monthlyIncome;
+
+    const totalIncome = baseIncome + extraIncome;
     const remaining = totalIncome - totalBills;
 
     months.push({

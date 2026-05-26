@@ -39,7 +39,7 @@ export default function Dashboard() {
 
   const income = user?.monthly_income || 0;
   const currency = user?.currency || '£';
-  const forecast = generateForecast(bills, income, new Date(startDate + '-01'), incomeStreams);
+  const forecast = generateForecast(bills, income, new Date(startDate + '-01'), incomeStreams, user);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const avgSpare = forecast.reduce((sum, m) => sum + m.remaining, 0) / 12;
 
