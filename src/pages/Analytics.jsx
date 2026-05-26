@@ -15,9 +15,14 @@ export default function Analytics() {
     queryFn: () => base44.entities.Bill.list(),
   });
 
+  const { data: incomeStreams = [] } = useQuery({
+    queryKey: ['income-streams'],
+    queryFn: () => base44.entities.IncomeStream.list(),
+  });
+
   const income = user?.monthly_income || 0;
   const currency = user?.currency || '£';
-  const forecast = generateForecast(bills, income);
+  const forecast = generateForecast(bills, income, new Date(), incomeStreams, user);
   const categoryTotals = getCategoryTotals(bills);
   const avgSpare = forecast.reduce((sum, m) => sum + m.remaining, 0) / 12;
   const totalAnnualBills = bills.reduce((sum, b) => sum + billToMonthlyCost(b), 0) * 12;
