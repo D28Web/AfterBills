@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { generateForecast, billToMonthlyCost } from '@/lib/forecast';
+import { generateForecast } from '@/lib/forecast';
 import { Wallet, Receipt, PiggyBank, TrendingUp } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import ForecastChart from '@/components/dashboard/ForecastChart';
@@ -21,8 +21,7 @@ export default function Dashboard() {
   const income = user?.monthly_income || 0;
   const currency = user?.currency || '£';
   const forecast = generateForecast(bills, income);
-  const currentMonth = forecast[0] || { totalBills: 0, remaining: 0 };
-  const totalMonthlyBills = bills.reduce((sum, b) => sum + billToMonthlyCost(b), 0);
+  const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const avgSpare = forecast.reduce((sum, m) => sum + m.remaining, 0) / 12;
 
   return (
@@ -46,7 +45,7 @@ export default function Dashboard() {
         />
         <StatCard
           title="Monthly Bills"
-          value={`${currency}${totalMonthlyBills.toFixed(0)}`}
+          value={`${currency}${currentMonth.totalBills.toFixed(0)}`}
           subtitle={`${bills.length} active bills`}
           icon={Receipt}
         />
