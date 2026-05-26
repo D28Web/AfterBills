@@ -23,11 +23,14 @@ export default function Settings() {
     currency: '£',
   });
 
+  const [useStartDate, setUseStartDate] = useState(false);
   const [showAddStream, setShowAddStream] = useState(false);
   const [editingStream, setEditingStream] = useState(null);
 
   useEffect(() => {
     if (user) {
+      const hasStartDate = !!user.pay_start_date;
+      setUseStartDate(hasStartDate);
       setForm({
         monthly_income: user.monthly_income || '',
         pay_frequency: user.pay_frequency || 'monthly',
@@ -70,8 +73,8 @@ export default function Settings() {
     mutation.mutate({
       monthly_income: parseFloat(form.monthly_income) || 0,
       pay_frequency: form.pay_frequency,
-      pay_day: parseInt(form.pay_day) || 1,
-      pay_start_date: form.pay_start_date || null,
+      pay_day: useStartDate ? null : (parseInt(form.pay_day) || 1),
+      pay_start_date: useStartDate ? (form.pay_start_date || null) : null,
       currency: form.currency,
     });
   };
@@ -115,25 +118,35 @@ export default function Settings() {
         </div>
 
         <div>
-          <Label>Pay Day (day of month)</Label>
-          <Input
-            type="number"
-            min="1"
-            max="31"
-            placeholder="e.g. 25"
-            value={form.pay_day}
-            onChange={e => setForm({ ...form, pay_day: e.target.value })}
-          />
-        </div>
-
-        <div>
-          <Label>Pay Start Date</Label>
-          <Input
-            type="date"
-            value={form.pay_start_date}
-            onChange={e => setForm({ ...form, pay_start_date: e.target.value })}
-          />
-          <p className="text-xs text-muted-foreground mt-1">The date your income started — used to anchor quarterly/annual cycles.</p>
+          <div className="flex items-center justify-between mb-2">
+            <Label>{useStartDate ? 'Pay Start Date' : 'Pay Day (day of month)'}</Label>
+            <button
+              type="button"
+              onClick={() => setUseStartDate(v => !v)}
+              className="text-xs text-primary underline underline-offset-2"
+            >
+              {useStartDate ? 'Use day of month instead' : 'Use start date instead'}
+            </button>
+          </div>
+          {useStartDate ? (
+            <>
+              <Input
+                type="date"
+                value={form.pay_start_date}
+                onChange={e => setForm({ ...form, pay_start_date: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground mt-1">The exact date your income started — the day-of-month is used as your pay day.</p>
+            </>
+          ) : (
+            <Input
+              type="number"
+              min="1"
+              max="31"
+              placeholder="e.g. 25"
+              value={form.pay_day}
+              onChange={e => setForm({ ...form, pay_day: e.target.value })}
+            />
+          )}
         </div>
 
         <div>
