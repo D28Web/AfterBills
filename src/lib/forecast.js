@@ -16,20 +16,23 @@ export function billToMonthlyCost(bill) {
 
 /**
  * Check if a bill is due in a given month/year based on its frequency and due_day.
+ * startMonth/startYear = the month the forecast begins (used to anchor quarterly/annual cycles).
  */
-export function isBillDueInMonth(bill, month, year) {
-  const daysInMonth = getDaysInMonth(new Date(year, month));
-  const dueDay = Math.min(bill.due_day, daysInMonth);
-
+export function isBillDueInMonth(bill, month, year, startMonth = 0, startYear = new Date().getFullYear()) {
   switch (bill.frequency) {
     case 'weekly':
     case 'fortnightly':
     case 'monthly':
       return true;
-    case 'quarterly':
-      return month % 3 === 0;
-    case 'annually':
-      return month === 0; // January
+    case 'quarterly': {
+      // months since the start of the forecast
+      const monthsElapsed = (year - startYear) * 12 + (month - startMonth);
+      return monthsElapsed % 3 === 0;
+    }
+    case 'annually': {
+      const monthsElapsed = (year - startYear) * 12 + (month - startMonth);
+      return monthsElapsed % 12 === 0;
+    }
     default:
       return true;
   }
@@ -38,8 +41,8 @@ export function isBillDueInMonth(bill, month, year) {
 /**
  * Get the actual bill amount for a given month.
  */
-export function getBillAmountForMonth(bill, month, year) {
-  if (!isBillDueInMonth(bill, month, year)) return 0;
+export function getBillAmountForMonth(bill, month, year, startMonth = 0, startYear = new Date().getFullYear()) {
+  if (!isBillDueInMonth(bill, month, year, startMonth, startYear)) return 0;
 
   switch (bill.frequency) {
     case 'weekly': return bill.amount * 52 / 12;
@@ -55,9 +58,13 @@ export function getBillAmountForMonth(bill, month, year) {
  * Generate a 12-month forecast.
  */
 export function generateForecast(bills, monthlyIncome, startDate = new Date()) {
+  const start = startOfMonth(startDate);
+  const startMonth = start.getMonth();
+  const startYear = start.getFullYear();
   const months = [];
+
   for (let i = 0; i < 12; i++) {
-    const date = addMonths(startOfMonth(startDate), i);
+    const date = addMonths(start, i);
     const month = date.getMonth();
     const year = date.getFullYear();
     const label = format(date, 'MMM yyyy');
@@ -67,7 +74,7 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date()) {
     const billsThisMonth = [];
 
     bills.forEach(bill => {
-      const amount = getBillAmountForMonth(bill, month, year);
+      const amount = getBillAmountForMonth(bill, month, year, startMonth, startYear);
       if (amount > 0) {
         totalBills += amount;
         billsThisMonth.push({ ...bill, monthAmount: amount });

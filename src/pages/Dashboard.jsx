@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateForecast } from '@/lib/forecast';
-import { Wallet, Receipt, PiggyBank, TrendingUp } from 'lucide-react';
+import { Wallet, Receipt, PiggyBank, TrendingUp, CalendarDays } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import ForecastChart from '@/components/dashboard/ForecastChart';
 import UpcomingBills from '@/components/dashboard/UpcomingBills';
 import MonthHighlights from '@/components/dashboard/MonthHighlights';
+import { format, startOfMonth } from 'date-fns';
 
 const FREQUENCY_OPTIONS = [
   { label: 'Weekly', value: 'weekly', multiplier: 12 / 52 },
@@ -28,10 +29,11 @@ export default function Dashboard() {
   });
 
   const [viewFrequency, setViewFrequency] = useState('monthly');
+  const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
 
   const income = user?.monthly_income || 0;
   const currency = user?.currency || '£';
-  const forecast = generateForecast(bills, income);
+  const forecast = generateForecast(bills, income, new Date(startDate + '-01'));
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const avgSpare = forecast.reduce((sum, m) => sum + m.remaining, 0) / 12;
 
@@ -51,7 +53,18 @@ export default function Dashboard() {
             Your financial overview at a glance
           </p>
         </div>
-        <div className="flex items-center gap-1 bg-muted rounded-xl p-1 self-start sm:self-auto flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-1.5">
+            <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+            <label className="text-xs text-muted-foreground font-medium">From</label>
+            <input
+              type="month"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              className="bg-transparent text-xs font-medium text-foreground outline-none cursor-pointer"
+            />
+          </div>
+        <div className="flex items-center gap-1 bg-muted rounded-xl p-1 flex-wrap">
           {FREQUENCY_OPTIONS.map(opt => (
             <button
               key={opt.value}
@@ -65,6 +78,7 @@ export default function Dashboard() {
               {opt.label}
             </button>
           ))}
+        </div>
         </div>
       </div>
 
