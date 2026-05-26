@@ -1,11 +1,11 @@
-import { addDays, addWeeks, addMonths, startOfDay, isAfter, format } from 'date-fns';
-import { getBillDueDay, isBillDueInMonth, getBillAmountForMonth } from './forecast';
+import { addDays, addWeeks, addMonths, startOfDay, isAfter, isBefore, format } from 'date-fns';
 
 function stepForward(date, freq) {
   switch (freq) {
     case 'weekly':      return addWeeks(date, 1);
     case 'fortnightly': return addWeeks(date, 2);
     case 'four_weekly': return addWeeks(date, 4);
+    case 'quarterly':   return addMonths(date, 3);
     case 'annually':    return addMonths(date, 12);
     default:            return addMonths(date, 1);
   }
@@ -62,30 +62,54 @@ export function getPayCycles(user, count = 3) {
 }
 
 /**
- * Returns all bills due within a pay cycle date range.
+ * Generate all occurrence dates for a bill from its start_date using its frequency.
+ * Returns dates that fall within [windowStart, windowEnd].
+ */
+export function getBillOccurrencesInWindow(bill, windowStart, windowEnd) {
+  if (!bill.start_date) return [];
+
+  let cursor = startOfDay(new Date(bill.start_date));
+  const end = startOfDay(new Date(windowEnd));
+  const start = startOfDay(new Date(windowStart));
+  const occurrences = [];
+
+  // Step forward until we reach or pass the window start
+  // but don't overshoot past windowEnd
+  const MAX_ITER = 2000;
+  let iter = 0;
+
+  // First walk cursor forward past its start if it's way before window
+  while (isBefore(cursor, start) && iter < MAX_ITER) {
+    cursor = stepForward(cursor, bill.frequency);
+    iter++;
+  }
+
+  // Now collect all occurrences within the window
+  iter = 0;
+  while (!isAfter(cursor, end) && iter < MAX_ITER) {
+    if (!isBefore(cursor, start)) {
+      occurrences.push(new Date(cursor));
+    }
+    cursor = stepForward(cursor, bill.frequency);
+    iter++;
+  }
+
+  return occurrences;
+}
+
+/**
+ * Returns all bills due within a pay cycle date range, with their exact due dates.
+ * Each bill occurrence is a separate entry.
  */
 export function getBillsInCycle(bills, cycleStart, cycleEnd) {
   const result = [];
-  const seen = new Set();
-  let cursor = new Date(cycleStart);
 
-  while (!isAfter(cursor, cycleEnd)) {
-    const day = cursor.getDate();
-    const month = cursor.getMonth();
-    const year = cursor.getFullYear();
-
-    bills.forEach(bill => {
-      if (getBillDueDay(bill) === day && isBillDueInMonth(bill, month, year)) {
-        const key = `${bill.id}-${year}-${month}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          result.push({ ...bill, dueDate: new Date(cursor), monthAmount: getBillAmountForMonth(bill, month, year) });
-        }
-      }
+  bills.forEach(bill => {
+    const occurrences = getBillOccurrencesInWindow(bill, cycleStart, cycleEnd);
+    occurrences.forEach(dueDate => {
+      result.push({ ...bill, dueDate, monthAmount: bill.amount });
     });
-
-    cursor = addDays(cursor, 1);
-  }
+  });
 
   return result.sort((a, b) => a.dueDate - b.dueDate);
 }

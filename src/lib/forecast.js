@@ -1,4 +1,4 @@
-import { addMonths, addWeeks, getDaysInMonth, startOfDay, startOfMonth, isSameMonth, format } from 'date-fns';
+import { addMonths, addWeeks, getDaysInMonth, startOfDay, startOfMonth, isSameMonth, format, addDays } from 'date-fns';
 
 /**
  * Inline pay cycle stepping — returns array of cycle start dates.
@@ -278,14 +278,47 @@ export function getUpcomingBills(bills, count = 5) {
 }
 
 /**
- * Get bills for a specific day in a month.
+ * Get bills for a specific day in a month, using start_date + frequency to generate occurrences.
  */
 export function getBillsForDay(bills, day, month, year) {
-  const daysInMonth = getDaysInMonth(new Date(year, month));
+  const targetDate = new Date(year, month, day);
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0);
+
   return bills.filter(bill => {
-    const dueDay = Math.min(getBillDueDay(bill), daysInMonth);
-    return dueDay === day && isBillDueInMonth(bill, month, year);
+    if (!bill.start_date) {
+      // legacy fallback: use due_day
+      const dueDay = Math.min(bill.due_day || 1, getDaysInMonth(new Date(year, month)));
+      return dueDay === day && isBillDueInMonth(bill, month, year);
+    }
+    let cursor = startOfDay(new Date(bill.start_date));
+    const end = startOfDay(monthEnd);
+    const MAX_ITER = 2000;
+    let iter = 0;
+    // Walk forward to month range
+    while (cursor < monthStart && iter < MAX_ITER) {
+      cursor = stepBillForward(cursor, bill.frequency);
+      iter++;
+    }
+    // Check if any occurrence matches this day
+    iter = 0;
+    while (cursor <= end && iter < MAX_ITER) {
+      if (cursor.getDate() === day && cursor.getMonth() === month && cursor.getFullYear() === year) return true;
+      cursor = stepBillForward(cursor, bill.frequency);
+      iter++;
+    }
+    return false;
   });
+}
+
+function stepBillForward(date, freq) {
+  switch (freq) {
+    case 'weekly':      return addWeeks(date, 1);
+    case 'fortnightly': return addWeeks(date, 2);
+    case 'quarterly':   return addMonths(date, 3);
+    case 'annually':    return addMonths(date, 12);
+    default:            return addMonths(date, 1);
+  }
 }
 
 /**
