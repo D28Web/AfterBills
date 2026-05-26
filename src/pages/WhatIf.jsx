@@ -25,8 +25,8 @@ export default function WhatIf() {
   const activeBills = bills.filter(b => !removedBillIds.includes(b.id));
   const allBills = [...activeBills, ...extraBills];
 
-  const realForecast = useMemo(() => generateForecast(bills, realIncome), [bills, realIncome]);
-  const simForecast = useMemo(() => generateForecast(allBills, effectiveIncome), [allBills, effectiveIncome]);
+  const realForecast = useMemo(() => generateForecast(bills, realIncome, new Date(), [], user), [bills, realIncome, user]);
+  const simForecast = useMemo(() => generateForecast(allBills, effectiveIncome, new Date(), [], user), [allBills, effectiveIncome, user]);
 
   const chartData = realForecast.map((m, i) => ({
     name: m.shortLabel,
@@ -40,7 +40,7 @@ export default function WhatIf() {
   const diff = simRemaining - realRemaining;
 
   const addExtraBill = () => {
-    setExtraBills([...extraBills, { id: `extra-${Date.now()}`, name: 'New Bill', amount: 50, due_day: 1, category: 'other', frequency: 'monthly' }]);
+    setExtraBills([...extraBills, { id: `extra-${Date.now()}`, name: 'New Bill', amount: 50, start_date: new Date().toISOString().slice(0, 10), category: 'other', frequency: 'monthly' }]);
   };
 
   const reset = () => {

@@ -94,8 +94,9 @@ function getBillAnchor(bill) {
     const d = new Date(bill.start_date);
     return { anchorMonth: d.getMonth(), anchorYear: d.getFullYear(), dueDay: d.getDate() };
   }
-  // legacy fallback
-  return { anchorMonth: 0, anchorYear: new Date().getFullYear(), dueDay: bill.due_day || 1 };
+  // legacy fallback: treat as always active, use due_day or 1
+  const today = new Date();
+  return { anchorMonth: 0, anchorYear: today.getFullYear() - 10, dueDay: bill.due_day || 1 };
 }
 
 /**
@@ -157,7 +158,7 @@ export function getBillAmountForMonth(bill, month, year) {
 export function getIncomeStreamAmountForMonth(stream, month, year) {
   const { anchorMonth, anchorYear } = stream.start_date
     ? (() => { const d = new Date(stream.start_date); return { anchorMonth: d.getMonth(), anchorYear: d.getFullYear() }; })()
-    : { anchorMonth: 0, anchorYear: new Date().getFullYear() };
+    : { anchorMonth: 0, anchorYear: new Date().getFullYear() - 10 };
 
   if (year < anchorYear || (year === anchorYear && month < anchorMonth)) return 0;
 

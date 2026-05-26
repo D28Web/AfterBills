@@ -29,7 +29,7 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <CalendarDays className="w-3 h-3" />
-              {bill.start_date ? `From ${bill.start_date}` : `Day ${getBillDueDay(bill)}`}
+              {`Due ${getBillDueDay(bill)}${[,'st','nd','rd'][getBillDueDay(bill) % 10 > 3 || Math.floor(getBillDueDay(bill) % 100 / 10) === 1 ? 0 : getBillDueDay(bill) % 10] || 'th'}`}
             </span>
             <span className="flex items-center gap-1">
               <Repeat className="w-3 h-3" />
