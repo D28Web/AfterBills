@@ -116,7 +116,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <ForecastChart forecast={forecast} currency={currency} />
+      <ForecastChart forecast={forecast} currency={currency} user={user} />
 
       <div className="grid md:grid-cols-2 gap-4">
         <UpcomingBills bills={bills} currency={currency} />
