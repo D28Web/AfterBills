@@ -13,10 +13,8 @@ import { format, startOfMonth } from 'date-fns';
 
 const FREQUENCY_OPTIONS = [
   { label: 'Weekly', value: 'weekly', multiplier: 12 / 52 },
-  { label: 'Four Weekly', value: 'four_weekly', multiplier: 12 / 13 },
+  { label: '4-Weekly', value: 'four_weekly', multiplier: 12 / 13 },
   { label: 'Monthly', value: 'monthly', multiplier: 1 },
-  { label: 'Quarterly', value: 'quarterly', multiplier: 3 },
-  { label: 'Annually', value: 'annually', multiplier: 12 },
 ];
 
 export default function Dashboard() {
