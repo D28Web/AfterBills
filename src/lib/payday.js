@@ -182,16 +182,20 @@ export function getBillOccurrencesInWindow(bill, windowStart, windowEnd) {
   const MAX_ITER = 2000;
   let iter = 0;
 
-  // Walk forward to window start
-  while (isBefore(cursor, start) && iter < MAX_ITER) {
-    cursor = stepForward(cursor, bill.frequency);
+  // Walk cursor back to before the window so we don't miss occurrences
+  // whose anchor falls inside or after the window start
+  while (!isBefore(cursor, start) && iter < MAX_ITER) {
+    cursor = stepBack(cursor, bill.frequency);
     iter++;
   }
 
+  // Now walk forward and collect every occurrence inside the window
   const occurrences = [];
   iter = 0;
   while (!isAfter(cursor, end) && iter < MAX_ITER) {
-    occurrences.push(new Date(cursor));
+    if (!isBefore(cursor, start)) {
+      occurrences.push(new Date(cursor));
+    }
     cursor = stepForward(cursor, bill.frequency);
     iter++;
   }
