@@ -8,6 +8,7 @@ import ForecastChart from '@/components/dashboard/ForecastChart';
 import UpcomingBills from '@/components/dashboard/UpcomingBills';
 import MonthHighlights from '@/components/dashboard/MonthHighlights';
 import PaydayCycles from '@/components/dashboard/PaydayCycles';
+import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
 import { format, startOfMonth } from 'date-fns';
 
 const FREQUENCY_OPTIONS = [
@@ -124,6 +125,7 @@ export default function Dashboard() {
       </div>
 
       <PaydayCycles user={user} bills={bills} currency={currency} />
+      <NoBillDuePeriods user={user} bills={bills} currency={currency} />
     </div>
   );
 }

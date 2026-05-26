@@ -22,6 +22,7 @@ export default function Settings() {
     pay_frequency: 'monthly',
     pay_day: '',
     pay_start_date: '',
+    pay_weekday: 'none',
     currency: '£',
   });
 
@@ -44,6 +45,7 @@ export default function Settings() {
         pay_frequency: freq,
         pay_day: user.pay_day || '',
         pay_start_date: user.pay_start_date || '',
+        pay_weekday: user.pay_weekday || 'none',
         currency: user.currency || '£',
       });
     }
@@ -109,11 +111,13 @@ export default function Settings() {
   const showMonthlyHint = ['weekly', 'fortnightly'].includes(form.pay_frequency) && rawIncome > 0;
 
   const handleSave = () => {
+    const isNonMonthly = ['weekly', 'fortnightly', 'four_weekly'].includes(form.pay_frequency);
     mutation.mutate({
       monthly_income: monthlyEquivalent,
       pay_frequency: form.pay_frequency,
-      pay_day: useStartDate ? null : (parseInt(form.pay_day) || 1),
-      pay_start_date: useStartDate ? (form.pay_start_date || null) : null,
+      pay_day: (!isNonMonthly && !useStartDate) ? (parseInt(form.pay_day) || 1) : null,
+      pay_start_date: (isNonMonthly || useStartDate) ? (form.pay_start_date || null) : null,
+      pay_weekday: form.pay_weekday || 'none',
       currency: form.currency,
     });
   };
@@ -202,37 +206,67 @@ export default function Settings() {
           </div>
         )}
 
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <Label>{useStartDate ? 'Pay Start Date' : 'Pay Day (day of month)'}</Label>
-            <button
-              type="button"
-              onClick={() => setUseStartDate(v => !v)}
-              className="text-xs text-primary underline underline-offset-2"
-            >
-              {useStartDate ? 'Use day of month instead' : 'Use start date instead'}
-            </button>
-          </div>
-          {useStartDate ? (
-            <>
+        {/* Payday Rules */}
+        {['weekly', 'fortnightly', 'four_weekly'].includes(form.pay_frequency) ? (
+          <div className="space-y-3 border border-border rounded-xl p-4 bg-muted/30">
+            <p className="text-xs font-semibold text-foreground">Payday Rules</p>
+            <div>
+              <Label>First Known Payday</Label>
               <Input
                 type="date"
                 value={form.pay_start_date}
                 onChange={e => setForm({ ...form, pay_start_date: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground mt-1">The exact date your income started — the day-of-month is used as your pay day.</p>
-            </>
-          ) : (
-            <Input
-              type="number"
-              min="1"
-              max="31"
-              placeholder="e.g. 25"
-              value={form.pay_day}
-              onChange={e => setForm({ ...form, pay_day: e.target.value })}
-            />
-          )}
-        </div>
+              <p className="text-xs text-muted-foreground mt-1">The exact date of a known payday — used as the anchor to generate all future paydays.</p>
+            </div>
+            <div>
+              <Label>Usual Payday Weekday</Label>
+              <Select value={form.pay_weekday} onValueChange={v => setForm({ ...form, pay_weekday: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No specific weekday</SelectItem>
+                  <SelectItem value="monday">Monday</SelectItem>
+                  <SelectItem value="tuesday">Tuesday</SelectItem>
+                  <SelectItem value="wednesday">Wednesday</SelectItem>
+                  <SelectItem value="thursday">Thursday</SelectItem>
+                  <SelectItem value="friday">Friday</SelectItem>
+                  <SelectItem value="saturday">Saturday</SelectItem>
+                  <SelectItem value="sunday">Sunday</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                If set, every generated payday will be snapped to this weekday. Example: every fourth Friday.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3 border border-border rounded-xl p-4 bg-muted/30">
+            <p className="text-xs font-semibold text-foreground">Payday Rules</p>
+            <div>
+              <Label>Usual Payday Rule</Label>
+              <Select value={form.pay_weekday} onValueChange={v => setForm({ ...form, pay_weekday: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Specific date of month</SelectItem>
+                  <SelectItem value="last_working_day">Last working day of month</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {form.pay_weekday !== 'last_working_day' && (
+              <div>
+                <Label>Pay Day (day of month)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="31"
+                  placeholder="e.g. 25"
+                  value={form.pay_day}
+                  onChange={e => setForm({ ...form, pay_day: e.target.value })}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <Label>Currency Symbol</Label>
