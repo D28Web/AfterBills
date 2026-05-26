@@ -1,0 +1,61 @@
+{
+  "name": "Bill",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the bill"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Bill amount"
+    },
+    "due_day": {
+      "type": "number",
+      "description": "Day of the month the bill is due (1-31)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "housing",
+        "utilities",
+        "insurance",
+        "transport",
+        "subscriptions",
+        "loans",
+        "food",
+        "health",
+        "education",
+        "other"
+      ],
+      "description": "Bill category"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "weekly",
+        "fortnightly",
+        "monthly",
+        "quarterly",
+        "annually"
+      ],
+      "description": "How often the bill occurs"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the bill recurs"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "name",
+    "amount",
+    "due_day",
+    "category",
+    "frequency"
+  ]
+}

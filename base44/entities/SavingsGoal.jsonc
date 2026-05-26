@@ -1,0 +1,27 @@
+{
+  "name": "SavingsGoal",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the savings goal"
+    },
+    "target_amount": {
+      "type": "number",
+      "description": "Target amount to save"
+    },
+    "current_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Amount saved so far"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Icon identifier for the goal"
+    }
+  },
+  "required": [
+    "name",
+    "target_amount"
+  ]
+}

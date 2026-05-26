@@ -1,0 +1,38 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "monthly_income": {
+      "type": "number",
+      "description": "Monthly income amount"
+    },
+    "pay_frequency": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "weekly",
+        "fortnightly",
+        "four_weekly"
+      ],
+      "default": "monthly",
+      "description": "How often the user gets paid"
+    },
+    "pay_day": {
+      "type": "number",
+      "description": "Day of the month the user gets paid"
+    },
+    "currency": {
+      "type": "string",
+      "default": "\u00a3",
+      "description": "Currency symbol"
+    }
+  }
+}
