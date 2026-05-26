@@ -90,7 +90,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard
           title="Remaining"
-          value={`${currency}${scale(currentMonth.remaining)}`}
+          value={`${currency}${scale(income - currentMonth.totalBills)}`}
           subtitle={freqLabel}
           icon={Wallet}
           variant="primary"
@@ -103,7 +103,7 @@ export default function Dashboard() {
         />
         <StatCard
           title="Income"
-          value={`${currency}${scale(currentMonth.income)}`}
+          value={`${currency}${scale(income)}`}
           subtitle={freqLabel}
           icon={PiggyBank}
         />

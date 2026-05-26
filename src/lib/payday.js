@@ -174,11 +174,26 @@ export function getPayCycles(user, count = 3) {
  * Returns dates that fall within [windowStart, windowEnd].
  */
 export function getBillOccurrencesInWindow(bill, windowStart, windowEnd) {
-  if (!bill.start_date) return [];
-
-  let cursor = startOfDay(new Date(bill.start_date));
   const start = startOfDay(new Date(windowStart));
   const end = startOfDay(new Date(windowEnd));
+
+  // Legacy bills without start_date: use due_day to place a single occurrence in the window month
+  if (!bill.start_date) {
+    const dueDay = bill.due_day || 1;
+    // Place occurrence on the due day of the window's start month
+    const occurrence = startOfDay(new Date(start.getFullYear(), start.getMonth(), Math.min(dueDay, 28)));
+    if (!isBefore(occurrence, start) && !isAfter(occurrence, end)) {
+      return [occurrence];
+    }
+    // Also check next month in case window spans two months
+    const occurrence2 = startOfDay(new Date(end.getFullYear(), end.getMonth(), Math.min(dueDay, 28)));
+    if (!isBefore(occurrence2, start) && !isAfter(occurrence2, end) && occurrence2.getTime() !== occurrence.getTime()) {
+      return [occurrence2];
+    }
+    return [];
+  }
+
+  let cursor = startOfDay(new Date(bill.start_date));
   const MAX_ITER = 2000;
   let iter = 0;
 
