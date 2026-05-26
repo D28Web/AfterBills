@@ -1,0 +1,40 @@
+{
+  "name": "IncomeStream",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the income stream (e.g. Salary, Freelance, Rental)"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Amount per occurrence"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "weekly",
+        "fortnightly",
+        "monthly",
+        "quarterly",
+        "annually"
+      ],
+      "description": "How often this income is received"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "The date this income stream started / is anchored to (YYYY-MM-DD)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "name",
+    "amount",
+    "frequency",
+    "start_date"
+  ]
+}

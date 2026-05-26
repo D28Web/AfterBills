@@ -77,9 +77,35 @@ export function getBillAmountForMonth(bill, month, year) {
 }
 
 /**
+ * Calculate monthly income for an income stream (same logic as bills).
+ */
+export function getIncomeStreamAmountForMonth(stream, month, year) {
+  const { anchorMonth, anchorYear } = stream.start_date
+    ? (() => { const d = new Date(stream.start_date); return { anchorMonth: d.getMonth(), anchorYear: d.getFullYear() }; })()
+    : { anchorMonth: 0, anchorYear: new Date().getFullYear() };
+
+  if (year < anchorYear || (year === anchorYear && month < anchorMonth)) return 0;
+
+  switch (stream.frequency) {
+    case 'weekly': return stream.amount * 52 / 12;
+    case 'fortnightly': return stream.amount * 26 / 12;
+    case 'monthly': return stream.amount;
+    case 'quarterly': {
+      const elapsed = (year - anchorYear) * 12 + (month - anchorMonth);
+      return elapsed % 3 === 0 ? stream.amount : 0;
+    }
+    case 'annually': {
+      const elapsed = (year - anchorYear) * 12 + (month - anchorMonth);
+      return elapsed % 12 === 0 ? stream.amount : 0;
+    }
+    default: return stream.amount;
+  }
+}
+
+/**
  * Generate a 12-month forecast.
  */
-export function generateForecast(bills, monthlyIncome, startDate = new Date()) {
+export function generateForecast(bills, monthlyIncome, startDate = new Date(), incomeStreams = []) {
   const start = startOfMonth(startDate);
   const months = [];
 
@@ -101,7 +127,14 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date()) {
       }
     });
 
-    const remaining = monthlyIncome - totalBills;
+    // Additional income streams on top of base monthly income
+    let extraIncome = 0;
+    incomeStreams.forEach(stream => {
+      extraIncome += getIncomeStreamAmountForMonth(stream, month, year);
+    });
+
+    const totalIncome = monthlyIncome + extraIncome;
+    const remaining = totalIncome - totalBills;
 
     months.push({
       date,
@@ -109,7 +142,7 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date()) {
       year,
       label,
       shortLabel,
-      income: monthlyIncome,
+      income: Math.round(totalIncome * 100) / 100,
       totalBills: Math.round(totalBills * 100) / 100,
       remaining: Math.round(remaining * 100) / 100,
       bills: billsThisMonth,
