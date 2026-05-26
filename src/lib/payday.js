@@ -1,93 +1,73 @@
-import { addDays, addWeeks, addMonths, startOfDay, isAfter, isBefore, isEqual, format } from 'date-fns';
+import { addDays, addWeeks, addMonths, startOfDay, isAfter, format } from 'date-fns';
 import { getBillDueDay, isBillDueInMonth, getBillAmountForMonth } from './forecast';
 
+function stepForward(date, freq) {
+  switch (freq) {
+    case 'weekly':      return addWeeks(date, 1);
+    case 'fortnightly': return addWeeks(date, 2);
+    case 'four_weekly': return addWeeks(date, 4);
+    case 'annually':    return addMonths(date, 12);
+    default:            return addMonths(date, 1);
+  }
+}
+
+function stepBack(date, freq) {
+  switch (freq) {
+    case 'weekly':      return addWeeks(date, -1);
+    case 'fortnightly': return addWeeks(date, -2);
+    case 'four_weekly': return addWeeks(date, -4);
+    case 'annually':    return addMonths(date, -12);
+    default:            return addMonths(date, -1);
+  }
+}
+
+function getAnchorDate(user) {
+  if (user?.pay_start_date) {
+    return startOfDay(new Date(user.pay_start_date));
+  }
+  const today = new Date();
+  const payDay = Math.min(parseInt(user?.pay_day) || 1, 28);
+  return startOfDay(new Date(today.getFullYear(), today.getMonth(), payDay));
+}
+
 /**
- * Given user settings, compute the start and end dates of the current and next pay cycles.
- * Pay cycle ends the day before the next pay date.
+ * Returns `count` pay cycles starting from the most recent payday on or before today.
  */
 export function getPayCycles(user, count = 3) {
   const today = startOfDay(new Date());
   const freq = user?.pay_frequency || 'monthly';
+  let anchor = getAnchorDate(user);
 
-  // Resolve the anchor date (first pay date reference)
-  let anchor;
-  if (user?.pay_start_date) {
-    anchor = startOfDay(new Date(user.pay_start_date));
-  } else if (user?.pay_day) {
-    // Use the current month's pay day as the anchor
-    const d = new Date();
-    anchor = startOfDay(new Date(d.getFullYear(), d.getMonth(), user.pay_day));
-  } else {
-    anchor = startOfDay(new Date(today.getFullYear(), today.getMonth(), 1));
-  }
-
-  // Step function per frequency
-  function nextPayDate(from) {
-    switch (freq) {
-      case 'weekly': return addWeeks(from, 1);
-      case 'fortnightly': return addWeeks(from, 2);
-      case 'four_weekly': return addWeeks(from, 4);
-      case 'annually': return addMonths(from, 12);
-      case 'monthly':
-      default:
-        return addMonths(from, 1);
+  // Walk to find most recent payday <= today
+  if (isAfter(anchor, today)) {
+    while (isAfter(anchor, today)) {
+      anchor = stepBack(anchor, freq);
     }
-  }
-
-  // Walk forward/backward from anchor to find a pay date <= today
-  let payDate = new Date(anchor);
-
-  // Walk backward if anchor is in the future
-  if (isAfter(payDate, today)) {
-    let prev = payDate;
-    while (isAfter(prev, today)) {
-      payDate = prev;
-      prev = prevPayDate(prev, freq);
-    }
-    // prev is now <= today — use that as the current cycle start
-    payDate = prev;
   } else {
-    // Walk forward until payDate > today, then step back one
-    let next = nextPayDate(payDate);
+    let next = stepForward(anchor, freq);
     while (!isAfter(next, today)) {
-      payDate = next;
-      next = nextPayDate(payDate);
+      anchor = next;
+      next = stepForward(anchor, freq);
     }
   }
 
-  // Build `count` cycles starting from payDate
   const cycles = [];
-  let cycleStart = payDate;
+  let cycleStart = anchor;
   for (let i = 0; i < count; i++) {
-    const cycleEnd = addDays(nextPayDate(cycleStart), -1);
+    const cycleEnd = addDays(stepForward(cycleStart, freq), -1);
     cycles.push({ start: cycleStart, end: cycleEnd, index: i });
     cycleStart = addDays(cycleEnd, 1);
   }
-
   return cycles;
 }
 
-function prevPayDate(from, freq) {
-  switch (freq) {
-    case 'weekly': return addWeeks(from, -1);
-    case 'fortnightly': return addWeeks(from, -2);
-    case 'four_weekly': return addWeeks(from, -4);
-    case 'annually': return addMonths(from, -12);
-    case 'monthly':
-    default:
-      return addMonths(from, -1);
-  }
-}
-
 /**
- * For a given pay cycle (start/end dates), return all bills that fall within it.
+ * Returns all bills due within a pay cycle date range.
  */
 export function getBillsInCycle(bills, cycleStart, cycleEnd) {
   const result = [];
-
-  // Iterate every day in the cycle, collect bills due that day
-  let cursor = new Date(cycleStart);
   const seen = new Set();
+  let cursor = new Date(cycleStart);
 
   while (!isAfter(cursor, cycleEnd)) {
     const day = cursor.getDate();
@@ -95,13 +75,11 @@ export function getBillsInCycle(bills, cycleStart, cycleEnd) {
     const year = cursor.getFullYear();
 
     bills.forEach(bill => {
-      const dueDay = getBillDueDay(bill);
-      if (dueDay === day && isBillDueInMonth(bill, month, year)) {
+      if (getBillDueDay(bill) === day && isBillDueInMonth(bill, month, year)) {
         const key = `${bill.id}-${year}-${month}`;
         if (!seen.has(key)) {
           seen.add(key);
-          const amount = getBillAmountForMonth(bill, month, year);
-          result.push({ ...bill, dueDate: new Date(cursor), monthAmount: amount });
+          result.push({ ...bill, dueDate: new Date(cursor), monthAmount: getBillAmountForMonth(bill, month, year) });
         }
       }
     });
