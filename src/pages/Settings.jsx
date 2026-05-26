@@ -31,9 +31,14 @@ export default function Settings() {
     if (user) {
       const hasStartDate = !!user.pay_start_date;
       setUseStartDate(hasStartDate);
+      const freq = user.pay_frequency || 'monthly';
+      const freqToMonthly = { weekly: 52 / 12, fortnightly: 26 / 12, monthly: 1, four_weekly: 13 / 12 };
+      const stored = user.monthly_income || 0;
+      // Convert stored monthly back to per-frequency amount
+      const perFreq = stored / (freqToMonthly[freq] || 1);
       setForm({
-        monthly_income: user.monthly_income || '',
-        pay_frequency: user.pay_frequency || 'monthly',
+        monthly_income: perFreq ? perFreq.toFixed(2) : '',
+        pay_frequency: freq,
         pay_day: user.pay_day || '',
         pay_start_date: user.pay_start_date || '',
         currency: user.currency || '£',
@@ -69,9 +74,27 @@ export default function Settings() {
     },
   });
 
+  const FREQ_TO_MONTHLY = {
+    weekly: 52 / 12,
+    fortnightly: 26 / 12,
+    monthly: 1,
+    four_weekly: 13 / 12,
+  };
+
+  const FREQ_LABEL = {
+    weekly: 'Weekly',
+    fortnightly: 'Fortnightly',
+    monthly: 'Monthly',
+    four_weekly: 'Four-Weekly',
+  };
+
+  const freqLabel = FREQ_LABEL[form.pay_frequency] || 'Monthly';
+  const rawIncome = parseFloat(form.monthly_income) || 0;
+  const monthlyEquivalent = rawIncome * (FREQ_TO_MONTHLY[form.pay_frequency] || 1);
+
   const handleSave = () => {
     mutation.mutate({
-      monthly_income: parseFloat(form.monthly_income) || 0,
+      monthly_income: monthlyEquivalent,
       pay_frequency: form.pay_frequency,
       pay_day: useStartDate ? null : (parseInt(form.pay_day) || 1),
       pay_start_date: useStartDate ? (form.pay_start_date || null) : null,
@@ -94,19 +117,8 @@ export default function Settings() {
         <h3 className="text-sm font-semibold font-heading">Income Details</h3>
 
         <div>
-          <Label>Monthly Income</Label>
-          <Input
-            type="number"
-            step="0.01"
-            placeholder="e.g. 2500"
-            value={form.monthly_income}
-            onChange={e => setForm({ ...form, monthly_income: e.target.value })}
-          />
-        </div>
-
-        <div>
           <Label>Pay Frequency</Label>
-          <Select value={form.pay_frequency} onValueChange={v => setForm({ ...form, pay_frequency: v })}>
+          <Select value={form.pay_frequency} onValueChange={v => setForm({ ...form, pay_frequency: v, monthly_income: '' })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="monthly">Monthly</SelectItem>
@@ -115,6 +127,22 @@ export default function Settings() {
               <SelectItem value="four_weekly">Four-weekly</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div>
+          <Label>{freqLabel} Income</Label>
+          <Input
+            type="number"
+            step="0.01"
+            placeholder="e.g. 2500"
+            value={form.monthly_income}
+            onChange={e => setForm({ ...form, monthly_income: e.target.value })}
+          />
+          {form.pay_frequency !== 'monthly' && rawIncome > 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              ≈ {form.currency || '£'}{monthlyEquivalent.toFixed(2)} / month
+            </p>
+          )}
         </div>
 
         <div>
