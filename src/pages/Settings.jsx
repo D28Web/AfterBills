@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import IncomeStreamForm from '@/components/income/IncomeStreamForm';
 import IncomeStreamCard from '@/components/income/IncomeStreamCard';
+import { ukTaxBreakdown } from '@/lib/ukTax';
+import { Switch } from '@/components/ui/switch';
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -26,13 +28,14 @@ export default function Settings() {
   const [useStartDate, setUseStartDate] = useState(false);
   const [showAddStream, setShowAddStream] = useState(false);
   const [editingStream, setEditingStream] = useState(null);
+  const [useUkTax, setUseUkTax] = useState(false);
 
   useEffect(() => {
     if (user) {
       const hasStartDate = !!user.pay_start_date;
       setUseStartDate(hasStartDate);
       const freq = user.pay_frequency || 'monthly';
-      const freqToMonthly = { weekly: 52 / 12, fortnightly: 26 / 12, monthly: 1, four_weekly: 13 / 12 };
+      const freqToMonthly = { weekly: 52 / 12, fortnightly: 26 / 12, monthly: 1, four_weekly: 13 / 12, annually: 1 / 12 };
       const stored = user.monthly_income || 0;
       // Convert stored monthly back to per-frequency amount
       const perFreq = stored / (freqToMonthly[freq] || 1);
@@ -79,6 +82,7 @@ export default function Settings() {
     fortnightly: 26 / 12,
     monthly: 1,
     four_weekly: 13 / 12,
+    annually: 1 / 12,
   };
 
   const FREQ_LABEL = {
@@ -86,11 +90,23 @@ export default function Settings() {
     fortnightly: 'Fortnightly',
     monthly: 'Monthly',
     four_weekly: 'Four-Weekly',
+    annually: 'Annual',
   };
 
   const freqLabel = FREQ_LABEL[form.pay_frequency] || 'Monthly';
   const rawIncome = parseFloat(form.monthly_income) || 0;
-  const monthlyEquivalent = rawIncome * (FREQ_TO_MONTHLY[form.pay_frequency] || 1);
+
+  // For annually + UK tax, compute take-home first
+  const ukBreakdown = (form.pay_frequency === 'annually' && useUkTax && rawIncome > 0)
+    ? ukTaxBreakdown(rawIncome)
+    : null;
+
+  const monthlyEquivalent = ukBreakdown
+    ? ukBreakdown.takeHomeMonthly
+    : rawIncome * (FREQ_TO_MONTHLY[form.pay_frequency] || 1);
+
+  // Only show monthly equivalent hint for weekly and fortnightly
+  const showMonthlyHint = ['weekly', 'fortnightly'].includes(form.pay_frequency) && rawIncome > 0;
 
   const handleSave = () => {
     mutation.mutate({
@@ -121,29 +137,70 @@ export default function Settings() {
           <Select value={form.pay_frequency} onValueChange={v => setForm({ ...form, pay_frequency: v, monthly_income: '' })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="monthly">Monthly</SelectItem>
               <SelectItem value="weekly">Weekly</SelectItem>
               <SelectItem value="fortnightly">Fortnightly</SelectItem>
               <SelectItem value="four_weekly">Four-weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="annually">Annually</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label>{freqLabel} Income</Label>
+          <Label>{freqLabel} Gross Income</Label>
           <Input
             type="number"
             step="0.01"
-            placeholder="e.g. 2500"
+            placeholder={form.pay_frequency === 'annually' ? 'e.g. 35000' : 'e.g. 2500'}
             value={form.monthly_income}
             onChange={e => setForm({ ...form, monthly_income: e.target.value })}
           />
-          {form.pay_frequency !== 'monthly' && rawIncome > 0 && (
+          {showMonthlyHint && (
             <p className="text-xs text-muted-foreground mt-1">
               ≈ {form.currency || '£'}{monthlyEquivalent.toFixed(2)} / month
             </p>
           )}
         </div>
+
+        {form.pay_frequency === 'annually' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Apply UK Tax Calculation</Label>
+                <p className="text-xs text-muted-foreground">Estimate take-home after Income Tax & NI (2024/25)</p>
+              </div>
+              <Switch checked={useUkTax} onCheckedChange={setUseUkTax} />
+            </div>
+
+            {useUkTax && ukBreakdown && (
+              <div className="bg-muted rounded-xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Gross Annual</span>
+                  <span>{form.currency || '£'}{ukBreakdown.grossAnnual.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-destructive/80">
+                  <span>Income Tax</span>
+                  <span>− {form.currency || '£'}{ukBreakdown.incomeTax.toFixed(0)}</span>
+                </div>
+                <div className="flex justify-between text-destructive/80">
+                  <span>National Insurance</span>
+                  <span>− {form.currency || '£'}{ukBreakdown.nationalInsurance.toFixed(0)}</span>
+                </div>
+                <div className="flex justify-between font-semibold border-t border-border pt-2 text-primary">
+                  <span>Est. Monthly Take-Home</span>
+                  <span>{form.currency || '£'}{ukBreakdown.takeHomeMonthly.toFixed(2)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">Estimate only. Does not account for pension, student loans, or other deductions.</p>
+              </div>
+            )}
+
+            {!useUkTax && rawIncome > 0 && (
+              <p className="text-xs text-muted-foreground">
+                ≈ {form.currency || '£'}{monthlyEquivalent.toFixed(2)} / month (gross)
+              </p>
+            )}
+          </div>
+        )}
 
         <div>
           <div className="flex items-center justify-between mb-2">
