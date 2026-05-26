@@ -12,7 +12,7 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
   const [form, setForm] = useState(bill || {
     name: '',
     amount: '',
-    due_day: '',
+    start_date: new Date().toISOString().slice(0, 10),
     category: 'other',
     frequency: 'monthly',
     is_recurring: true,
@@ -24,7 +24,6 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
     onSubmit({
       ...form,
       amount: parseFloat(form.amount),
-      due_day: parseInt(form.due_day),
     });
   };
 
@@ -61,14 +60,11 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
         </div>
 
         <div>
-          <Label>Due Day</Label>
+          <Label>Start Date</Label>
           <Input
-            type="number"
-            min="1"
-            max="31"
-            placeholder="1-31"
-            value={form.due_day}
-            onChange={e => setForm({ ...form, due_day: e.target.value })}
+            type="date"
+            value={form.start_date || ''}
+            onChange={e => setForm({ ...form, start_date: e.target.value })}
             required
           />
         </div>

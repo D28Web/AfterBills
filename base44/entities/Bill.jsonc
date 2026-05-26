@@ -10,9 +10,10 @@
       "type": "number",
       "description": "Bill amount"
     },
-    "due_day": {
-      "type": "number",
-      "description": "Day of the month the bill is due (1-31)"
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "The date the bill first started / is anchored to (YYYY-MM-DD). The day-of-month is used as the due day each period."
     },
     "category": {
       "type": "string",
@@ -54,7 +55,7 @@
   "required": [
     "name",
     "amount",
-    "due_day",
+    "start_date",
     "category",
     "frequency"
   ]

@@ -1,4 +1,4 @@
-import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/lib/forecast';
+import { CATEGORY_COLORS, CATEGORY_LABELS, getBillDueDay } from '@/lib/forecast';
 import { Pencil, Trash2, CalendarDays, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -29,7 +29,7 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <CalendarDays className="w-3 h-3" />
-              Day {bill.due_day}
+              {bill.start_date ? `From ${bill.start_date}` : `Day ${getBillDueDay(bill)}`}
             </span>
             <span className="flex items-center gap-1">
               <Repeat className="w-3 h-3" />

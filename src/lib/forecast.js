@@ -15,22 +15,37 @@ export function billToMonthlyCost(bill) {
 }
 
 /**
- * Check if a bill is due in a given month/year based on its frequency and due_day.
- * startMonth/startYear = the month the forecast begins (used to anchor quarterly/annual cycles).
+ * Get the anchor month/year for a bill from its start_date (or fallback to due_day).
  */
-export function isBillDueInMonth(bill, month, year, startMonth = 0, startYear = new Date().getFullYear()) {
+function getBillAnchor(bill) {
+  if (bill.start_date) {
+    const d = new Date(bill.start_date);
+    return { anchorMonth: d.getMonth(), anchorYear: d.getFullYear(), dueDay: d.getDate() };
+  }
+  // legacy fallback
+  return { anchorMonth: 0, anchorYear: new Date().getFullYear(), dueDay: bill.due_day || 1 };
+}
+
+/**
+ * Check if a bill is due in a given month/year based on its frequency and start_date.
+ */
+export function isBillDueInMonth(bill, month, year) {
+  const { anchorMonth, anchorYear } = getBillAnchor(bill);
+
+  // Bill hasn't started yet
+  if (year < anchorYear || (year === anchorYear && month < anchorMonth)) return false;
+
   switch (bill.frequency) {
     case 'weekly':
     case 'fortnightly':
     case 'monthly':
       return true;
     case 'quarterly': {
-      // months since the start of the forecast
-      const monthsElapsed = (year - startYear) * 12 + (month - startMonth);
+      const monthsElapsed = (year - anchorYear) * 12 + (month - anchorMonth);
       return monthsElapsed % 3 === 0;
     }
     case 'annually': {
-      const monthsElapsed = (year - startYear) * 12 + (month - startMonth);
+      const monthsElapsed = (year - anchorYear) * 12 + (month - anchorMonth);
       return monthsElapsed % 12 === 0;
     }
     default:
@@ -39,10 +54,17 @@ export function isBillDueInMonth(bill, month, year, startMonth = 0, startYear = 
 }
 
 /**
+ * Get the due day for a bill in a given month.
+ */
+export function getBillDueDay(bill) {
+  return getBillAnchor(bill).dueDay;
+}
+
+/**
  * Get the actual bill amount for a given month.
  */
-export function getBillAmountForMonth(bill, month, year, startMonth = 0, startYear = new Date().getFullYear()) {
-  if (!isBillDueInMonth(bill, month, year, startMonth, startYear)) return 0;
+export function getBillAmountForMonth(bill, month, year) {
+  if (!isBillDueInMonth(bill, month, year)) return 0;
 
   switch (bill.frequency) {
     case 'weekly': return bill.amount * 52 / 12;
@@ -59,8 +81,6 @@ export function getBillAmountForMonth(bill, month, year, startMonth = 0, startYe
  */
 export function generateForecast(bills, monthlyIncome, startDate = new Date()) {
   const start = startOfMonth(startDate);
-  const startMonth = start.getMonth();
-  const startYear = start.getFullYear();
   const months = [];
 
   for (let i = 0; i < 12; i++) {
@@ -74,7 +94,7 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date()) {
     const billsThisMonth = [];
 
     bills.forEach(bill => {
-      const amount = getBillAmountForMonth(bill, month, year, startMonth, startYear);
+      const amount = getBillAmountForMonth(bill, month, year);
       if (amount > 0) {
         totalBills += amount;
         billsThisMonth.push({ ...bill, monthAmount: amount });
@@ -107,8 +127,10 @@ export function getUpcomingBills(bills, count = 5) {
   const currentDay = today.getDate();
 
   const sorted = [...bills].sort((a, b) => {
-    const aDays = a.due_day >= currentDay ? a.due_day - currentDay : a.due_day + 30 - currentDay;
-    const bDays = b.due_day >= currentDay ? b.due_day - currentDay : b.due_day + 30 - currentDay;
+    const aDue = getBillDueDay(a);
+    const bDue = getBillDueDay(b);
+    const aDays = aDue >= currentDay ? aDue - currentDay : aDue + 30 - currentDay;
+    const bDays = bDue >= currentDay ? bDue - currentDay : bDue + 30 - currentDay;
     return aDays - bDays;
   });
 
@@ -121,7 +143,7 @@ export function getUpcomingBills(bills, count = 5) {
 export function getBillsForDay(bills, day, month, year) {
   const daysInMonth = getDaysInMonth(new Date(year, month));
   return bills.filter(bill => {
-    const dueDay = Math.min(bill.due_day, daysInMonth);
+    const dueDay = Math.min(getBillDueDay(bill), daysInMonth);
     return dueDay === day && isBillDueInMonth(bill, month, year);
   });
 }

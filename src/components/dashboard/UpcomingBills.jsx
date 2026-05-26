@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CATEGORY_COLORS, CATEGORY_LABELS, getUpcomingBills } from '@/lib/forecast';
+import { CATEGORY_COLORS, CATEGORY_LABELS, getUpcomingBills, getBillDueDay } from '@/lib/forecast';
 import { CalendarDays } from 'lucide-react';
 
 export default function UpcomingBills({ bills, currency = '£' }) {
@@ -26,8 +26,8 @@ export default function UpcomingBills({ bills, currency = '£' }) {
             <div className="text-right">
               <p className="text-sm font-semibold text-foreground">{currency}{bill.amount.toFixed(2)}</p>
               <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
-                <CalendarDays className="w-3 h-3" />
-                {bill.due_day}{getOrdinal(bill.due_day)}
+              <CalendarDays className="w-3 h-3" />
+              {getBillDueDay(bill)}{getOrdinal(getBillDueDay(bill))}
               </p>
             </div>
           </div>
