@@ -103,7 +103,7 @@ export default function Dashboard() {
         />
         <StatCard
           title="Income"
-          value={`${currency}${scale(income)}`}
+          value={`${currency}${scale(currentMonth.income)}`}
           subtitle={freqLabel}
           icon={PiggyBank}
         />
