@@ -1,4 +1,4 @@
-import { addMonths, addWeeks, getDaysInMonth, startOfDay, startOfMonth, format } from 'date-fns';
+import { addMonths, addWeeks, getDaysInMonth, startOfDay, startOfMonth, isSameMonth, format } from 'date-fns';
 
 /**
  * Inline pay cycle stepping — returns array of cycle start dates.
@@ -42,6 +42,34 @@ function computePayCycles(user, count = 16) {
     cur = step(cur);
   }
   return starts;
+}
+
+/**
+ * Counts how many times a weekly or fortnightly event occurs within a specific calendar month.
+ * Uses the event's anchor start_date to determine the exact schedule.
+ */
+function countOccurrencesInMonth(startDateStr, frequency, targetMonth, targetYear) {
+  const monthStart = startOfMonth(new Date(targetYear, targetMonth));
+  const monthEnd = startOfMonth(addMonths(monthStart, 1));
+
+  let cur = startOfDay(new Date(startDateStr));
+
+  // Walk forward to the first occurrence on or after the month start
+  const stepForward = (d) => frequency === 'weekly' ? addWeeks(d, 1) : addWeeks(d, 2);
+
+  // If anchor is after the month, no occurrences
+  if (cur >= monthEnd) return 0;
+
+  // Walk anchor forward until it reaches or passes the month start
+  while (cur < monthStart) cur = stepForward(cur);
+
+  // Count occurrences that fall within the month
+  let count = 0;
+  while (cur < monthEnd) {
+    if (isSameMonth(cur, monthStart)) count++;
+    cur = stepForward(cur);
+  }
+  return count;
 }
 
 /**
@@ -108,14 +136,17 @@ export function getBillDueDay(bill) {
  * Get the actual bill amount for a given month.
  */
 export function getBillAmountForMonth(bill, month, year) {
-  if (!isBillDueInMonth(bill, month, year)) return 0;
+  const { anchorMonth, anchorYear } = getBillAnchor(bill);
+  if (year < anchorYear || (year === anchorYear && month < anchorMonth)) return 0;
 
   switch (bill.frequency) {
-    case 'weekly': return bill.amount * 52 / 12;
-    case 'fortnightly': return bill.amount * 26 / 12;
+    case 'weekly':
+      return bill.amount * countOccurrencesInMonth(bill.start_date, 'weekly', month, year);
+    case 'fortnightly':
+      return bill.amount * countOccurrencesInMonth(bill.start_date, 'fortnightly', month, year);
     case 'monthly': return bill.amount;
-    case 'quarterly': return bill.amount;
-    case 'annually': return bill.amount;
+    case 'quarterly': return isBillDueInMonth(bill, month, year) ? bill.amount : 0;
+    case 'annually': return isBillDueInMonth(bill, month, year) ? bill.amount : 0;
     default: return bill.amount;
   }
 }
@@ -131,8 +162,10 @@ export function getIncomeStreamAmountForMonth(stream, month, year) {
   if (year < anchorYear || (year === anchorYear && month < anchorMonth)) return 0;
 
   switch (stream.frequency) {
-    case 'weekly': return stream.amount * 52 / 12;
-    case 'fortnightly': return stream.amount * 26 / 12;
+    case 'weekly':
+      return stream.amount * countOccurrencesInMonth(stream.start_date, 'weekly', month, year);
+    case 'fortnightly':
+      return stream.amount * countOccurrencesInMonth(stream.start_date, 'fortnightly', month, year);
     case 'monthly': return stream.amount;
     case 'quarterly': {
       const elapsed = (year - anchorYear) * 12 + (month - anchorMonth);
