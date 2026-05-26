@@ -7,6 +7,7 @@ import StatCard from '@/components/dashboard/StatCard';
 import ForecastChart from '@/components/dashboard/ForecastChart';
 import UpcomingBills from '@/components/dashboard/UpcomingBills';
 import MonthHighlights from '@/components/dashboard/MonthHighlights';
+import PaydayCycles from '@/components/dashboard/PaydayCycles';
 import { format, startOfMonth } from 'date-fns';
 
 const FREQUENCY_OPTIONS = [
@@ -121,6 +122,8 @@ export default function Dashboard() {
         <UpcomingBills bills={bills} currency={currency} />
         <MonthHighlights forecast={forecast} currency={currency} />
       </div>
+
+      <PaydayCycles user={user} bills={bills} currency={currency} />
     </div>
   );
 }
