@@ -20,8 +20,11 @@ export default function PaydayCycles({ user, bills, currency = '£' }) {
   const freq = user?.pay_frequency || 'monthly';
   const cycleIncome = monthlyIncome / (FREQ_MULTIPLIER[freq] || 1);
 
-  // Show 6 cycles for a proper forecast
-  const cycles = getPayCycles(user, 6);
+  // Show 13 cycles to cover a full year of pay periods
+  const cycles = getPayCycles(user, 13);
+
+  // Find the housing/mortgage bill (if any) to detect "mortgage-free" cycles
+  const housingBills = bills.filter(b => b.category === 'housing');
 
   if (!monthlyIncome) {
     return (
@@ -57,6 +60,9 @@ export default function PaydayCycles({ user, bills, currency = '£' }) {
           const isOpen = expanded === i;
           const isCurrent = i === 0;
           const isBillFree = cycleBills.length === 0;
+          const cycleBillIds = new Set(cycleBills.map(b => b.id));
+          const isMortgageFree = housingBills.length > 0 && !housingBills.some(b => cycleBillIds.has(b.id));
+          const isHighSpare = isMortgageFree || (isBillFree && housingBills.length === 0);
           const cycleDays = differenceInDays(cycle.end, cycle.start) + 1;
 
           return (
@@ -65,7 +71,7 @@ export default function PaydayCycles({ user, bills, currency = '£' }) {
               className={cn(
                 "rounded-xl border transition-all",
                 isCurrent ? "border-primary/40 bg-accent/20" : "border-border bg-muted/20",
-                isBillFree && !isCurrent && "border-green-200 bg-green-50/30 dark:border-green-900/40 dark:bg-green-900/10"
+                (isBillFree || isHighSpare) && !isCurrent && "border-green-200 bg-green-50/30 dark:border-green-900/40 dark:bg-green-900/10"
               )}
             >
               <button
@@ -84,6 +90,7 @@ export default function PaydayCycles({ user, bills, currency = '£' }) {
                     <span className="text-[11px] font-medium text-foreground">
                       {isCurrent ? 'This cycle' : format(cycle.start, 'EEE d MMM')}
                       {isBillFree && <span className="ml-1.5 text-green-600 dark:text-green-400">✓ bill-free</span>}
+                      {!isBillFree && isMortgageFree && <span className="ml-1.5 text-green-600 dark:text-green-400">💰 mortgage-free</span>}
                     </span>
                     <span className={cn(
                       "text-xs font-bold",
@@ -135,6 +142,14 @@ export default function PaydayCycles({ user, bills, currency = '£' }) {
                         </div>
                         <span className="font-semibold text-primary">+{currency}{cycleIncome.toFixed(2)}</span>
                       </div>
+
+                      {/* High spare highlight */}
+                      {isMortgageFree && !isBillFree && (
+                        <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 py-1 bg-green-50/50 dark:bg-green-900/20 rounded-lg px-2">
+                          <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>No mortgage this cycle — great month to save extra!</span>
+                        </div>
+                      )}
 
                       {/* Bills */}
                       {isBillFree ? (

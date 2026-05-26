@@ -12,10 +12,10 @@ export default function ForecastChart({ forecast, currency = '£', user }) {
     date: m.date,
   }));
 
-  // Find which chart months have a payday landing in them
+  // Find which chart months have a payday landing in them (use 16 cycles to ensure 13 visible in 12-month window)
   const payCycleMonths = new Set();
   if (user?.monthly_income || user?.pay_frequency) {
-    const cycles = getPayCycles(user, 14);
+    const cycles = getPayCycles(user, 16);
     cycles.forEach(cycle => {
       chartData.forEach(d => {
         if (isSameMonth(cycle.start, d.date)) {
