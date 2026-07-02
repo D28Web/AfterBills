@@ -25,7 +25,9 @@ export default function Analytics() {
   const forecast = generateForecast(bills, income, new Date(), incomeStreams, user);
   const categoryTotals = getCategoryTotals(bills);
   const avgSpare = forecast.reduce((sum, m) => sum + m.remaining, 0) / 12;
-  const totalAnnualBills = bills.reduce((sum, b) => sum + billToMonthlyCost(b), 0) * 12;
+  const totalMonthlyBills = bills.reduce((sum, b) => sum + billToMonthlyCost(b), 0);
+  const totalAnnualBills = totalMonthlyBills * 12;
+  const billToIncomeRatio = income > 0 ? Math.round((totalMonthlyBills / income) * 100) : 0;
 
   const pieColors = categoryTotals.map(c => CATEGORY_COLORS[c.category]);
 
@@ -57,9 +59,7 @@ export default function Analytics() {
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4 col-span-2 lg:col-span-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Bill-to-Income Ratio</p>
-          <p className="text-2xl font-bold font-heading mt-1">
-            {income > 0 ? `${Math.round((billToMonthlyCost(bills[0] || { amount: 0, frequency: 'monthly' }) * bills.length / income) * 100 / bills.length)}%` : '0%'}
-          </p>
+          <p className="text-2xl font-bold font-heading mt-1">{billToIncomeRatio}%</p>
         </motion.div>
       </div>
 
