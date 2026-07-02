@@ -100,7 +100,7 @@ export default function Settings() {
 
   // For annually + UK tax, compute take-home first
   const ukBreakdown = (form.pay_frequency === 'annually' && useUkTax && rawIncome > 0)
-    ? ukTaxBreakdown(rawIncome)
+    ? ukTaxBreakdown({ grossAnnual: rawIncome })
     : null;
 
   const monthlyEquivalent = ukBreakdown

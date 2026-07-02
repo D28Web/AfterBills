@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { FlaskConical, Plus, X, RotateCcw } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
+import UKTaxSettings from '@/components/income/UKTaxSettings';
+import { ukTaxBreakdown } from '@/lib/ukTax';
 
 export default function WhatIf() {
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
@@ -20,8 +22,32 @@ export default function WhatIf() {
   const [simIncome, setSimIncome] = useState(null);
   const [extraBills, setExtraBills] = useState([]);
   const [removedBillIds, setRemovedBillIds] = useState([]);
+  const [incomeMode, setIncomeMode] = useState('per_cycle');
+  const [taxSettings, setTaxSettings] = useState({
+    grossAnnual: '',
+    taxCode: '1257L',
+    studentLoanPlan: 'none',
+    pensionType: 'percent',
+    pensionValue: '',
+    salarySacrificeMonthly: '',
+    otherDeductionsMonthly: '',
+  });
 
-  const effectiveIncome = simIncome !== null ? simIncome : realIncome;
+  const salaryMonthlyIncome = useMemo(() => {
+    const gross = parseFloat(taxSettings.grossAnnual) || 0;
+    if (!gross) return 0;
+    return ukTaxBreakdown({
+      grossAnnual: gross,
+      taxCode: taxSettings.taxCode,
+      studentLoanPlan: taxSettings.studentLoanPlan,
+      pensionType: taxSettings.pensionType,
+      pensionValue: parseFloat(taxSettings.pensionValue) || 0,
+      salarySacrificeAnnual: (parseFloat(taxSettings.salarySacrificeMonthly) || 0) * 12,
+      otherDeductionsAnnual: (parseFloat(taxSettings.otherDeductionsMonthly) || 0) * 12,
+    }).takeHomeAnnual / 12;
+  }, [taxSettings]);
+
+  const effectiveIncome = incomeMode === 'salary' ? salaryMonthlyIncome : (simIncome !== null ? simIncome : realIncome);
   const activeBills = bills.filter(b => !removedBillIds.includes(b.id));
   const allBills = [...activeBills, ...extraBills];
 
@@ -47,6 +73,16 @@ export default function WhatIf() {
     setSimIncome(null);
     setExtraBills([]);
     setRemovedBillIds([]);
+    setIncomeMode('per_cycle');
+    setTaxSettings({
+      grossAnnual: '',
+      taxCode: '1257L',
+      studentLoanPlan: 'none',
+      pensionType: 'percent',
+      pensionValue: '',
+      salarySacrificeMonthly: '',
+      otherDeductionsMonthly: '',
+    });
   };
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -83,22 +119,53 @@ export default function WhatIf() {
 
           <div className="space-y-5">
             <div>
-              <Label className="text-xs">Monthly Income</Label>
-              <Input
-                type="number"
-                value={simIncome !== null ? simIncome : realIncome}
-                onChange={e => setSimIncome(parseFloat(e.target.value) || 0)}
-                className="mt-1"
-              />
-              <Slider
-                value={[simIncome !== null ? simIncome : realIncome]}
-                onValueChange={v => setSimIncome(v[0])}
-                min={0}
-                max={Math.max(realIncome * 3, 10000)}
-                step={50}
-                className="mt-2"
-              />
+              <Label className="text-xs mb-2 block">Income Type</Label>
+              <div className="flex gap-2">
+                {[
+                  { value: 'per_cycle', label: 'Monthly income' },
+                  { value: 'salary', label: 'Annual salary (UK tax)' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setIncomeMode(opt.value)}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors ${
+                      incomeMode === opt.value
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-muted text-muted-foreground border-transparent hover:text-foreground'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {incomeMode === 'per_cycle' ? (
+              <div>
+                <Label className="text-xs">Monthly Income</Label>
+                <Input
+                  type="number"
+                  value={simIncome !== null ? simIncome : realIncome}
+                  onChange={e => setSimIncome(parseFloat(e.target.value) || 0)}
+                  className="mt-1"
+                />
+                <Slider
+                  value={[simIncome !== null ? simIncome : realIncome]}
+                  onValueChange={v => setSimIncome(v[0])}
+                  min={0}
+                  max={Math.max(realIncome * 3, 10000)}
+                  step={50}
+                  className="mt-2"
+                />
+              </div>
+            ) : (
+              <UKTaxSettings
+                taxSettings={taxSettings}
+                onChange={setTaxSettings}
+                payFrequency="monthly"
+                currency={currency}
+              />
+            )}
 
             <div>
               <div className="flex items-center justify-between mb-2">
