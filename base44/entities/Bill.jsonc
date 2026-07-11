@@ -8,7 +8,7 @@
     },
     "amount": {
       "type": "number",
-      "description": "Bill amount"
+      "description": "Total bill amount (full price before any split)"
     },
     "start_date": {
       "type": "string",
@@ -46,6 +46,16 @@
       "type": "boolean",
       "default": true,
       "description": "Whether the bill recurs"
+    },
+    "is_split": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this bill is split between multiple people"
+    },
+    "split_between": {
+      "type": "number",
+      "default": 2,
+      "description": "Number of people the bill is split between (your share = amount / split_between)"
     },
     "notes": {
       "type": "string",

@@ -16,6 +16,8 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
     category: 'other',
     frequency: 'monthly',
     is_recurring: true,
+    is_split: false,
+    split_between: 2,
     notes: '',
   });
 
@@ -102,6 +104,33 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
           />
           <Label>Recurring bill</Label>
         </div>
+
+        <div className="col-span-2 flex items-center gap-3">
+          <Switch
+            checked={form.is_split}
+            onCheckedChange={v => setForm({ ...form, is_split: v })}
+          />
+          <Label>Split this bill</Label>
+        </div>
+
+        {form.is_split && (
+          <div className="col-span-2">
+            <Label>Split between (people)</Label>
+            <Input
+              type="number"
+              min="2"
+              max="20"
+              value={form.split_between}
+              onChange={e => setForm({ ...form, split_between: parseInt(e.target.value) || 2 })}
+              required
+            />
+            {parseFloat(form.amount) > 0 && (
+              <p className="text-xs text-primary mt-1">
+                Your share: £{(parseFloat(form.amount) / (parseInt(form.split_between) || 1)).toFixed(2)} / {(parseInt(form.split_between) || 1)} people
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="col-span-2">
           <Label>Notes (optional)</Label>

@@ -1,5 +1,5 @@
-import { CATEGORY_COLORS, CATEGORY_LABELS, getBillDueDay } from '@/lib/forecast';
-import { Pencil, Trash2, CalendarDays, Repeat } from 'lucide-react';
+import { CATEGORY_COLORS, CATEGORY_LABELS, getBillDueDay, getBillShare } from '@/lib/forecast';
+import { Pencil, Trash2, CalendarDays, Repeat, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
@@ -22,9 +22,19 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
               <h4 className="text-sm font-semibold text-foreground truncate">{bill.name}</h4>
               <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[bill.category]}</p>
             </div>
-            <p className="text-lg font-bold font-heading text-foreground whitespace-nowrap">
-              {currency}{bill.amount.toFixed(2)}
-            </p>
+            <div className="text-right whitespace-nowrap">
+              {bill.is_split && bill.split_between > 1 ? (
+                <>
+                  <p className="text-lg font-bold font-heading text-primary">{currency}{getBillShare(bill).toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground line-through">{currency}{bill.amount.toFixed(2)} total</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end mt-0.5">
+                    <Users className="w-3 h-3" /> {bill.split_between} people
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg font-bold font-heading text-foreground">{currency}{bill.amount.toFixed(2)}</p>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">

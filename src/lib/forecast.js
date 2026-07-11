@@ -75,14 +75,20 @@ function countOccurrencesInMonth(startDateStr, frequency, targetMonth, targetYea
 /**
  * Convert a bill to its monthly equivalent cost.
  */
+export function getBillShare(bill) {
+  if (bill.is_split && bill.split_between > 1) return bill.amount / bill.split_between;
+  return bill.amount;
+}
+
 export function billToMonthlyCost(bill) {
+  const amount = getBillShare(bill);
   switch (bill.frequency) {
-    case 'weekly': return bill.amount * 52 / 12;
-    case 'fortnightly': return bill.amount * 26 / 12;
-    case 'monthly': return bill.amount;
-    case 'quarterly': return bill.amount / 3;
-    case 'annually': return bill.amount / 12;
-    default: return bill.amount;
+    case 'weekly': return amount * 52 / 12;
+    case 'fortnightly': return amount * 26 / 12;
+    case 'monthly': return amount;
+    case 'quarterly': return amount / 3;
+    case 'annually': return amount / 12;
+    default: return amount;
   }
 }
 
@@ -140,15 +146,16 @@ export function getBillAmountForMonth(bill, month, year) {
   const { anchorMonth, anchorYear } = getBillAnchor(bill);
   if (year < anchorYear || (year === anchorYear && month < anchorMonth)) return 0;
 
+  const amount = getBillShare(bill);
   switch (bill.frequency) {
     case 'weekly':
-      return bill.amount * countOccurrencesInMonth(bill.start_date, 'weekly', month, year);
+      return amount * countOccurrencesInMonth(bill.start_date, 'weekly', month, year);
     case 'fortnightly':
-      return bill.amount * countOccurrencesInMonth(bill.start_date, 'fortnightly', month, year);
-    case 'monthly': return bill.amount;
-    case 'quarterly': return isBillDueInMonth(bill, month, year) ? bill.amount : 0;
-    case 'annually': return isBillDueInMonth(bill, month, year) ? bill.amount : 0;
-    default: return bill.amount;
+      return amount * countOccurrencesInMonth(bill.start_date, 'fortnightly', month, year);
+    case 'monthly': return amount;
+    case 'quarterly': return isBillDueInMonth(bill, month, year) ? amount : 0;
+    case 'annually': return isBillDueInMonth(bill, month, year) ? amount : 0;
+    default: return amount;
   }
 }
 

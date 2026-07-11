@@ -1,4 +1,5 @@
 import { addDays, addWeeks, addMonths, startOfDay, isAfter, isBefore, format, getDay, getDaysInMonth } from 'date-fns';
+import { getBillShare } from '@/lib/forecast';
 
 const WEEKDAY_MAP = {
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
@@ -225,7 +226,7 @@ export function getBillsInCycle(bills, cycleStart, cycleEnd) {
   bills.forEach(bill => {
     const occurrences = getBillOccurrencesInWindow(bill, cycleStart, cycleEnd);
     occurrences.forEach(dueDate => {
-      result.push({ ...bill, dueDate, monthAmount: bill.amount });
+      result.push({ ...bill, dueDate, monthAmount: getBillShare(bill) });
     });
   });
   return result.sort((a, b) => a.dueDate - b.dueDate);
