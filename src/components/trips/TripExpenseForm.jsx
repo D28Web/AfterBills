@@ -15,7 +15,7 @@ const CATEGORIES = [
   { value: 'other', label: 'Other' },
 ];
 
-export default function TripExpenseForm({ tripName, expense, onSubmit, onCancel, currency = '£' }) {
+export default function TripExpenseForm({ tripName, expense, onSubmit, onCancel, currency = '£', trips = [] }) {
   const [form, setForm] = useState({
     trip_name: tripName || expense?.trip_name || '',
     description: expense?.description || '',
@@ -41,6 +41,28 @@ export default function TripExpenseForm({ tripName, expense, onSubmit, onCancel,
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 border border-border rounded-xl p-4 bg-muted/30">
+      <div>
+        <Label className="text-xs">Assign to Trip</Label>
+        {trips.length > 0 ? (
+          <Select value={form.trip_name} onValueChange={v => setForm({ ...form, trip_name: v })}>
+            <SelectTrigger className="mt-1"><SelectValue placeholder="Select a trip" /></SelectTrigger>
+            <SelectContent>
+              {trips.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
+              {form.trip_name && !trips.some(t => t.name === form.trip_name) && (
+                <SelectItem value={form.trip_name}>{form.trip_name}</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            placeholder="e.g. Japan 2026"
+            value={form.trip_name}
+            onChange={e => setForm({ ...form, trip_name: e.target.value })}
+            className="mt-1"
+            required
+          />
+        )}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs">Description</Label>

@@ -154,6 +154,7 @@ export default function TripPlanner() {
       {showAdd && (
         <TripExpenseForm
           tripName={tripFilter !== 'all' ? tripFilter : ''}
+          trips={trips}
           currency={currency}
           onSubmit={(data) => createMutation.mutate(data)}
           onCancel={() => setShowAdd(false)}
@@ -171,6 +172,7 @@ export default function TripPlanner() {
               <TripExpenseForm
                 key={expense.id}
                 expense={expense}
+                trips={trips}
                 currency={currency}
                 onSubmit={(data) => updateMutation.mutate({ id: expense.id, data })}
                 onCancel={() => setEditingExpense(null)}
@@ -200,6 +202,7 @@ export default function TripPlanner() {
               <TripExpenseForm
                 key={expense.id}
                 expense={expense}
+                trips={trips}
                 currency={currency}
                 onSubmit={(data) => updateMutation.mutate({ id: expense.id, data })}
                 onCancel={() => setEditingExpense(null)}
