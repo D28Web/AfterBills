@@ -7,7 +7,7 @@ import { Plus, Plane, Wallet, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import TripExpenseForm from '@/components/trips/TripExpenseForm';
-import TripExpenseCard from '@/components/trips/TripExpenseCard';
+import TripExpenseCard, { getExpenseShare } from '@/components/trips/TripExpenseCard';
 
 export default function TripPlanner() {
   const queryClient = useQueryClient();
@@ -43,8 +43,8 @@ export default function TripPlanner() {
     return expenses.filter(e => e.trip_name === tripFilter);
   }, [expenses, tripFilter]);
 
-  const totalCost = filtered.reduce((s, e) => s + e.amount, 0);
-  const totalPaid = filtered.filter(e => e.is_paid).reduce((s, e) => s + e.amount, 0);
+  const totalCost = filtered.reduce((s, e) => s + getExpenseShare(e), 0);
+  const totalPaid = filtered.filter(e => e.is_paid).reduce((s, e) => s + getExpenseShare(e), 0);
   const totalUnpaid = totalCost - totalPaid;
   const paidCount = filtered.filter(e => e.is_paid).length;
 
@@ -123,6 +123,7 @@ export default function TripPlanner() {
       {showAdd && (
         <TripExpenseForm
           tripName={tripFilter !== 'all' ? tripFilter : ''}
+          currency={currency}
           onSubmit={(data) => createMutation.mutate(data)}
           onCancel={() => setShowAdd(false)}
         />
@@ -139,6 +140,7 @@ export default function TripPlanner() {
               <TripExpenseForm
                 key={expense.id}
                 expense={expense}
+                currency={currency}
                 onSubmit={(data) => updateMutation.mutate({ id: expense.id, data })}
                 onCancel={() => setEditingExpense(null)}
               />
@@ -167,6 +169,7 @@ export default function TripPlanner() {
               <TripExpenseForm
                 key={expense.id}
                 expense={expense}
+                currency={currency}
                 onSubmit={(data) => updateMutation.mutate({ id: expense.id, data })}
                 onCancel={() => setEditingExpense(null)}
               />

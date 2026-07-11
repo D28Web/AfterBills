@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 const CATEGORIES = [
   { value: 'travel', label: 'Travel' },
@@ -14,7 +15,7 @@ const CATEGORIES = [
   { value: 'other', label: 'Other' },
 ];
 
-export default function TripExpenseForm({ tripName, expense, onSubmit, onCancel }) {
+export default function TripExpenseForm({ tripName, expense, onSubmit, onCancel, currency = '£' }) {
   const [form, setForm] = useState({
     trip_name: tripName || expense?.trip_name || '',
     description: expense?.description || '',
@@ -23,6 +24,8 @@ export default function TripExpenseForm({ tripName, expense, onSubmit, onCancel 
     due_date: expense?.due_date || '',
     paid_date: expense?.paid_date || '',
     category: expense?.category || 'other',
+    is_split: expense?.is_split || false,
+    split_between: expense?.split_between || 2,
     notes: expense?.notes || '',
   });
 
@@ -31,6 +34,7 @@ export default function TripExpenseForm({ tripName, expense, onSubmit, onCancel 
     onSubmit({
       ...form,
       amount: parseFloat(form.amount) || 0,
+      split_between: form.is_split ? (parseInt(form.split_between) || 2) : form.split_between,
       paid_date: form.is_paid ? form.paid_date : null,
     });
   };
@@ -81,6 +85,33 @@ export default function TripExpenseForm({ tripName, expense, onSubmit, onCancel 
           />
         </div>
       </div>
+
+      <div className="flex items-center gap-3">
+        <Switch
+          checked={form.is_split}
+          onCheckedChange={v => setForm({ ...form, is_split: v })}
+        />
+        <Label className="text-xs cursor-pointer">Split between people</Label>
+      </div>
+      {form.is_split && (
+        <div>
+          <Label className="text-xs">Split between (people)</Label>
+          <Input
+            type="number"
+            min="2"
+            max="20"
+            value={form.split_between}
+            onChange={e => setForm({ ...form, split_between: parseInt(e.target.value) || 2 })}
+            className="mt-1"
+          />
+          {parseFloat(form.amount) > 0 && (
+            <p className="text-xs text-primary mt-1">
+              Your share: {currency}{(parseFloat(form.amount) / (parseInt(form.split_between) || 1)).toFixed(2)} / {parseInt(form.split_between) || 1} people
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 text-xs cursor-pointer">
           <input

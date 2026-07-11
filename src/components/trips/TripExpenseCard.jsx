@@ -1,4 +1,4 @@
-import { Check, Clock, Pencil, Trash2 } from 'lucide-react';
+import { Check, Clock, Pencil, Trash2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const CATEGORY_COLORS = {
@@ -21,9 +21,14 @@ const CATEGORY_LABELS = {
   other: 'Other',
 };
 
+export const getExpenseShare = (e) =>
+  e.is_split && e.split_between > 1 ? e.amount / e.split_between : e.amount;
+
 export default function TripExpenseCard({ expense, currency, onTogglePaid, onEdit, onDelete }) {
   const colorClass = CATEGORY_COLORS[expense.category] || CATEGORY_COLORS.other;
   const label = CATEGORY_LABELS[expense.category] || expense.category;
+  const share = getExpenseShare(expense);
+  const isSplit = expense.is_split && expense.split_between > 1;
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:shadow-sm transition-shadow">
@@ -51,13 +56,27 @@ export default function TripExpenseCard({ expense, currency, onTogglePaid, onEdi
           ) : (
             <span className="text-xs text-muted-foreground">Unpaid</span>
           )}
+          {isSplit && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Users className="w-3 h-3" /> {expense.split_between}
+            </span>
+          )}
         </div>
       </div>
 
       <div className="text-right shrink-0">
-        <p className={`text-sm font-bold font-heading ${expense.is_paid ? 'text-primary' : 'text-foreground'}`}>
-          {currency}{expense.amount.toLocaleString()}
-        </p>
+        {isSplit ? (
+          <>
+            <p className={`text-sm font-bold font-heading ${expense.is_paid ? 'text-primary' : 'text-foreground'}`}>
+              {currency}{share.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className="text-xs text-muted-foreground line-through">{currency}{expense.amount.toLocaleString()}</p>
+          </>
+        ) : (
+          <p className={`text-sm font-bold font-heading ${expense.is_paid ? 'text-primary' : 'text-foreground'}`}>
+            {currency}{expense.amount.toLocaleString()}
+          </p>
+        )}
       </div>
 
       <div className="flex gap-1 shrink-0">

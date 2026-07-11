@@ -12,7 +12,7 @@
     },
     "amount": {
       "type": "number",
-      "description": "Cost of the expense"
+      "description": "Total cost of the expense (full price before any split)"
     },
     "is_paid": {
       "type": "boolean",
@@ -42,6 +42,16 @@
       ],
       "default": "other",
       "description": "Expense category"
+    },
+    "is_split": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this expense is split between multiple people"
+    },
+    "split_between": {
+      "type": "number",
+      "default": 2,
+      "description": "Number of people the expense is split between (your share = amount / split_between)"
     },
     "notes": {
       "type": "string",
