@@ -1,0 +1,28 @@
+{
+  "name": "TripContribution",
+  "type": "object",
+  "properties": {
+    "trip_name": {
+      "type": "string",
+      "description": "Name of the trip this contribution is for"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Amount saved toward the trip"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the contribution was made (YYYY-MM-DD)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "trip_name",
+    "amount",
+    "date"
+  ]
+}

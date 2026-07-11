@@ -3,11 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Plane, Wallet, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Plane, Wallet, CheckCircle2, AlertCircle, PiggyBank } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import TripExpenseForm from '@/components/trips/TripExpenseForm';
 import TripExpenseCard, { getExpenseShare } from '@/components/trips/TripExpenseCard';
+import TripPlanCard from '@/components/trips/TripPlanCard';
+import TripForm from '@/components/trips/TripForm';
+import { getPayCycles } from '@/lib/payday';
 
 export default function TripPlanner() {
   const queryClient = useQueryClient();
@@ -22,6 +25,8 @@ export default function TripPlanner() {
   const [tripFilter, setTripFilter] = useState('all');
   const [showAdd, setShowAdd] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [showAddTrip, setShowAddTrip] = useState(false);
+  const [editingTrip, setEditingTrip] = useState(null);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.TripExpense.create(data),
@@ -36,7 +41,33 @@ export default function TripPlanner() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['trip-expenses'] }); toast.success('Expense deleted'); },
   });
 
+  const { data: trips = [] } = useQuery({ queryKey: ['trips'], queryFn: () => base44.entities.Trip.list() });
+  const { data: contributions = [] } = useQuery({ queryKey: ['trip-contributions'], queryFn: () => base44.entities.TripContribution.list() });
+
+  const createTrip = useMutation({
+    mutationFn: (data) => base44.entities.Trip.create(data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['trips'] }); setShowAddTrip(false); toast.success('Trip added'); },
+  });
+  const updateTrip = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Trip.update(id, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['trips'] }); setEditingTrip(null); toast.success('Trip updated'); },
+  });
+  const deleteTrip = useMutation({
+    mutationFn: (id) => base44.entities.Trip.delete(id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['trips'] }); toast.success('Trip deleted'); },
+  });
+  const addContribution = useMutation({
+    mutationFn: (data) => base44.entities.TripContribution.create(data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['trip-contributions'] }); toast.success('Contribution added'); },
+  });
+  const deleteContribution = useMutation({
+    mutationFn: (id) => base44.entities.TripContribution.delete(id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['trip-contributions'] }); toast.success('Contribution deleted'); },
+  });
+
   const tripNames = useMemo(() => [...new Set(expenses.map(e => e.trip_name))], [expenses]);
+
+  const allCycles = useMemo(() => getPayCycles(user, 200), [user]);
 
   const filtered = useMemo(() => {
     if (tripFilter === 'all') return expenses;
@@ -193,6 +224,53 @@ export default function TripPlanner() {
           <p className="text-sm text-muted-foreground">No trip expenses yet — add your first one to get started</p>
         </div>
       )}
+
+      {/* Savings Plan */}
+      <div className="pt-6 border-t border-border">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold font-heading text-foreground flex items-center gap-2">
+              <PiggyBank className="w-5 h-5 text-primary" /> Savings Plan
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Plan how to save up for each trip, based on cost minus payments made</p>
+          </div>
+          {!showAddTrip && !editingTrip && (
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowAddTrip(true)}>
+              <Plus className="w-3.5 h-3.5" /> New Trip
+            </Button>
+          )}
+        </div>
+
+        {showAddTrip && <TripForm onSubmit={(d) => createTrip.mutate(d)} onCancel={() => setShowAddTrip(false)} />}
+        {editingTrip && (
+          <TripForm trip={editingTrip} onSubmit={(d) => updateTrip.mutate({ id: editingTrip.id, data: d })} onCancel={() => setEditingTrip(null)} />
+        )}
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {trips.map(trip => (
+            <TripPlanCard
+              key={trip.id}
+              trip={trip}
+              expenses={expenses.filter(e => e.trip_name === trip.name)}
+              contributions={contributions}
+              user={user}
+              currency={currency}
+              cycles={allCycles}
+              onEditTrip={setEditingTrip}
+              onDeleteTrip={(t) => deleteTrip.mutate(t.id)}
+              onAddContribution={(d) => addContribution.mutate(d)}
+              onDeleteContribution={(c) => deleteContribution.mutate(c.id)}
+            />
+          ))}
+        </div>
+
+        {trips.length === 0 && !showAddTrip && (
+          <div className="text-center py-12">
+            <PiggyBank className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Create a trip with a target date to start planning your savings</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

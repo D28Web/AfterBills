@@ -1,0 +1,23 @@
+{
+  "name": "Trip",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the trip"
+    },
+    "target_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Target date you want to have the trip saved by (YYYY-MM-DD)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "name",
+    "target_date"
+  ]
+}
