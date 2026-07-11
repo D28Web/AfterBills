@@ -18,6 +18,7 @@ import CalendarView from '@/pages/CalendarView';
 import Analytics from '@/pages/Analytics';
 import Savings from '@/pages/Savings';
 import WhatIf from '@/pages/WhatIf';
+import TripPlanner from '@/pages/TripPlanner';
 import Settings from '@/pages/Settings';
 import AppLayout from '@/components/layout/AppLayout';
 import Onboarding from '@/pages/Onboarding';
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/savings" element={<Savings />} />
           <Route path="/what-if" element={<WhatIf />} />
+          <Route path="/trips" element={<TripPlanner />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>

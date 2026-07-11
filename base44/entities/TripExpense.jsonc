@@ -1,0 +1,57 @@
+{
+  "name": "TripExpense",
+  "type": "object",
+  "properties": {
+    "trip_name": {
+      "type": "string",
+      "description": "Name of the trip this expense belongs to"
+    },
+    "description": {
+      "type": "string",
+      "description": "What the expense is for (e.g. Flights, Hotel, Food)"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Cost of the expense"
+    },
+    "is_paid": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this expense has been paid"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When this expense needs to be paid by (YYYY-MM-DD)"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When this expense was actually paid (YYYY-MM-DD)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "travel",
+        "accommodation",
+        "food",
+        "activities",
+        "transport",
+        "shopping",
+        "other"
+      ],
+      "default": "other",
+      "description": "Expense category"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "trip_name",
+    "description",
+    "amount",
+    "category"
+  ]
+}
