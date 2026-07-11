@@ -65,14 +65,17 @@ export default function TripPlanner() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['trip-contributions'] }); toast.success('Contribution deleted'); },
   });
 
-  const tripNames = useMemo(() => [...new Set(expenses.map(e => e.trip_name))], [expenses]);
+  const assignedNames = useMemo(() => new Set(trips.map(t => t.name)), [trips]);
+
+  const tripNames = useMemo(() => [...new Set(expenses.filter(e => !assignedNames.has(e.trip_name)).map(e => e.trip_name))], [expenses, assignedNames]);
 
   const allCycles = useMemo(() => getPayCycles(user, 200), [user]);
 
   const filtered = useMemo(() => {
-    if (tripFilter === 'all') return expenses;
-    return expenses.filter(e => e.trip_name === tripFilter);
-  }, [expenses, tripFilter]);
+    const top = expenses.filter(e => !assignedNames.has(e.trip_name));
+    if (tripFilter === 'all') return top;
+    return top.filter(e => e.trip_name === tripFilter);
+  }, [expenses, assignedNames, tripFilter]);
 
   const totalCost = filtered.reduce((s, e) => s + getExpenseShare(e), 0);
   const totalPaid = filtered.filter(e => e.is_paid).reduce((s, e) => s + getExpenseShare(e), 0);
@@ -224,7 +227,7 @@ export default function TripPlanner() {
       {filtered.length === 0 && !showAdd && (
         <div className="text-center py-16">
           <Plane className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No trip expenses yet — add your first one to get started</p>
+          <p className="text-sm text-muted-foreground">No standalone expenses — add one above, or assign costs to a trip in your Savings Plan below</p>
         </div>
       )}
 
@@ -259,6 +262,12 @@ export default function TripPlanner() {
               user={user}
               currency={currency}
               cycles={allCycles}
+              trips={trips}
+              editingExpense={editingExpense}
+              onEditExpense={setEditingExpense}
+              onTogglePaidExpense={togglePaid}
+              onUpdateExpense={(data) => updateMutation.mutate({ id: editingExpense.id, data })}
+              onDeleteExpense={(e) => deleteMutation.mutate(e.id)}
               onEditTrip={setEditingTrip}
               onDeleteTrip={(t) => deleteTrip.mutate(t.id)}
               onAddContribution={(d) => addContribution.mutate(d)}

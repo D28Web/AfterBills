@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Calendar, Pencil, Trash2, Plus, PiggyBank, TrendingUp, Clock } from 'lucide-react';
+import { Calendar, Pencil, Trash2, Plus, PiggyBank, TrendingUp, Clock, Plane } from 'lucide-react';
 import { differenceInCalendarMonths, format, isBefore } from 'date-fns';
-import { getExpenseShare } from '@/components/trips/TripExpenseCard';
+import TripExpenseCard, { getExpenseShare } from '@/components/trips/TripExpenseCard';
+import TripExpenseForm from '@/components/trips/TripExpenseForm';
 import TripContributionForm from '@/components/trips/TripContributionForm';
 
-export default function TripPlanCard({ trip, expenses, contributions, user, currency, cycles, onEditTrip, onDeleteTrip, onAddContribution, onDeleteContribution }) {
+export default function TripPlanCard({ trip, expenses, contributions, user, currency, cycles, trips = [], editingExpense, onEditExpense, onTogglePaidExpense, onUpdateExpense, onDeleteExpense, onEditTrip, onDeleteTrip, onAddContribution, onDeleteContribution }) {
   const [showContribution, setShowContribution] = useState(false);
 
   const totalCost = expenses.reduce((s, e) => s + getExpenseShare(e), 0);
@@ -93,6 +94,35 @@ export default function TripPlanCard({ trip, expenses, contributions, user, curr
         <div className="flex items-center gap-2 bg-primary/10 rounded-xl p-3 text-sm text-primary">
           <PiggyBank className="w-4 h-4" />
           <span className="font-medium">{outstanding > 0 ? 'Trip fully funded — you\'re all set!' : 'Nothing to save for this trip yet.'}</span>
+        </div>
+      )}
+
+      {expenses.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-xs font-semibold text-foreground flex items-center gap-1">
+            <Plane className="w-3.5 h-3.5" /> Assigned Costs ({expenses.length})
+          </span>
+          {expenses.map(expense =>
+            editingExpense?.id === expense.id ? (
+              <TripExpenseForm
+                key={expense.id}
+                expense={expense}
+                trips={trips}
+                currency={currency}
+                onSubmit={(data) => onUpdateExpense(data)}
+                onCancel={() => onEditExpense(null)}
+              />
+            ) : (
+              <TripExpenseCard
+                key={expense.id}
+                expense={expense}
+                currency={currency}
+                onTogglePaid={onTogglePaidExpense}
+                onEdit={onEditExpense}
+                onDelete={onDeleteExpense}
+              />
+            )
+          )}
         </div>
       )}
 
