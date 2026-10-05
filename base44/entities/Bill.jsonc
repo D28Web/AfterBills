@@ -8,7 +8,7 @@
     },
     "amount": {
       "type": "number",
-      "description": "Total bill amount (full price before any split)"
+      "description": "Total bill amount (full price before any split). For loans/credit cards this is the payment made each period."
     },
     "start_date": {
       "type": "string",
@@ -52,6 +52,10 @@
       "type": "string",
       "format": "date",
       "description": "Targeted payoff date for loans / credit cards (YYYY-MM-DD). Optional."
+    },
+    "remaining_balance": {
+      "type": "number",
+      "description": "Outstanding balance still owed on a loan / credit card. Optional."
     },
     "is_split": {
       "type": "boolean",

@@ -19,6 +19,7 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
     is_split: false,
     split_between: 2,
     target_end_date: '',
+    remaining_balance: '',
     notes: '',
   });
 
@@ -27,6 +28,7 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
     onSubmit({
       ...form,
       amount: parseFloat(form.amount),
+      remaining_balance: form.remaining_balance === '' ? undefined : parseFloat(form.remaining_balance),
     });
   };
 
@@ -115,6 +117,20 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
               onChange={e => setForm({ ...form, target_end_date: e.target.value })}
             />
             <p className="text-xs text-muted-foreground mt-1">The date you aim to have this paid off by.</p>
+          </div>
+        )}
+
+        {(form.category === 'loans' || form.category === 'credit_cards') && (
+          <div className="col-span-2">
+            <Label>Remaining balance</Label>
+            <Input
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={form.remaining_balance || ''}
+              onChange={e => setForm({ ...form, remaining_balance: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground mt-1">The amount you still owe today. Used to project your payoff timeline.</p>
           </div>
         )}
 
