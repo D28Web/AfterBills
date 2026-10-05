@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CATEGORY_COLORS, CATEGORY_LABELS, getBillDueDay, getBillShare } from '@/lib/forecast';
+import { CATEGORY_COLORS, CATEGORY_LABELS, FREQUENCY_LABELS, getBillDueDay, getBillShare } from '@/lib/forecast';
 import { Pencil, Trash2, CalendarDays, Repeat, Users, Target, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -51,7 +51,7 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
             </span>
             <span className="flex items-center gap-1">
               <Repeat className="w-3 h-3" />
-              {bill.frequency}
+              {FREQUENCY_LABELS[bill.frequency] || bill.frequency}
             </span>
           </div>
           {hasPayoffTarget && (

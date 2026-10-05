@@ -55,7 +55,12 @@ function countOccurrencesInMonth(startDateStr, frequency, targetMonth, targetYea
   let cur = startOfDay(new Date(startDateStr));
 
   // Walk forward to the first occurrence on or after the month start
-  const stepForward = (d) => frequency === 'weekly' ? addWeeks(d, 1) : addWeeks(d, 2);
+  const stepForward = (d) => {
+    if (frequency === 'weekly') return addWeeks(d, 1);
+    if (frequency === 'fortnightly') return addWeeks(d, 2);
+    if (frequency === 'four_weekly') return addWeeks(d, 4);
+    return addWeeks(d, 1);
+  };
 
   // If anchor is after the month, no occurrences
   if (cur >= monthEnd) return 0;
@@ -85,6 +90,7 @@ export function billToMonthlyCost(bill) {
   switch (bill.frequency) {
     case 'weekly': return amount * 52 / 12;
     case 'fortnightly': return amount * 26 / 12;
+    case 'four_weekly': return amount * 13 / 12;
     case 'monthly': return amount;
     case 'quarterly': return amount / 3;
     case 'annually': return amount / 12;
@@ -117,6 +123,7 @@ export function isBillDueInMonth(bill, month, year) {
   switch (bill.frequency) {
     case 'weekly':
     case 'fortnightly':
+    case 'four_weekly':
     case 'monthly':
       return true;
     case 'quarterly': {
@@ -152,6 +159,8 @@ export function getBillAmountForMonth(bill, month, year) {
       return amount * countOccurrencesInMonth(bill.start_date, 'weekly', month, year);
     case 'fortnightly':
       return amount * countOccurrencesInMonth(bill.start_date, 'fortnightly', month, year);
+    case 'four_weekly':
+      return amount * countOccurrencesInMonth(bill.start_date, 'four_weekly', month, year);
     case 'monthly': return amount;
     case 'quarterly': return isBillDueInMonth(bill, month, year) ? amount : 0;
     case 'annually': return isBillDueInMonth(bill, month, year) ? amount : 0;
@@ -322,6 +331,7 @@ function stepBillForward(date, freq) {
   switch (freq) {
     case 'weekly':      return addWeeks(date, 1);
     case 'fortnightly': return addWeeks(date, 2);
+    case 'four_weekly': return addWeeks(date, 4);
     case 'quarterly':   return addMonths(date, 3);
     case 'annually':    return addMonths(date, 12);
     default:            return addMonths(date, 1);
@@ -355,6 +365,15 @@ export const CATEGORY_COLORS = {
   health: 'hsl(200, 60%, 50%)',
   education: 'hsl(260, 50%, 50%)',
   other: 'hsl(220, 10%, 55%)',
+};
+
+export const FREQUENCY_LABELS = {
+  weekly: 'Weekly',
+  fortnightly: 'Fortnightly',
+  four_weekly: 'Four-Weekly',
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  annually: 'Annually',
 };
 
 export const CATEGORY_LABELS = {

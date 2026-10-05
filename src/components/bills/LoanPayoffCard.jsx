@@ -9,6 +9,7 @@ function addPeriod(date, freq) {
   switch (freq) {
     case 'weekly': return addDays(date, 7);
     case 'fortnightly': return addDays(date, 14);
+    case 'four_weekly': return addDays(date, 28);
     case 'quarterly': return addMonths(date, 3);
     case 'annually': return addYears(date, 1);
     case 'monthly':

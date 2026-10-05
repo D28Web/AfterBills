@@ -93,6 +93,7 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
             <SelectContent>
               <SelectItem value="weekly">Weekly</SelectItem>
               <SelectItem value="fortnightly">Fortnightly</SelectItem>
+              <SelectItem value="four_weekly">Four-Weekly</SelectItem>
               <SelectItem value="monthly">Monthly</SelectItem>
               <SelectItem value="quarterly">Quarterly</SelectItem>
               <SelectItem value="annually">Annually</SelectItem>

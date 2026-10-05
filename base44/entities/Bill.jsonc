@@ -37,6 +37,7 @@
       "enum": [
         "weekly",
         "fortnightly",
+        "four_weekly",
         "monthly",
         "quarterly",
         "annually"
