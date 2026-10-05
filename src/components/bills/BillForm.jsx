@@ -18,6 +18,7 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
     is_recurring: true,
     is_split: false,
     split_between: 2,
+    target_end_date: '',
     notes: '',
   });
 
@@ -104,6 +105,18 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
           />
           <Label>Recurring bill</Label>
         </div>
+
+        {(form.category === 'loans' || form.category === 'credit_cards') && (
+          <div className="col-span-2">
+            <Label>Target end date (payoff goal)</Label>
+            <Input
+              type="date"
+              value={form.target_end_date || ''}
+              onChange={e => setForm({ ...form, target_end_date: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground mt-1">The date you aim to have this paid off by.</p>
+          </div>
+        )}
 
         <div className="col-span-2 flex items-center gap-3">
           <Switch

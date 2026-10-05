@@ -24,6 +24,7 @@
         "transport",
         "subscriptions",
         "loans",
+        "credit_cards",
         "food",
         "health",
         "education",
@@ -46,6 +47,11 @@
       "type": "boolean",
       "default": true,
       "description": "Whether the bill recurs"
+    },
+    "target_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Targeted payoff date for loans / credit cards (YYYY-MM-DD). Optional."
     },
     "is_split": {
       "type": "boolean",

@@ -1,9 +1,14 @@
 import { CATEGORY_COLORS, CATEGORY_LABELS, getBillDueDay, getBillShare } from '@/lib/forecast';
-import { Pencil, Trash2, CalendarDays, Repeat, Users } from 'lucide-react';
+import { Pencil, Trash2, CalendarDays, Repeat, Users, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
 
 export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
+  const hasPayoffTarget = !!bill.target_end_date && (bill.category === 'loans' || bill.category === 'credit_cards');
+  const monthsLeft = hasPayoffTarget
+    ? Math.max(0, (new Date(bill.target_end_date).getFullYear() * 12 + new Date(bill.target_end_date).getMonth()) - (new Date().getFullYear() * 12 + new Date().getMonth()))
+    : 0;
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -46,6 +51,15 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
               {bill.frequency}
             </span>
           </div>
+          {hasPayoffTarget && (
+            <div className="flex items-center gap-1 mt-2 text-xs text-primary">
+              <Target className="w-3 h-3" />
+              <span>Pay off by {format(new Date(bill.target_end_date), 'd MMM yyyy')}</span>
+              <span className="text-muted-foreground">
+                {monthsLeft > 0 ? `(${monthsLeft} mo left)` : '(past due)'}
+              </span>
+            </div>
+          )}
           {bill.notes && (
             <p className="text-xs text-muted-foreground mt-1 truncate">{bill.notes}</p>
           )}
