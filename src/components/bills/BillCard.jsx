@@ -1,14 +1,17 @@
+import { useState } from 'react';
 import { CATEGORY_COLORS, CATEGORY_LABELS, getBillDueDay, getBillShare } from '@/lib/forecast';
-import { Pencil, Trash2, CalendarDays, Repeat, Users, Target } from 'lucide-react';
+import { Pencil, Trash2, CalendarDays, Repeat, Users, Target, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
+import BillSubcategoryList from '@/components/bills/BillSubcategoryList';
 
 export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
   const hasPayoffTarget = !!bill.target_end_date && (bill.category === 'loans' || bill.category === 'credit_cards');
   const monthsLeft = hasPayoffTarget
     ? Math.max(0, (new Date(bill.target_end_date).getFullYear() * 12 + new Date(bill.target_end_date).getMonth()) - (new Date().getFullYear() * 12 + new Date().getMonth()))
     : 0;
+  const [expanded, setExpanded] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -63,6 +66,11 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
           {bill.notes && (
             <p className="text-xs text-muted-foreground mt-1 truncate">{bill.notes}</p>
           )}
+          <button type="button" onClick={() => setExpanded(e => !e)} className="flex items-center gap-1 text-xs text-primary mt-2 hover:underline">
+            <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            Subcategories
+          </button>
+          {expanded && <BillSubcategoryList bill={bill} currency={currency} />}
         </div>
         <div className="flex gap-1 shrink-0">
           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(bill)}>

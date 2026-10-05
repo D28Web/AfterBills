@@ -1,0 +1,23 @@
+{
+  "name": "BillSubcategory",
+  "type": "object",
+  "properties": {
+    "bill_id": {
+      "type": "string",
+      "description": "ID of the parent bill this subcategory belongs to"
+    },
+    "name": {
+      "type": "string",
+      "description": "Subcategory name (e.g. Snacks, Dinners, Lunch, Breakfast)"
+    },
+    "budget_amount": {
+      "type": "number",
+      "description": "Budget allocated to this subcategory"
+    }
+  },
+  "required": [
+    "bill_id",
+    "name",
+    "budget_amount"
+  ]
+}
