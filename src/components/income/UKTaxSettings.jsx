@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { ukTaxBreakdown, getCurrentTaxYear } from '@/lib/ukTax';
 import { Info, Calculator } from 'lucide-react';
 
@@ -36,6 +37,7 @@ export default function UKTaxSettings({ taxSettings, onChange, payFrequency, cur
     studentLoanPlan = 'none',
     pensionType = 'percent',
     pensionValue = '',
+    pensionIsSalarySacrifice = false,
     salarySacrificeMonthly = '',
     otherDeductionsMonthly = '',
   } = taxSettings;
@@ -53,6 +55,7 @@ export default function UKTaxSettings({ taxSettings, onChange, payFrequency, cur
         studentLoanPlan,
         pensionType,
         pensionValue: parseFloat(pensionValue) || 0,
+        pensionIsSalarySacrifice,
         salarySacrificeAnnual,
         otherDeductionsAnnual,
       })
@@ -116,7 +119,15 @@ export default function UKTaxSettings({ taxSettings, onChange, payFrequency, cur
             onChange={e => set('pensionValue', e.target.value)}
           />
         </div>
-        <p className="text-xs text-muted-foreground">% of post-sacrifice gross salary deducted before tax.</p>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Switch checked={pensionIsSalarySacrifice} onCheckedChange={v => set('pensionIsSalarySacrifice', v)} />
+          <span className="text-xs font-medium">Paid via salary sacrifice</span>
+        </label>
+        <p className="text-xs text-muted-foreground">
+          {pensionIsSalarySacrifice
+            ? 'Salary sacrifice: deducted from gross before Income Tax AND National Insurance — biggest take-home saving.'
+            : 'Relief at source / net pay: deducted before Income Tax but does not reduce National Insurance.'}
+        </p>
       </div>
 
       {/* Student loan */}
@@ -178,7 +189,7 @@ export default function UKTaxSettings({ taxSettings, onChange, payFrequency, cur
             <Row label="Salary sacrifice" value={breakdown.salarySacrifice} currency={currency} negative muted />
           )}
           {breakdown.pensionDeduction > 0 && (
-            <Row label="Pension contribution" value={breakdown.pensionDeduction} currency={currency} negative muted />
+            <Row label={pensionIsSalarySacrifice ? 'Pension (salary sacrifice)' : 'Pension contribution'} value={breakdown.pensionDeduction} currency={currency} negative muted />
           )}
 
           <div className="border-t border-border/60 pt-2 mt-1 space-y-1.5">

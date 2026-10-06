@@ -112,6 +112,7 @@ export function allowanceFromTaxCode(taxCode, grossAnnual, txYear) {
  * @param {string} [opts.studentLoanPlan]    - 'none'|'plan1'|'plan2'|'plan4'|'plan5'|'postgrad'
  * @param {'percent'|'fixed'} [opts.pensionType] - How pension is specified
  * @param {number} [opts.pensionValue]       - Percentage (0–100) or fixed annual amount
+ * @param {boolean} [opts.pensionIsSalarySacrifice] - Whether the pension is paid via salary sacrifice (reduces NI too)
  * @param {number} [opts.salarySacrificeAnnual] - Annual salary sacrifice amount
  * @param {number} [opts.otherDeductionsAnnual] - Other annual deductions (post-tax)
  * @param {string} [opts.taxYearKey]         - Override tax year key
@@ -122,6 +123,7 @@ export function ukTaxBreakdown({
   studentLoanPlan = 'none',
   pensionType = 'percent',
   pensionValue = 0,
+  pensionIsSalarySacrifice = false,
   salarySacrificeAnnual = 0,
   otherDeductionsAnnual = 0,
   taxYearKey,
@@ -164,8 +166,9 @@ export function ukTaxBreakdown({
     }
   }
 
-  // 4. National Insurance (on post-sacrifice gross, pension does NOT reduce NI for net-pay arrangements)
-  const niGross = postSacrificeGross; // salary sacrifice reduces NI; pension typically does not
+  // 4. National Insurance (salary sacrifice reduces NI; a salary-sacrifice pension also reduces NI,
+  //    whereas a relief-at-source / net-pay pension typically does not)
+  const niGross = pensionIsSalarySacrifice ? Math.max(0, postSacrificeGross - pensionAnnual) : postSacrificeGross;
   let nationalInsurance = 0;
   const { main: niMain, upper: niUpper } = config.niRates;
   if (niGross > config.niPrimaryThreshold) {
@@ -193,6 +196,7 @@ export function ukTaxBreakdown({
     grossAnnual: gross,
     salarySacrifice: sacrifice,
     pensionDeduction: pensionAnnual,
+    pensionIsSalarySacrifice: !!pensionIsSalarySacrifice,
     incomeTax: Math.max(0, incomeTax),
     nationalInsurance: Math.max(0, nationalInsurance),
     studentLoanDeduction: Math.max(0, studentLoanDeduction),

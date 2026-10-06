@@ -29,6 +29,7 @@ export default function WhatIf() {
     studentLoanPlan: 'none',
     pensionType: 'percent',
     pensionValue: '',
+    pensionIsSalarySacrifice: false,
     salarySacrificeMonthly: '',
     otherDeductionsMonthly: '',
   });
@@ -42,6 +43,7 @@ export default function WhatIf() {
       studentLoanPlan: taxSettings.studentLoanPlan,
       pensionType: taxSettings.pensionType,
       pensionValue: parseFloat(taxSettings.pensionValue) || 0,
+      pensionIsSalarySacrifice: taxSettings.pensionIsSalarySacrifice,
       salarySacrificeAnnual: (parseFloat(taxSettings.salarySacrificeMonthly) || 0) * 12,
       otherDeductionsAnnual: (parseFloat(taxSettings.otherDeductionsMonthly) || 0) * 12,
     }).takeHomeAnnual / 12;
@@ -80,6 +82,7 @@ export default function WhatIf() {
       studentLoanPlan: 'none',
       pensionType: 'percent',
       pensionValue: '',
+      pensionIsSalarySacrifice: false,
       salarySacrificeMonthly: '',
       otherDeductionsMonthly: '',
     });
