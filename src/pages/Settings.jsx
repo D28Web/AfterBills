@@ -10,8 +10,20 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import IncomeStreamForm from '@/components/income/IncomeStreamForm';
 import IncomeStreamCard from '@/components/income/IncomeStreamCard';
+import UKTaxSettings from '@/components/income/UKTaxSettings';
 import { ukTaxBreakdown } from '@/lib/ukTax';
 import { Switch } from '@/components/ui/switch';
+
+const DEFAULT_TAX_SETTINGS = {
+  grossAnnual: '',
+  taxCode: '1257L',
+  studentLoanPlan: 'none',
+  pensionType: 'percent',
+  pensionValue: '',
+  pensionIsSalarySacrifice: false,
+  salarySacrificeMonthly: '',
+  otherDeductionsMonthly: '',
+};
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -30,6 +42,8 @@ export default function Settings() {
   const [showAddStream, setShowAddStream] = useState(false);
   const [editingStream, setEditingStream] = useState(null);
   const [useUkTax, setUseUkTax] = useState(false);
+  const [incomeMode, setIncomeMode] = useState('net');
+  const [taxSettings, setTaxSettings] = useState(DEFAULT_TAX_SETTINGS);
 
   useEffect(() => {
     if (user) {
@@ -48,6 +62,8 @@ export default function Settings() {
         pay_weekday: user.pay_weekday || 'none',
         currency: user.currency || '£',
       });
+      setIncomeMode(user.income_mode || 'net');
+      setTaxSettings({ ...DEFAULT_TAX_SETTINGS, ...(user.tax_settings || {}) });
     }
   }, [user]);
 
@@ -103,9 +119,23 @@ export default function Settings() {
     ? ukTaxBreakdown({ grossAnnual: rawIncome })
     : null;
 
-  const monthlyEquivalent = ukBreakdown
-    ? ukBreakdown.takeHomeMonthly
-    : rawIncome * (FREQ_TO_MONTHLY[form.pay_frequency] || 1);
+  // Salary (before tax) mode: full UK tax breakdown from taxSettings
+  const salaryBreakdown = (incomeMode === 'salary' && parseFloat(taxSettings.grossAnnual) > 0)
+    ? ukTaxBreakdown({
+        grossAnnual: parseFloat(taxSettings.grossAnnual),
+        taxCode: taxSettings.taxCode,
+        studentLoanPlan: taxSettings.studentLoanPlan,
+        pensionType: taxSettings.pensionType,
+        pensionValue: parseFloat(taxSettings.pensionValue) || 0,
+        pensionIsSalarySacrifice: taxSettings.pensionIsSalarySacrifice,
+        salarySacrificeAnnual: (parseFloat(taxSettings.salarySacrificeMonthly) || 0) * 12,
+        otherDeductionsAnnual: (parseFloat(taxSettings.otherDeductionsMonthly) || 0) * 12,
+      })
+    : null;
+
+  const monthlyEquivalent = incomeMode === 'salary'
+    ? (salaryBreakdown ? salaryBreakdown.takeHomeMonthly : 0)
+    : (ukBreakdown ? ukBreakdown.takeHomeMonthly : rawIncome * (FREQ_TO_MONTHLY[form.pay_frequency] || 1));
 
   // Only show monthly equivalent hint for weekly and fortnightly
   const showMonthlyHint = ['weekly', 'fortnightly'].includes(form.pay_frequency) && rawIncome > 0;
@@ -119,6 +149,8 @@ export default function Settings() {
       pay_start_date: (isNonMonthly || useStartDate) ? (form.pay_start_date || null) : null,
       pay_weekday: form.pay_weekday || 'none',
       currency: form.currency,
+      income_mode: incomeMode,
+      tax_settings: incomeMode === 'salary' ? taxSettings : null,
     });
   };
 
@@ -137,6 +169,15 @@ export default function Settings() {
         <h3 className="text-sm font-semibold font-heading">Income Details</h3>
 
         <div>
+          <Label>Income Type</Label>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setIncomeMode('net')} className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors ${incomeMode === 'net' ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-transparent hover:text-foreground'}`}>Take-home (net)</button>
+            <button type="button" onClick={() => setIncomeMode('salary')} className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors ${incomeMode === 'salary' ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-transparent hover:text-foreground'}`}>Salary before tax</button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">{incomeMode === 'salary' ? 'Enter your gross annual salary — UK tax & NI estimated to give take-home.' : 'Enter what you actually receive each pay period.'}</p>
+        </div>
+
+        <div>
           <Label>Pay Frequency</Label>
           <Select value={form.pay_frequency} onValueChange={v => setForm({ ...form, pay_frequency: v, monthly_income: '' })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -150,23 +191,34 @@ export default function Settings() {
           </Select>
         </div>
 
-        <div>
-          <Label>{freqLabel} Gross Income</Label>
-          <Input
-            type="number"
-            step="0.01"
-            placeholder={form.pay_frequency === 'annually' ? 'e.g. 35000' : 'e.g. 2500'}
-            value={form.monthly_income}
-            onChange={e => setForm({ ...form, monthly_income: e.target.value })}
-          />
-          {showMonthlyHint && (
-            <p className="text-xs text-muted-foreground mt-1">
-              ≈ {form.currency || '£'}{monthlyEquivalent.toFixed(2)} / month
-            </p>
-          )}
-        </div>
+        {incomeMode === 'net' && (
+          <div>
+            <Label>{freqLabel} Gross Income</Label>
+            <Input
+              type="number"
+              step="0.01"
+              placeholder={form.pay_frequency === 'annually' ? 'e.g. 35000' : 'e.g. 2500'}
+              value={form.monthly_income}
+              onChange={e => setForm({ ...form, monthly_income: e.target.value })}
+            />
+            {showMonthlyHint && (
+              <p className="text-xs text-muted-foreground mt-1">
+                ≈ {form.currency || '£'}{monthlyEquivalent.toFixed(2)} / month
+              </p>
+            )}
+          </div>
+        )}
 
-        {form.pay_frequency === 'annually' && (
+        {incomeMode === 'salary' && (
+          <UKTaxSettings
+            taxSettings={taxSettings}
+            onChange={setTaxSettings}
+            payFrequency={form.pay_frequency}
+            currency={form.currency || '£'}
+          />
+        )}
+
+        {incomeMode === 'net' && form.pay_frequency === 'annually' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
