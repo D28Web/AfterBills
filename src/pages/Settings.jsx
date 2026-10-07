@@ -48,6 +48,11 @@ export default function Settings() {
   const [primaryStreamId, setPrimaryStreamId] = useState(null);
   const loadedRef = useRef(false);
 
+  const { data: incomeStreams = [], isLoading: streamsLoading } = useQuery({
+    queryKey: ['income-streams'],
+    queryFn: () => base44.entities.IncomeStream.list(),
+  });
+
   useEffect(() => {
     if (!user || streamsLoading || loadedRef.current) return;
     loadedRef.current = true;
@@ -84,11 +89,6 @@ export default function Settings() {
       setTaxSettings({ ...DEFAULT_TAX_SETTINGS, ...(user.tax_settings || {}) });
     }
   }, [user, incomeStreams, streamsLoading]);
-
-  const { data: incomeStreams = [], isLoading: streamsLoading } = useQuery({
-    queryKey: ['income-streams'],
-    queryFn: () => base44.entities.IncomeStream.list(),
-  });
 
   const createStream = useMutation({
     mutationFn: (data) => base44.entities.IncomeStream.create(data),
