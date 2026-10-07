@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Plane, Settings, Shield, Menu, X, Wallet, Bell } from 'lucide-react';
+import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Plane, Settings, Shield, Menu, X, Wallet, Bell, History } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { path: '/trips', label: 'Trips', icon: Plane },
   { path: '/settings', label: 'Settings', icon: Settings },
   { path: '/reminders', label: 'Reminders', icon: Bell },
+  { path: '/activity', label: 'Activity', icon: History },
 ];
 
 export default function AppLayout() {

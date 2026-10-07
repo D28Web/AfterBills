@@ -5,6 +5,7 @@ import { getPrimaryIncomeContext } from '@/lib/income';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
 } from '@/components/ui/dialog';
@@ -31,14 +32,16 @@ export default function WhatIf() {
   const [loadedScenario, setLoadedScenario] = useState(null); // { id, type, data }
   const [pendingSave, setPendingSave] = useState(null); // { type, data }
   const [saveName, setSaveName] = useState('');
+  const [saveNotes, setSaveNotes] = useState('');
 
   const saveMutation = useMutation({
-    mutationFn: ({ name, type, data }) => base44.entities.Scenario.create({ name, type, data }),
+    mutationFn: ({ name, type, data, notes }) => base44.entities.Scenario.create({ name, type, data, notes: notes || null }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scenarios'] });
       toast.success('Scenario saved');
       setPendingSave(null);
       setSaveName('');
+      setSaveNotes('');
     },
     onError: () => toast.error('Could not save scenario'),
   });
@@ -46,11 +49,12 @@ export default function WhatIf() {
   const handleRequestSave = (type, data) => {
     setPendingSave({ type, data });
     setSaveName('');
+    setSaveNotes('');
   };
 
   const confirmSave = () => {
     if (!saveName.trim() || !pendingSave) return;
-    saveMutation.mutate({ name: saveName.trim(), type: pendingSave.type, data: pendingSave.data });
+    saveMutation.mutate({ name: saveName.trim(), type: pendingSave.type, data: pendingSave.data, notes: saveNotes });
   };
 
   const handleLoad = (scenario) => {
@@ -130,6 +134,12 @@ export default function WhatIf() {
               value={saveName}
               onChange={e => setSaveName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') confirmSave(); }}
+            />
+            <Textarea
+              placeholder="Notes (optional) — e.g. what this scenario is testing"
+              value={saveNotes}
+              onChange={e => setSaveNotes(e.target.value)}
+              rows={2}
             />
           </div>
           <DialogFooter>

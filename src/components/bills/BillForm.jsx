@@ -10,6 +10,7 @@ import { formatMoney } from '@/lib/money';
 import { getDefaultEssential } from '@/lib/essential';
 import ScheduledChangesEditor from '@/components/bills/ScheduledChangesEditor';
 import { X } from 'lucide-react';
+import AttachmentsField from '@/components/common/AttachmentsField';
 
 export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) {
   const [form, setForm] = useState(() => {
@@ -19,6 +20,7 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
         essential: bill.essential ?? getDefaultEssential(bill.category),
         end_date: bill.end_date || '',
         scheduled_changes: bill.scheduled_changes || [],
+        attachments: bill.attachments || [],
       };
     }
     return {
@@ -37,6 +39,7 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
         remaining_balance: '',
         original_balance: '',
         notes: '',
+        attachments: [],
       contract_start_date: '',
       contract_end_date: '',
       renewal_date: '',
@@ -244,6 +247,13 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
             value={form.notes}
             onChange={e => setForm({ ...form, notes: e.target.value })}
             rows={2}
+          />
+        </div>
+
+        <div className="col-span-2">
+          <AttachmentsField
+            attachments={form.attachments || []}
+            onChange={atts => setForm({ ...form, attachments: atts })}
           />
         </div>
 

@@ -8,6 +8,7 @@ import { Save, X } from 'lucide-react';
 import { INCOME_TYPE_LABELS } from '@/lib/income';
 import IncomeChangesEditor from '@/components/income/IncomeChangesEditor';
 import VariablePeriodsEditor from '@/components/income/VariablePeriodsEditor';
+import AttachmentsField from '@/components/common/AttachmentsField';
 
 const INCOME_TYPES = Object.entries(INCOME_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
@@ -34,6 +35,7 @@ const DEFAULT = {
   scheduled_changes: [],
   variable_periods: [],
   notes: '',
+  attachments: [],
 };
 
 export default function IncomeStreamForm({ stream, onSubmit, onCancel }) {
@@ -49,6 +51,7 @@ export default function IncomeStreamForm({ stream, onSubmit, onCancel }) {
     scheduled_changes: stream.scheduled_changes || [],
     variable_periods: stream.variable_periods || [],
     notes: stream.notes || '',
+    attachments: stream.attachments || [],
   } : DEFAULT);
 
   const set = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target ? e.target.value : e }));
@@ -169,6 +172,13 @@ export default function IncomeStreamForm({ stream, onSubmit, onCancel }) {
         <div className="col-span-2">
           <Label>Notes (optional)</Label>
           <Input placeholder="Optional notes" value={form.notes} onChange={set('notes')} />
+        </div>
+
+        <div className="col-span-2">
+          <AttachmentsField
+            attachments={form.attachments || []}
+            onChange={atts => setForm(prev => ({ ...prev, attachments: atts }))}
+          />
         </div>
       </div>
       <div className="flex gap-2 justify-end">

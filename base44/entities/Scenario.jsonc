@@ -22,6 +22,32 @@
     "notes": {
       "type": "string",
       "description": "Optional notes"
+    },
+    "attachments": {
+      "type": "array",
+      "description": "Optional supporting documents (quotes, contracts, supporting records). Files are stored privately and accessible only to the owner.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Filename"
+          },
+          "file_uri": {
+            "type": "string",
+            "description": "Private storage URI"
+          },
+          "uploaded_date": {
+            "type": "string",
+            "format": "date",
+            "description": "When the file was uploaded (YYYY-MM-DD)"
+          }
+        },
+        "required": [
+          "name",
+          "file_uri"
+        ]
+      }
     }
   },
   "required": [

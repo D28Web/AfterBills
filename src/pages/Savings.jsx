@@ -18,10 +18,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { addMonths, format } from 'date-fns';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
+import { Textarea } from '@/components/ui/textarea';
+import AttachmentsField from '@/components/common/AttachmentsField';
+import { logActivity } from '@/lib/activityLog';
 
 export default function Savings() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', target_amount: '', current_amount: '' });
+  const [form, setForm] = useState({ name: '', target_amount: '', current_amount: '', notes: '', attachments: [] });
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
@@ -42,7 +45,12 @@ export default function Savings() {
 
   const createMutation = useMutation({
     mutationFn: data => base44.entities.SavingsGoal.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['goals'] }); setShowForm(false); setForm({ name: '', target_amount: '', current_amount: '' }); },
+    onSuccess: (_res, data) => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      setShowForm(false);
+      setForm({ name: '', target_amount: '', current_amount: '', notes: '', attachments: [] });
+      logActivity('savings_target_changed', 'savings_goal', data.name, `Created savings goal "${data.name}" with target ${formatMoney(data.target_amount, { currency })}`);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -61,6 +69,8 @@ export default function Savings() {
       name: form.name,
       target_amount: parseFloat(form.target_amount),
       current_amount: parseFloat(form.current_amount) || 0,
+      notes: form.notes || null,
+      attachments: form.attachments || [],
     });
   };
 
@@ -189,6 +199,14 @@ export default function Savings() {
               <Label>Already Saved (optional)</Label>
               <Input type="number" step="0.01" placeholder="0.00" value={form.current_amount} onChange={e => setForm({ ...form, current_amount: e.target.value })} />
             </div>
+            <div>
+              <Label>Notes (optional)</Label>
+              <Textarea placeholder="Any extra details…" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
+            </div>
+            <AttachmentsField
+              attachments={form.attachments || []}
+              onChange={atts => setForm({ ...form, attachments: atts })}
+            />
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
               <Button type="submit">Create Goal</Button>

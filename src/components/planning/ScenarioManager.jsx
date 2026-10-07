@@ -10,6 +10,7 @@ import { Save, FolderOpen, Trash2, CheckCircle2, FlaskConical, ShieldCheck, Shop
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { logActivity } from '@/lib/activityLog';
 
 const TYPE_META = {
   what_if: { label: 'What If', icon: FlaskConical },
@@ -72,6 +73,7 @@ export default function ScenarioManager({ onLoad, currency = '£' }) {
       if (scenario.type === 'purchase') queryClient.invalidateQueries({ queryKey: ['sinking-funds'] });
       queryClient.invalidateQueries({ queryKey: ['bills'] });
       toast.success('Scenario applied to your live data');
+      logActivity('scenario_applied', 'scenario', scenario.name, `Applied "${scenario.name}" scenario to live data`);
     },
     onError: () => toast.error('Could not apply scenario — please try again'),
   });

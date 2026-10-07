@@ -1,0 +1,88 @@
+{
+  "name": "ActivityLog",
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": [
+        "bill_created",
+        "bill_amount_changed",
+        "bill_ended",
+        "income_changed",
+        "savings_target_changed",
+        "sinking_fund_contribution",
+        "debt_updated",
+        "scenario_applied"
+      ],
+      "description": "The type of meaningful financial activity recorded"
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "bill",
+        "income",
+        "savings_goal",
+        "sinking_fund",
+        "debt",
+        "scenario"
+      ],
+      "description": "The kind of item affected"
+    },
+    "item_name": {
+      "type": "string",
+      "description": "Denormalised name of the affected item, for display when the item may have been deleted"
+    },
+    "description": {
+      "type": "string",
+      "description": "Concise human-readable description of the change"
+    }
+  },
+  "required": [
+    "action",
+    "item_type",
+    "description"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "immutable"
+      }
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

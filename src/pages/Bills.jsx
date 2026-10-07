@@ -9,6 +9,8 @@ import BillForm from '@/components/bills/BillForm';
 import BillCard from '@/components/bills/BillCard';
 import LoanPayoffCard from '@/components/bills/LoanPayoffCard';
 import { CATEGORY_LABELS } from '@/lib/forecast';
+import { formatMoney } from '@/lib/money';
+import { logActivity } from '@/lib/activityLog';
 import { getMilestones } from '@/lib/insights';
 import MilestonesStrip from '@/components/insights/MilestonesStrip';
 import PageContainer from '@/components/layout/PageContainer';
@@ -32,9 +34,18 @@ export default function Bills() {
 
   const createMutation = useMutation({
     mutationFn: data => base44.entities.Bill.create(data),
-    onSuccess: () => {
+    onSuccess: (_res, data) => {
       queryClient.invalidateQueries({ queryKey: ['bills'] });
       setShowForm(false);
+      const isDebt = ['loans', 'credit_cards'].includes(data.category);
+      logActivity(
+        isDebt ? 'debt_updated' : 'bill_created',
+        isDebt ? 'debt' : 'bill',
+        data.name,
+        isDebt
+          ? `Added debt "${data.name}" (${formatMoney(data.amount, { currency: user?.currency || '£' })})`
+          : `Created bill "${data.name}" (${formatMoney(data.amount, { currency: user?.currency || '£' })})`
+      );
     },
   });
 
@@ -49,13 +60,22 @@ export default function Bills() {
 
   const deleteMutation = useMutation({
     mutationFn: id => base44.entities.Bill.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bills'] }),
+    onSuccess: (_res, id) => {
+      queryClient.invalidateQueries({ queryKey: ['bills'] });
+      const bill = bills.find(b => b.id === id);
+      if (bill) {
+        const isDebt = ['loans', 'credit_cards'].includes(bill.category);
+        logActivity('bill_ended', isDebt ? 'debt' : 'bill', bill.name, `${isDebt ? 'Debt' : 'Bill'} "${bill.name}" deleted`);
+      }
+    },
   });
 
   const handleSubmit = (data) => {
     if (editingBill) {
       const oldAmount = editingBill.amount;
       const newAmount = data.amount;
+      const isDebt = ['loans', 'credit_cards'].includes(data.category);
+      const cur = user?.currency || '£';
       if (Number.isFinite(oldAmount) && Number.isFinite(newAmount) && Math.abs(newAmount - oldAmount) > 0.001) {
         const pctChange = oldAmount > 0 ? Math.round(((newAmount - oldAmount) / oldAmount) * 10000) / 100 : 0;
         data.amount_history = [...(editingBill.amount_history || []), {
@@ -64,6 +84,17 @@ export default function Bills() {
           effective_date: new Date().toISOString().slice(0, 10),
           percentage_change: pctChange,
         }];
+        if (isDebt) {
+          logActivity('debt_updated', 'debt', data.name, `"${data.name}" payment changed from ${formatMoney(oldAmount, { currency: cur })} to ${formatMoney(newAmount, { currency: cur })}`);
+        } else {
+          logActivity('bill_amount_changed', 'bill', data.name, `"${data.name}" changed from ${formatMoney(oldAmount, { currency: cur })} to ${formatMoney(newAmount, { currency: cur })} (${pctChange >= 0 ? '+' : ''}${pctChange}%)`);
+        }
+      }
+      if (!editingBill.end_date && data.end_date) {
+        logActivity('bill_ended', isDebt ? 'debt' : 'bill', data.name, `"${data.name}" ended — stops after ${data.end_date}`);
+      }
+      if (isDebt && editingBill.remaining_balance !== data.remaining_balance && data.remaining_balance != null) {
+        logActivity('debt_updated', 'debt', data.name, `"${data.name}" remaining balance updated to ${formatMoney(data.remaining_balance, { currency: cur })}`);
       }
       updateMutation.mutate({ id: editingBill.id, data });
     } else {

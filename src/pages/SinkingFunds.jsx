@@ -20,6 +20,7 @@ import SinkingFundCard from '@/components/sinking-funds/SinkingFundCard';
 import SinkingFundForm from '@/components/sinking-funds/SinkingFundForm';
 import { getMilestones } from '@/lib/insights';
 import MilestonesStrip from '@/components/insights/MilestonesStrip';
+import { logActivity } from '@/lib/activityLog';
 
 export default function SinkingFunds() {
   const [showForm, setShowForm] = useState(false);
@@ -73,6 +74,7 @@ export default function SinkingFunds() {
     const updates = { current_amount: newAmount };
     if (newAmount >= (fund.target_amount || 0)) updates.status = 'completed';
     updateMutation.mutate({ id: fund.id, data: updates });
+    logActivity('sinking_fund_contribution', 'sinking_fund', fund.name, `Contributed ${formatMoney(amount, { currency })} to "${fund.name}"`);
   };
 
   const activeFunds = funds.filter(f => f.status !== 'completed' && getSinkingFundStats(f).remaining > 0);

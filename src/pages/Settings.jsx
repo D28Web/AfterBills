@@ -21,6 +21,7 @@ import { FREQUENCY_LABELS } from '@/lib/forecast';
 import { Switch } from '@/components/ui/switch';
 import { getOtherStreams, FREQ_TO_MONTHLY } from '@/lib/income';
 import { cn } from '@/lib/utils';
+import { logActivity } from '@/lib/activityLog';
 
 const DEFAULT_TAX_SETTINGS = {
   grossAnnual: '',
@@ -105,12 +106,22 @@ export default function Settings() {
 
   const createStream = useMutation({
     mutationFn: (data) => base44.entities.IncomeStream.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['income-streams'] }); setShowAddStream(false); toast.success('Income stream added'); },
+    onSuccess: (_res, data) => {
+      queryClient.invalidateQueries({ queryKey: ['income-streams'] });
+      setShowAddStream(false);
+      toast.success('Income stream added');
+      logActivity('income_changed', 'income', data.name, `Added income stream "${data.name}"`);
+    },
   });
 
   const updateStream = useMutation({
     mutationFn: ({ id, data }) => base44.entities.IncomeStream.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['income-streams'] }); setEditingStream(null); toast.success('Income stream updated'); },
+    onSuccess: (_res, { data }) => {
+      queryClient.invalidateQueries({ queryKey: ['income-streams'] });
+      setEditingStream(null);
+      toast.success('Income stream updated');
+      logActivity('income_changed', 'income', data.name, `Updated income stream "${data.name}"`);
+    },
   });
 
   const deleteStream = useMutation({
@@ -126,6 +137,7 @@ export default function Settings() {
       if (!vars.id) setPrimaryStreamId(res.id);
       queryClient.invalidateQueries({ queryKey: ['income-streams'] });
       toast.success('Settings saved');
+      logActivity('income_changed', 'income', vars.data.name, `Primary income ${vars.id ? 'updated' : 'set'} (${vars.data.frequency})`);
     },
   });
 

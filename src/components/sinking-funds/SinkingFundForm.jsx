@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import AttachmentsField from '@/components/common/AttachmentsField';
 
 const FREQUENCY_OPTIONS = [
   { value: 'weekly', label: 'Weekly' },
@@ -30,6 +31,7 @@ const EMPTY = {
   contribution_frequency: 'monthly',
   priority: 'medium',
   notes: '',
+  attachments: [],
   status: 'active',
 };
 
@@ -48,6 +50,7 @@ export default function SinkingFundForm({ open, onOpenChange, onSubmit, fund = n
           contribution_frequency: fund.contribution_frequency || 'monthly',
           priority: fund.priority || 'medium',
           notes: fund.notes || '',
+          attachments: fund.attachments || [],
           status: fund.status || 'active',
         });
       } else {
@@ -70,6 +73,7 @@ export default function SinkingFundForm({ open, onOpenChange, onSubmit, fund = n
       contribution_frequency: form.contribution_frequency,
       priority: form.priority,
       notes: form.notes.trim() || null,
+      attachments: form.attachments || [],
       status: form.status,
     });
   };
@@ -155,6 +159,11 @@ export default function SinkingFundForm({ open, onOpenChange, onSubmit, fund = n
             <Label>Notes (optional)</Label>
             <Textarea placeholder="Any extra details…" value={form.notes} onChange={set('notes')} rows={2} />
           </div>
+
+          <AttachmentsField
+            attachments={form.attachments || []}
+            onChange={atts => setForm(prev => ({ ...prev, attachments: atts }))}
+          />
 
           <div className="flex gap-2 justify-end pt-1">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
