@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CATEGORY_COLORS, CATEGORY_LABELS, FREQUENCY_LABELS, getBillDueDay, getBillShare, formatDueDay } from '@/lib/forecast';
+import { CATEGORY_COLORS, CATEGORY_LABELS, FREQUENCY_LABELS, getBillShare, formatDueDay } from '@/lib/forecast';
 import { formatMoney } from '@/lib/money';
 import { isEssentialBill } from '@/lib/essential';
 import { Pencil, Trash2, CalendarDays, Repeat, Users, Target, ChevronDown, RefreshCw, TrendingUp, CalendarClock } from 'lucide-react';
@@ -8,6 +8,8 @@ import { motion } from 'framer-motion';
 import { format, differenceInCalendarDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import BillSubcategoryList from '@/components/bills/BillSubcategoryList';
+import FinanceTrackingCard from '@/components/bills/FinanceTrackingCard';
+import { isFinanceBill, FINANCE_TYPE_LABELS } from '@/lib/financeTracking';
 
 export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
   const hasPayoffTarget = !!bill.target_end_date && (bill.category === 'loans' || bill.category === 'credit_cards');
@@ -45,6 +47,11 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
                 {bill.is_salary_sacrifice && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400">
                     Salary Sacrifice
+                  </span>
+                )}
+                {isFinanceBill(bill) && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400">
+                    {FINANCE_TYPE_LABELS[bill.finance_type] || 'Finance'}
                   </span>
                 )}
               </div>
@@ -120,6 +127,7 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
           {bill.notes && (
             <p className="text-xs text-muted-foreground mt-1 truncate">{bill.notes}</p>
           )}
+          {isFinanceBill(bill) && <FinanceTrackingCard bill={bill} currency={currency} />}
           <button type="button" onClick={() => setExpanded(e => !e)} className="flex items-center gap-1 text-xs text-primary mt-2 hover:underline">
             <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
             Subcategories

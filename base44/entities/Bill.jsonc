@@ -13,7 +13,7 @@
     "start_date": {
       "type": "string",
       "format": "date",
-      "description": "The date the bill first started / is anchored to (YYYY-MM-DD). The day-of-month is used as the due day each period."
+      "description": "The date the bill first started / is anchored to (YYYY-MM-DD). The day-of-month is used as the due day each period. For financed commitments, this is the agreement start date."
     },
     "end_date": {
       "type": "string",
@@ -76,6 +76,93 @@
       "type": "string",
       "description": "ID of the household member this bill belongs to (optional, for household support)"
     },
+    "finance_type": {
+      "type": "string",
+      "enum": [
+        "mortgage",
+        "personal_loan",
+        "hp",
+        "pcp",
+        "car_loan",
+        "student_loan",
+        "credit_agreement",
+        "other_finance"
+      ],
+      "description": "When set, this bill is a financed commitment (mortgage, loan, car finance, etc.) and finance-specific tracking fields apply. Null/absent means a normal recurring bill."
+    },
+    "interest_rate": {
+      "type": "number",
+      "description": "Annual interest rate as a percentage (e.g. 5.5 for 5.5%). Optional."
+    },
+    "interest_type": {
+      "type": "string",
+      "enum": [
+        "fixed",
+        "tracker",
+        "variable",
+        "discount",
+        "other"
+      ],
+      "description": "Interest rate type. Primarily for mortgages and student loans."
+    },
+    "apr": {
+      "type": "number",
+      "description": "Annual Percentage Rate (APR) as a percentage, where it differs from the interest rate. Optional."
+    },
+    "original_term_months": {
+      "type": "number",
+      "description": "Original agreement term in months. Optional."
+    },
+    "remaining_term_months": {
+      "type": "number",
+      "description": "Remaining term in months. Optional \u2014 can be derived from agreement end date or original term if not provided."
+    },
+    "agreement_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Agreement end date (YYYY-MM-DD). The scheduled end of the finance agreement, distinct from a target payoff goal."
+    },
+    "balloon_payment": {
+      "type": "number",
+      "description": "Final / balloon payment due at the end of the agreement (e.g. PCP). Optional."
+    },
+    "overpayment_amount": {
+      "type": "number",
+      "description": "Regular overpayment amount. Optional."
+    },
+    "overpayment_frequency": {
+      "type": "string",
+      "enum": [
+        "weekly",
+        "fortnightly",
+        "four_weekly",
+        "monthly",
+        "quarterly",
+        "annually"
+      ],
+      "description": "How often the overpayment is made."
+    },
+    "early_repayment_charge": {
+      "type": "number",
+      "description": "Early repayment charge amount (fixed) or percentage (if early_repayment_charge_type is 'percentage'). Optional."
+    },
+    "early_repayment_charge_type": {
+      "type": "string",
+      "enum": [
+        "fixed",
+        "percentage"
+      ],
+      "description": "Whether the early repayment charge is a fixed amount or a percentage of the remaining balance."
+    },
+    "property_value": {
+      "type": "number",
+      "description": "Estimated property value, for mortgages. Used to calculate loan-to-value (LTV). Optional."
+    },
+    "fixed_rate_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When the fixed-rate period ends (YYYY-MM-DD). For fixed-rate mortgages. Optional."
+    },
     "scheduled_changes": {
       "type": "array",
       "description": "Future-dated amount changes for this bill (e.g. rent increase, renewal price). Each change overrides the base amount from its effective date until its optional end date. Historical amounts are preserved in amount_history.",
@@ -114,11 +201,11 @@
     },
     "remaining_balance": {
       "type": "number",
-      "description": "Outstanding balance still owed on a loan / credit card. Optional."
+      "description": "Outstanding balance still owed on a loan / credit card / financed commitment. Optional."
     },
     "original_balance": {
       "type": "number",
-      "description": "Original balance when the loan / credit card was taken out. Optional. Used with remaining_balance to recognise debt-repaid milestones (25%, 50%, 75%, cleared)."
+      "description": "Original balance when the loan / credit card / finance agreement was taken out. Optional. Used with remaining_balance to recognise debt-repaid milestones (25%, 50%, 75%, cleared)."
     },
     "is_split": {
       "type": "boolean",

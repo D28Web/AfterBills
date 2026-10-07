@@ -12,6 +12,8 @@ import { getDefaultEssential } from '@/lib/essential';
 import ScheduledChangesEditor from '@/components/bills/ScheduledChangesEditor';
 import AttachmentsField from '@/components/common/AttachmentsField';
 import AmountHistoryEditor from '@/components/bills/AmountHistoryEditor';
+import FinanceFields from '@/components/bills/FinanceFields';
+import { FINANCE_TYPE_LABELS, FINANCE_TYPE_KEYS } from '@/lib/financeTracking';
 import { ChevronDown } from 'lucide-react';
 
 export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) {
@@ -46,6 +48,20 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       target_end_date: '',
       remaining_balance: '',
       original_balance: '',
+      finance_type: '',
+      interest_rate: '',
+      interest_type: '',
+      apr: '',
+      original_term_months: '',
+      remaining_term_months: '',
+      agreement_end_date: '',
+      balloon_payment: '',
+      overpayment_amount: '',
+      overpayment_frequency: '',
+      early_repayment_charge: '',
+      early_repayment_charge_type: '',
+      property_value: '',
+      fixed_rate_end_date: '',
       notes: '',
       attachments: [],
       contract_start_date: '',
@@ -65,7 +81,8 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       bill.contract_start_date || bill.contract_end_date || bill.renewal_date ||
       bill.intro_price_end_date || bill.expected_new_price ||
       (bill.scheduled_changes && bill.scheduled_changes.length) ||
-      bill.remaining_balance != null || bill.original_balance != null || bill.target_end_date);
+      bill.remaining_balance != null || bill.original_balance != null || bill.target_end_date ||
+      bill.finance_type);
   });
 
   const handleSubmit = (e) => {
@@ -75,6 +92,20 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       amount: parseFloat(form.amount),
       remaining_balance: form.remaining_balance === '' ? undefined : parseFloat(form.remaining_balance),
       original_balance: form.original_balance === '' ? undefined : parseFloat(form.original_balance),
+      finance_type: form.finance_type || undefined,
+      interest_rate: form.interest_rate === '' ? undefined : parseFloat(form.interest_rate),
+      interest_type: form.interest_type || undefined,
+      apr: form.apr === '' ? undefined : parseFloat(form.apr),
+      original_term_months: form.original_term_months === '' ? undefined : parseInt(form.original_term_months),
+      remaining_term_months: form.remaining_term_months === '' ? undefined : parseInt(form.remaining_term_months),
+      agreement_end_date: form.agreement_end_date || null,
+      balloon_payment: form.balloon_payment === '' ? undefined : parseFloat(form.balloon_payment),
+      overpayment_amount: form.overpayment_amount === '' ? undefined : parseFloat(form.overpayment_amount),
+      overpayment_frequency: form.overpayment_frequency || undefined,
+      early_repayment_charge: form.early_repayment_charge === '' ? undefined : parseFloat(form.early_repayment_charge),
+      early_repayment_charge_type: form.early_repayment_charge_type || undefined,
+      property_value: form.property_value === '' ? undefined : parseFloat(form.property_value),
+      fixed_rate_end_date: form.fixed_rate_end_date || null,
       contract_start_date: form.contract_start_date || null,
       contract_end_date: form.contract_end_date || null,
       renewal_date: form.renewal_date || null,
@@ -153,6 +184,20 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
           </Select>
         </div>
 
+        <div className="col-span-2">
+          <Label>Finance Type (optional)</Label>
+          <Select value={form.finance_type || 'none'} onValueChange={v => setForm({ ...form, finance_type: v === 'none' ? '' : v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Not a financed commitment</SelectItem>
+              {FINANCE_TYPE_KEYS.map(key => (
+                <SelectItem key={key} value={key}>{FINANCE_TYPE_LABELS[key]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-1">Track the underlying balance, interest, and progress towards repayment.</p>
+        </div>
+
         <div className="col-span-2 flex items-center gap-3">
           <Switch checked={form.is_recurring} onCheckedChange={v => setForm({ ...form, is_recurring: v })} />
           <Label>Recurring bill</Label>
@@ -183,11 +228,15 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
             </div>
 
             {isLoan && (
+              <div className="col-span-2">
+                <Label>Target end date (payoff goal)</Label>
+                <Input type="date" value={form.target_end_date || ''} onChange={e => setForm({ ...form, target_end_date: e.target.value })} />
+              </div>
+            )}
+            {form.finance_type ? (
+              <FinanceFields form={form} setForm={setForm} />
+            ) : isLoan ? (
               <>
-                <div className="col-span-2">
-                  <Label>Target end date (payoff goal)</Label>
-                  <Input type="date" value={form.target_end_date || ''} onChange={e => setForm({ ...form, target_end_date: e.target.value })} />
-                </div>
                 <div className="col-span-2">
                   <Label>Remaining balance</Label>
                   <Input type="number" step="0.01" placeholder="0.00" value={form.remaining_balance || ''} onChange={e => setForm({ ...form, remaining_balance: e.target.value })} />
@@ -197,7 +246,7 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
                   <Input type="number" step="0.01" placeholder="0.00" value={form.original_balance || ''} onChange={e => setForm({ ...form, original_balance: e.target.value })} />
                 </div>
               </>
-            )}
+            ) : null}
 
             <div className="col-span-2 flex items-center gap-3">
               <Switch checked={form.is_split} onCheckedChange={v => setForm({ ...form, is_split: v })} />
