@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { generateForecast } from '@/lib/forecast';
 import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
@@ -37,13 +38,18 @@ export default function Dashboard() {
     queryFn: () => base44.entities.IncomeStream.list(),
   });
 
+  const { data: sinkingFunds = [] } = useQuery({
+    queryKey: ['sinking-funds'],
+    queryFn: () => base44.entities.SinkingFund.list(),
+  });
+
   const [viewFrequency, setViewFrequency] = useState('monthly');
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
 
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
   const income = primaryCtx.monthly_income;
   const currency = user?.currency || '£';
-  const forecast = generateForecast(bills, income, new Date(startDate + '-01'), getOtherStreams(incomeStreams), primaryCtx);
+  const forecast = generateForecast(bills, income, new Date(startDate + '-01'), getOtherStreams(incomeStreams), primaryCtx, sinkingFunds);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
 
@@ -115,6 +121,16 @@ export default function Dashboard() {
           icon={TrendingUp}
         />
       </div>
+
+      {sinkingFunds.filter(f => f.status !== 'completed').length > 0 && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <PiggyBank className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            Forecast includes <span className="font-medium text-foreground">{formatMoney(forecast[0]?.sinkingFunds || 0, { currency, decimals: 2 })}</span>/mo for sinking fund contributions.{' '}
+            <Link to="/sinking-funds" className="font-medium underline underline-offset-2">View funds</Link>
+          </span>
+        </div>
+      )}
 
       <ForecastChart forecast={forecast} currency={currency} user={primaryCtx} />
 

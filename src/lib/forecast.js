@@ -1,6 +1,7 @@
 import { addMonths, addWeeks, getDaysInMonth, startOfDay, startOfMonth, isSameMonth, format, addDays } from 'date-fns';
 import { roundMoney, getSplitShare } from './money';
 import { FREQ_TO_MONTHLY } from './income';
+import { getSinkingFundMonthlyContribution } from './sinkingFunds';
 
 /**
  * Inline pay cycle stepping — returns array of cycle start dates.
@@ -215,7 +216,7 @@ export function getIncomeStreamAmountForMonth(stream, month, year) {
  * When user has a non-monthly pay frequency, income per month is calculated by
  * counting actual paydays that fall in each calendar month.
  */
-export function generateForecast(bills, monthlyIncome, startDate = new Date(), incomeStreams = [], user = null) {
+export function generateForecast(bills, monthlyIncome, startDate = new Date(), incomeStreams = [], user = null, sinkingFunds = []) {
   const start = startOfMonth(startDate);
   const months = [];
 
@@ -265,7 +266,20 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date(), i
       : monthlyIncome;
 
     const totalIncome = baseIncome + extraIncome;
-    const remaining = totalIncome - totalBills;
+
+    // Planned sinking fund contributions for this month
+    let sinkingFundTotal = 0;
+    if (sinkingFunds && sinkingFunds.length > 0) {
+      sinkingFunds.forEach(fund => {
+        if (fund.status === 'completed') return;
+        const fundTarget = fund.target_date ? new Date(fund.target_date) : null;
+        if (fundTarget && (fundTarget.getFullYear() < year || (fundTarget.getFullYear() === year && fundTarget.getMonth() < month))) return;
+        sinkingFundTotal += getSinkingFundMonthlyContribution(fund);
+      });
+    }
+    sinkingFundTotal = roundMoney(sinkingFundTotal);
+
+    const remaining = totalIncome - totalBills - sinkingFundTotal;
 
     months.push({
       date,
@@ -275,6 +289,7 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date(), i
       shortLabel,
       income: roundMoney(totalIncome),
       totalBills: roundMoney(totalBills),
+      sinkingFunds: sinkingFundTotal,
       remaining: roundMoney(remaining),
       bills: billsThisMonth,
     });

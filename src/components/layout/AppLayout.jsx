@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, FlaskConical, Plane, Settings, Shield, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Plane, Settings, Shield, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { path: '/calendar', label: 'Calendar', icon: Calendar },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/savings', label: 'Savings', icon: Target },
+  { path: '/sinking-funds', label: 'Sinking Funds', icon: PiggyBank },
   { path: '/what-if', label: 'What If', icon: FlaskConical },
   { path: '/trips', label: 'Trips', icon: Plane },
   { path: '/settings', label: 'Settings', icon: Settings },
