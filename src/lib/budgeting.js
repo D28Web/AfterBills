@@ -13,7 +13,7 @@
  */
 import { billToMonthlyCost, CATEGORY_LABELS } from './forecast';
 import { getRegularBills, getMonthlySalarySacrifice } from './salarySacrifice';
-import { getStreamMonthlyAmount, getOtherStreams, getPrimaryIncomeContext, FREQ_TO_MONTHLY } from './income';
+import { getStreamMonthlyAmount, getEffectiveStreamMonthlyAmount, getOtherStreams, getPrimaryStream, getPrimaryIncomeContext, FREQ_TO_MONTHLY } from './income';
 import { getSinkingFundMonthlyContribution } from './sinkingFunds';
 import { roundMoney, sumMoney, getSplitShare } from './money';
 import { EXPENSE_CATEGORIES } from './expenses';
@@ -220,8 +220,10 @@ export function calculateBudget({ bills, expenses, sinkingFunds, goals, incomeSt
 
   // Income: net take-home from primary + other streams
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
-  const otherMonthly = sumMoney(getOtherStreams(incomeStreams).map(s => getStreamMonthlyAmount(s)));
-  const monthlyIncome = roundMoney(primaryCtx.monthly_income + otherMonthly);
+  const primaryStream = getPrimaryStream(incomeStreams);
+  const primaryMonthly = primaryStream ? getEffectiveStreamMonthlyAmount(primaryStream) : primaryCtx.monthly_income;
+  const otherMonthly = sumMoney(getOtherStreams(incomeStreams).map(s => getEffectiveStreamMonthlyAmount(s)));
+  const monthlyIncome = roundMoney(primaryMonthly + otherMonthly);
 
   // Salary sacrifice (shown separately, not in budget categories)
   const salarySacrificeMonthly = getMonthlySalarySacrifice(bills);

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, PiggyBank } from 'lucide-react';
 import { formatMoney, roundMoney, sumMoney } from '@/lib/money';
-import { getStreamMonthlyAmount, INCOME_TYPE_LABELS } from '@/lib/income';
+import { getStreamMonthlyAmount, getEffectiveStreamMonthlyAmount, INCOME_TYPE_LABELS } from '@/lib/income';
 import { FREQUENCY_LABELS } from '@/lib/forecast';
 import { format } from 'date-fns';
 
 export default function IncomeBreakdown({ incomeStreams, currency }) {
   const [expanded, setExpanded] = useState(false);
 
-  const total = roundMoney(sumMoney(incomeStreams.map(s => getStreamMonthlyAmount(s))));
+  const total = roundMoney(sumMoney(incomeStreams.map(s => getEffectiveStreamMonthlyAmount(s))));
 
   if (incomeStreams.length === 0) return null;
 
@@ -31,7 +31,7 @@ export default function IncomeBreakdown({ incomeStreams, currency }) {
       {expanded && (
         <div className="border-t border-border divide-y divide-border">
           {incomeStreams.map(stream => {
-            const monthly = getStreamMonthlyAmount(stream);
+            const monthly = getEffectiveStreamMonthlyAmount(stream);
             const isIrregular = stream.frequency === 'irregular';
             return (
               <div key={stream.id} className="flex items-center justify-between p-3 text-sm gap-3">

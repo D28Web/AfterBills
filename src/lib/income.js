@@ -180,6 +180,28 @@ export function getEffectivePrimaryMonthlyIncome(ctx, month, year, baseMonthlyIn
   return baseMonthlyIncome || 0;
 }
 
+/**
+ * Effective monthly amount for a single stream as of a given date, resolving
+ * active 'amount' scheduled changes (pay rises/reductions). Variable streams
+ * resolve their per-period amount. Does NOT include one-off or addition
+ * changes (those are temporary and handled per-cycle in the forecast).
+ */
+export function getEffectiveStreamMonthlyAmount(stream, date = new Date()) {
+  if (!stream) return 0;
+  if (stream.frequency === 'irregular') return 0;
+  const multiplier = FREQ_TO_MONTHLY[stream.frequency] || 1;
+  if (stream.is_variable) return roundMoney(getEffectiveVariableAmount(stream, date) * multiplier);
+  const change = getActiveAmountChange(stream, date);
+  if (stream.income_mode === 'salary') {
+    const ts = stream.tax_settings || {};
+    const gross = change?.gross_annual != null ? parseFloat(change.gross_annual) : (parseFloat(ts.grossAnnual) || 0);
+    if (!gross || gross <= 0 || isNaN(gross)) return 0;
+    return roundMoney(ukTaxBreakdown({ ...ts, grossAnnual: gross }).takeHomeMonthly);
+  }
+  const amount = change?.amount != null ? parseFloat(change.amount) : (parseFloat(stream.amount) || 0);
+  return roundMoney((amount || 0) * multiplier);
+}
+
 // Build a user-like context (monthly_income + pay schedule) from the primary
 // income stream, falling back to legacy User-entity fields for users who
 // haven't yet saved their income into an IncomeStream record. Enriched with
