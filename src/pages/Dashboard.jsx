@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { generateForecast } from '@/lib/forecast';
@@ -25,6 +25,10 @@ import InsightsList from '@/components/insights/InsightsList';
 import { format, startOfMonth } from 'date-fns';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
+import DashboardSection from '@/components/dashboard/DashboardSection';
+import DashboardCustomize from '@/components/dashboard/DashboardCustomize';
+import { resolveLayout, getVisibleSections } from '@/lib/dashboardSections';
+import { SlidersHorizontal } from 'lucide-react';
 
 const FREQUENCY_OPTIONS = [
   { label: 'Weekly', value: 'weekly' },
@@ -63,8 +67,12 @@ export default function Dashboard() {
     queryFn: () => base44.entities.SavingsGoal.list(),
   });
 
+  const queryClient = useQueryClient();
   const [viewFrequency, setViewFrequency] = useState('monthly');
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const layout = resolveLayout(user?.dashboard_layout);
+  const visibleSections = getVisibleSections(layout);
 
   const { monthlyIncome, incomeStreams: forecastStreams, primaryCtx } = getForecastIncomeParams(incomeStreams, user);
   const currency = user?.currency || '£';
@@ -86,6 +94,22 @@ export default function Dashboard() {
   const freqLabel = FREQUENCY_OPTIONS.find(f => f.value === viewFrequency)?.label ?? 'Monthly';
 
   const scale = (val) => formatMoney(val * multiplier, { currency });
+
+  const dashData = {
+    monthlySpare, currentMonth, currency, incomeStreams,
+    safeToSpendCycle, buffer, bills, sinkingFunds, goals,
+    forecast, plannerData, primaryCtx, emergencyGoal,
+    comparisons, insights,
+  };
+
+  const handleSaveLayout = async (newLayout) => {
+    try {
+      await base44.auth.updateMe({ dashboard_layout: newLayout });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    } catch (e) {
+      // silently fail — layout still works locally until refresh
+    }
+  };
 
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
@@ -119,6 +143,13 @@ export default function Dashboard() {
                 </button>
               ))}
             </div>
+            <button
+              onClick={() => setCustomizeOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Customize</span>
+            </button>
           </>
         }
       />
@@ -155,55 +186,15 @@ export default function Dashboard() {
         <MilestonesStrip milestones={milestones.filter(m => m.type !== 'debt')} />
       )}
 
-      <ThingsToKnow
-        bills={bills}
-        incomeStreams={incomeStreams}
-        sinkingFunds={sinkingFunds}
-        goals={goals}
-        forecast={forecast}
-        plannerData={plannerData}
-        buffer={buffer}
-        monthlySpare={monthlySpare}
-        currency={currency}
+      <DashboardCustomize
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+        layout={layout}
+        onSave={handleSaveLayout}
       />
-
-      {safeToSpendCycle && (
-        <div className="grid lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <SafeToSpendCard data={safeToSpendCycle} currency={currency} />
-          </div>
-          <BufferIndicator amountLeft={safeToSpendCycle.amountLeft} buffer={buffer} currency={currency} />
-        </div>
-      )}
-
-      <IncomeBreakdown incomeStreams={incomeStreams} currency={currency} />
-
-      {sinkingFunds.filter(f => f.status !== 'completed').length > 0 && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-xl p-3">
-          <PiggyBank className="w-4 h-4 text-amber-600 shrink-0" />
-          <span>
-            Forecast includes <span className="font-medium text-foreground">{formatMoney(forecast[0]?.sinkingFunds || 0, { currency, decimals: 2 })}</span>/mo for sinking fund contributions.{' '}
-            <Link to="/sinking-funds" className="font-medium underline underline-offset-2">View funds</Link>
-          </span>
-        </div>
-      )}
-
-      <div className="grid lg:grid-cols-2 gap-4">
-        <PeriodComparisonCard comparisons={comparisons} currency={currency} />
-        <InsightsList insights={insights} />
-      </div>
-
-      <ForecastChart forecast={forecast} currency={currency} user={primaryCtx} />
-
-      <UpcomingCommitments bills={bills} sinkingFunds={sinkingFunds} currency={currency} />
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <UpcomingBills bills={bills} currency={currency} />
-        <MonthHighlights forecast={forecast} currency={currency} />
-      </div>
-
-      <PaydayCycles user={primaryCtx} bills={bills} currency={currency} />
-      <NoBillDuePeriods user={primaryCtx} bills={bills} currency={currency} />
+      {visibleSections.map(key => (
+        <DashboardSection key={key} sectionKey={key} data={dashData} />
+      ))}
     </PageContainer>
   );
 }
