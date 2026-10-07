@@ -26,6 +26,7 @@ export default function DashboardSection({ sectionKey, data }) {
           salarySacrificeMonthly={data.salarySacrificeMonthly}
           safeToSpendCycle={data.safeToSpendCycle}
           buffer={data.buffer}
+          periodLabel={data.periodLabel}
         />
       );
     case 'payday_planner':

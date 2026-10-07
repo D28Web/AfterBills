@@ -3,11 +3,12 @@ import { formatMoney, roundMoney } from '@/lib/money';
 import { motion } from 'framer-motion';
 
 // Prominent card showing the core AfterBills value: what's left after bills.
-export default function LeftAfterBillsCard({ monthlySpare, currentMonth, currency, salarySacrificeMonthly = 0 }) {
+export default function LeftAfterBillsCard({ monthlySpare, currentMonth, currency, salarySacrificeMonthly = 0, periodLabel = 'Monthly' }) {
   const income = currentMonth?.income || 0;
   const bills = currentMonth?.totalBills || 0;
   const left = monthlySpare != null ? monthlySpare : roundMoney(income - bills);
   const isPositive = left >= 0;
+  const periodPhrase = `per ${periodLabel.toLowerCase()}`;
 
   return (
     <motion.div
@@ -25,7 +26,7 @@ export default function LeftAfterBillsCard({ monthlySpare, currentMonth, currenc
         <span className={`text-4xl font-bold font-heading tracking-tight ${isPositive ? 'text-foreground' : 'text-destructive'}`}>
           {formatMoney(left, { currency, decimals: 2 })}
         </span>
-        <span className="text-sm text-muted-foreground">per month</span>
+        <span className="text-sm text-muted-foreground">{periodPhrase}</span>
       </div>
       <div className="mt-4 flex items-center gap-3 text-sm flex-wrap">
         <div className="flex items-center gap-1.5">
@@ -44,7 +45,7 @@ export default function LeftAfterBillsCard({ monthlySpare, currentMonth, currenc
       </div>
       {salarySacrificeMonthly > 0 && (
         <p className="text-xs text-muted-foreground mt-2">
-          Plus <span className="font-medium text-foreground">{formatMoney(salarySacrificeMonthly, { currency, decimals: 2 })}</span>/mo salary sacrifice (pre-tax, not deducted again)
+          Plus <span className="font-medium text-foreground">{formatMoney(salarySacrificeMonthly, { currency, decimals: 2 })}</span> {periodLabel.toLowerCase()} salary sacrifice (pre-tax, not deducted again)
         </p>
       )}
     </motion.div>

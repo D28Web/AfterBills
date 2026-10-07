@@ -30,6 +30,21 @@ export const DISPLAY_PERIOD_LABELS = {
   annually: 'Annually',
 };
 
+// Factor to convert a monthly amount into the given display period.
+// monthly_amount * getPeriodFactor(period) = amount for that period.
+// e.g. monthly * (12/52) = weekly; monthly * 12 = annually.
+export function getPeriodFactor(period) {
+  const monthlyMultiplier = {
+    weekly: 52 / 12,
+    fortnightly: 26 / 12,
+    four_weekly: 13 / 12,
+    monthly: 1,
+    quarterly: 4 / 12,
+    annually: 1 / 12,
+  }[period] || 1;
+  return monthlyMultiplier === 0 ? 1 : 1 / monthlyMultiplier;
+}
+
 export function getInitialDisplayPeriod() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);

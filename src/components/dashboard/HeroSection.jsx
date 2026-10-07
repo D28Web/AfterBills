@@ -6,7 +6,7 @@ import BufferIndicator from '@/components/payday-planner/BufferIndicator';
 // Combines the two most important numbers above the fold in a 5-col grid
 // (3 for Left After Bills, 2 for Safe to Spend) so both are immediately
 // visible on a laptop display.
-export default function HeroSection({ monthlySpare, currentMonth, currency, salarySacrificeMonthly, safeToSpendCycle, buffer }) {
+export default function HeroSection({ monthlySpare, currentMonth, currency, salarySacrificeMonthly, safeToSpendCycle, buffer, periodLabel }) {
   return (
     <div className="grid lg:grid-cols-5 gap-4">
       <div className="lg:col-span-3">
@@ -15,6 +15,7 @@ export default function HeroSection({ monthlySpare, currentMonth, currency, sala
           currentMonth={currentMonth}
           currency={currency}
           salarySacrificeMonthly={salarySacrificeMonthly}
+          periodLabel={periodLabel}
         />
       </div>
       <div className="lg:col-span-2 space-y-4">

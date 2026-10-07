@@ -13,7 +13,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import DashboardSection from '@/components/dashboard/DashboardSection';
 import DashboardCustomize from '@/components/dashboard/DashboardCustomize';
 import { resolveLayout, getVisibleSections, MODE_PRESETS, MODE_LABELS, DASHBOARD_MODES, DEFAULT_MODE } from '@/lib/dashboardSections';
-import { useDisplayPeriod, DISPLAY_PERIOD_OPTIONS } from '@/lib/displayPeriod';
+import { useDisplayPeriod, DISPLAY_PERIOD_OPTIONS, DISPLAY_PERIOD_LABELS, getPeriodFactor } from '@/lib/displayPeriod';
 import { getRegularBills, getMonthlySalarySacrifice } from '@/lib/salarySacrifice';
 import { calculateBudget } from '@/lib/budgeting';
 
@@ -84,12 +84,25 @@ export default function Dashboard() {
   const insights = getInsights({ plannerData, forecast, bills: regularBills, goals, monthlySpare, currency });
   const budget = user ? calculateBudget({ bills, expenses, sinkingFunds, goals, incomeStreams, user, overrides }) : null;
 
+  // Scale the display figures to the selected period. Calculation-only values
+  // (emergency fund, milestones, insights) keep the original monthly amounts.
+  const periodFactor = getPeriodFactor(viewFrequency);
+  const periodLabel = DISPLAY_PERIOD_LABELS[viewFrequency] || 'Monthly';
+  const displayMonth = {
+    ...currentMonth,
+    income: roundMoney(currentMonth.income * periodFactor),
+    totalBills: roundMoney(currentMonth.totalBills * periodFactor),
+    remaining: roundMoney(currentMonth.remaining * periodFactor),
+  };
+  const displaySpare = roundMoney(monthlySpare * periodFactor);
+  const displaySalarySacrifice = roundMoney(salarySacrificeMonthly * periodFactor);
+
   const dashData = {
-    monthlySpare, currentMonth, currency, incomeStreams,
+    monthlySpare: displaySpare, currentMonth: displayMonth, currency, incomeStreams,
     safeToSpendCycle, buffer, bills: regularBills, sinkingFunds, goals,
     forecast, plannerData, primaryCtx, emergencyGoal,
-    comparisons, insights, milestones, salarySacrificeMonthly,
-    budget,
+    comparisons, insights, milestones, salarySacrificeMonthly: displaySalarySacrifice,
+    budget, periodLabel,
   };
 
   const handleSaveLayout = async (newLayout, newMode) => {
