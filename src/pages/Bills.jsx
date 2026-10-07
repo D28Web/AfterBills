@@ -148,7 +148,7 @@ export default function Bills() {
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           <AnimatePresence>
             {filtered.map(bill => (
               <BillCard
@@ -175,7 +175,7 @@ export default function Bills() {
             <p className="text-sm text-muted-foreground mt-1">Track payoff progress toward your target dates</p>
           </div>
           {debtMilestones.length > 0 && <MilestonesStrip milestones={debtMilestones} />}
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {loanBills.map(bill => (
               <LoanPayoffCard
                 key={bill.id}
