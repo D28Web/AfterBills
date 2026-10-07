@@ -1,9 +1,9 @@
 import { cn } from '@/lib/utils';
 
 const ROLE_STYLES = {
-  owner: 'bg-amber-100 text-amber-800 border-amber-200',
-  admin: 'bg-sky-100 text-sky-800 border-sky-200',
-  user: 'bg-slate-100 text-slate-600 border-slate-200',
+  owner: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
+  admin: 'bg-sky-500/15 text-sky-400 border-sky-500/20',
+  user: 'bg-muted text-muted-foreground border-border',
 };
 
 export default function RoleBadge({ role }) {

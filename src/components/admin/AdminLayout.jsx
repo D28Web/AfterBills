@@ -26,8 +26,8 @@ function NavLinks({ onNavigate }) {
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
               active
-                ? 'bg-amber-500 text-slate-950 shadow-sm'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             )}
           >
             <item.icon className="w-4 h-4" />
@@ -43,29 +43,29 @@ export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-100 flex">
+    <div className="dark min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-slate-800 bg-slate-900 fixed inset-y-0 left-0 z-30">
-        <div className="p-6 border-b border-slate-800">
+      <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card fixed inset-y-0 left-0 z-30">
+        <div className="p-6 border-b border-border">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-amber-500 rounded-lg">
-              <Shield className="w-4 h-4 text-slate-950" />
+            <div className="p-1.5 bg-primary rounded-lg">
+              <Shield className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-heading text-base font-bold text-white tracking-tight leading-none">
+              <h1 className="font-heading text-base font-bold text-foreground tracking-tight leading-none">
                 Administration
               </h1>
-              <p className="text-[11px] text-slate-400 mt-1">AfterBills Control</p>
+              <p className="text-[11px] text-muted-foreground mt-1">AfterBills Control</p>
             </div>
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
           <NavLinks />
         </nav>
-        <div className="p-3 border-t border-slate-800">
+        <div className="p-3 border-t border-border">
           <Link
             to="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to app
@@ -74,16 +74,16 @@ export default function AdminLayout() {
       </aside>
 
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900 border-b border-slate-800 h-14 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-card border-b border-border h-14 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <div className="p-1 bg-amber-500 rounded-md">
-            <Shield className="w-3.5 h-3.5 text-slate-950" />
+          <div className="p-1 bg-primary rounded-md">
+            <Shield className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
-          <span className="font-heading text-sm font-bold text-white">Administration</span>
+          <span className="font-heading text-sm font-bold text-foreground">Administration</span>
         </div>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors"
+          className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
         >
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -105,14 +105,14 @@ export default function AdminLayout() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="lg:hidden fixed right-0 top-14 bottom-0 z-50 w-64 bg-slate-900 border-l border-slate-800 p-4 space-y-1"
+              className="lg:hidden fixed right-0 top-14 bottom-0 z-50 w-64 bg-card border-l border-border p-4 space-y-1"
             >
               <NavLinks onNavigate={() => setMobileOpen(false)} />
-              <div className="pt-3 mt-3 border-t border-slate-800">
+              <div className="pt-3 mt-3 border-t border-border">
                 <Link
                   to="/"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back to app
@@ -124,7 +124,7 @@ export default function AdminLayout() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 bg-slate-100 min-h-screen">
+      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 bg-background min-h-screen">
         <Outlet />
       </main>
     </div>

@@ -45,7 +45,7 @@ export default function AppLayout() {
                   active
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                  item.path === '/admin' && !active && "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                  item.path === '/admin' && !active && "text-primary hover:text-primary hover:bg-primary/10"
                 )}
               >
                 <item.icon className="w-4 h-4" />
@@ -99,7 +99,7 @@ export default function AppLayout() {
                       active
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                      item.path === '/admin' && !active && "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                      item.path === '/admin' && !active && "text-primary hover:text-primary hover:bg-primary/10"
                     )}
                   >
                     <item.icon className="w-4 h-4" />

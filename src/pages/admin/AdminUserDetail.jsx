@@ -107,12 +107,12 @@ export default function AdminUserDetail() {
   };
 
   if (loading) {
-    return <div className="p-8"><div className="w-7 h-7 border-4 border-slate-200 border-t-amber-500 rounded-full animate-spin" /></div>;
+    return <div className="p-8"><div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
   }
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm mb-4">{error}</div>
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl p-4 text-sm mb-4">{error}</div>
         <Button variant="outline" onClick={() => navigate('/admin/users')} className="gap-2"><ArrowLeft className="w-4 h-4" /> Back to users</Button>
       </div>
     );
@@ -124,22 +124,22 @@ export default function AdminUserDetail() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-      <button onClick={() => navigate('/admin/users')} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 mb-4">
+      <button onClick={() => navigate('/admin/users')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
         <ArrowLeft className="w-4 h-4" /> Back to users
       </button>
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-6">
+      <div className="bg-card rounded-xl border border-border p-6 shadow-sm mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="font-heading text-xl font-bold text-slate-900">{user.full_name || 'Unnamed user'}</h1>
-            <p className="text-sm text-slate-500 mt-0.5">{user.email}</p>
+            <h1 className="font-heading text-xl font-bold text-foreground">{user.full_name || 'Unnamed user'}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{user.email}</p>
             <div className="flex items-center gap-2 mt-3">
               <RoleBadge role={user.role} />
               <StatusBadge status={user.account_status} />
               {user.onboarded
-                ? <span className="text-xs text-emerald-600 font-medium">Onboarded</span>
-                : <span className="text-xs text-slate-400">Not onboarded</span>}
+                ? <span className="text-xs text-emerald-400 font-medium">Onboarded</span>
+                : <span className="text-xs text-muted-foreground">Not onboarded</span>}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -154,13 +154,13 @@ export default function AdminUserDetail() {
                 <Power className="w-4 h-4" /> Re-enable
               </Button>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => setStatus('disabled')} disabled={actionLoading === 'disabled' || isOwner} className="gap-2 text-amber-700 border-amber-200 hover:bg-amber-50">
+              <Button variant="outline" size="sm" onClick={() => setStatus('disabled')} disabled={actionLoading === 'disabled' || isOwner} className="gap-2 text-primary border-primary/20 hover:bg-primary/10">
                 <Power className="w-4 h-4" /> Disable
               </Button>
             )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={actionLoading === 'delete' || isOwner} className="gap-2 text-red-600 border-red-200 hover:bg-red-50">
+                <Button variant="outline" size="sm" disabled={actionLoading === 'delete' || isOwner} className="gap-2 text-red-400 border-red-500/20 hover:bg-red-500/10">
                   <Trash2 className="w-4 h-4" /> Delete
                 </Button>
               </AlertDialogTrigger>
@@ -180,7 +180,7 @@ export default function AdminUserDetail() {
           </div>
         </div>
         {isOwner && (
-          <p className="text-xs text-amber-600 mt-4 flex items-center gap-1.5">
+          <p className="text-xs text-primary mt-4 flex items-center gap-1.5">
             <ShieldAlert className="w-3.5 h-3.5" /> Owner accounts are protected and cannot be disabled or deleted.
           </p>
         )}
@@ -188,63 +188,63 @@ export default function AdminUserDetail() {
 
       {/* Metadata */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-400">User ID</p>
-          <p className="text-sm font-mono text-slate-700 mt-1 break-all">{user.id}</p>
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+          <p className="text-xs text-muted-foreground">User ID</p>
+          <p className="text-sm font-mono text-foreground/80 mt-1 break-all">{user.id}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-400">Registered</p>
-          <p className="text-sm text-slate-700 mt-1">{formatDate(user.created_date)}</p>
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+          <p className="text-xs text-muted-foreground">Registered</p>
+          <p className="text-sm text-foreground/80 mt-1">{formatDate(user.created_date)}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-400">Last activity</p>
-          <p className="text-sm text-slate-700 mt-1">{formatDate(user.last_activity)}</p>
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+          <p className="text-xs text-muted-foreground">Last activity</p>
+          <p className="text-sm text-foreground/80 mt-1">{formatDate(user.last_activity)}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-400">Currency</p>
-          <p className="text-sm text-slate-700 mt-1">{currency}</p>
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+          <p className="text-xs text-muted-foreground">Currency</p>
+          <p className="text-sm text-foreground/80 mt-1">{currency}</p>
         </div>
       </div>
 
       {/* Counts */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-3">
-          <div className="p-2 bg-amber-50 rounded-lg"><Receipt className="w-4 h-4 text-amber-600" /></div>
-          <div><p className="text-xs text-slate-400">Bills</p><p className="text-lg font-bold text-slate-900">{user.counts.bills}</p></div>
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg"><Receipt className="w-4 h-4 text-primary" /></div>
+          <div><p className="text-xs text-muted-foreground">Bills</p><p className="text-lg font-bold text-foreground">{user.counts.bills}</p></div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-3">
-          <div className="p-2 bg-violet-50 rounded-lg"><Target className="w-4 h-4 text-violet-600" /></div>
-          <div><p className="text-xs text-slate-400">Savings goals</p><p className="text-lg font-bold text-slate-900">{user.counts.savings_goals}</p></div>
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm flex items-center gap-3">
+          <div className="p-2 bg-violet-500/15 rounded-lg"><Target className="w-4 h-4 text-violet-400" /></div>
+          <div><p className="text-xs text-muted-foreground">Savings goals</p><p className="text-lg font-bold text-foreground">{user.counts.savings_goals}</p></div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-3">
-          <div className="p-2 bg-sky-50 rounded-lg"><Plane className="w-4 h-4 text-sky-600" /></div>
-          <div><p className="text-xs text-slate-400">Trips</p><p className="text-lg font-bold text-slate-900">{user.counts.trips}</p></div>
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm flex items-center gap-3">
+          <div className="p-2 bg-sky-500/15 rounded-lg"><Plane className="w-4 h-4 text-sky-400" /></div>
+          <div><p className="text-xs text-muted-foreground">Trips</p><p className="text-lg font-bold text-foreground">{user.counts.trips}</p></div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-3">
-          <div className="p-2 bg-emerald-50 rounded-lg"><Wallet className="w-4 h-4 text-emerald-600" /></div>
-          <div><p className="text-xs text-slate-400">Income streams</p><p className="text-lg font-bold text-slate-900">{user.counts.income_streams}</p></div>
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm flex items-center gap-3">
+          <div className="p-2 bg-emerald-500/15 rounded-lg"><Wallet className="w-4 h-4 text-emerald-400" /></div>
+          <div><p className="text-xs text-muted-foreground">Income streams</p><p className="text-lg font-bold text-foreground">{user.counts.income_streams}</p></div>
         </div>
       </div>
 
       {/* Financial details (only on explicit request) */}
       {showFinancial && financial && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+          <div className="flex items-center gap-2 text-primary bg-primary/10 border border-primary/20 rounded-xl p-3 text-sm">
             <Eye className="w-4 h-4" /> Detailed financial view — this access is recorded in the audit log.
           </div>
 
           {financial.income_streams.length > 0 && (
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Income streams</h3>
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Income streams</h3>
               <div className="space-y-2">
                 {financial.income_streams.map((i) => (
-                  <div key={i.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0 text-sm">
+                  <div key={i.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 text-sm">
                     <div>
-                      <span className="font-medium text-slate-800">{i.name}</span>
-                      {i.is_primary && <span className="ml-2 text-xs text-emerald-600 font-medium">Primary</span>}
-                      <p className="text-xs text-slate-400">{FREQ_LABELS[i.frequency] || i.frequency} · {i.income_mode === 'salary' ? 'Gross (UK tax)' : 'Net'}</p>
+                      <span className="font-medium text-foreground">{i.name}</span>
+                      {i.is_primary && <span className="ml-2 text-xs text-emerald-400 font-medium">Primary</span>}
+                      <p className="text-xs text-muted-foreground">{FREQ_LABELS[i.frequency] || i.frequency} · {i.income_mode === 'salary' ? 'Gross (UK tax)' : 'Net'}</p>
                     </div>
-                    <span className="text-slate-700">{i.income_mode === 'salary' ? '—' : formatMoney(i.amount, { currency, decimals: 2 })}</span>
+                    <span className="text-foreground/80">{i.income_mode === 'salary' ? '—' : formatMoney(i.amount, { currency, decimals: 2 })}</span>
                   </div>
                 ))}
               </div>
@@ -252,16 +252,16 @@ export default function AdminUserDetail() {
           )}
 
           {financial.bills.length > 0 && (
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Bills</h3>
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Bills</h3>
               <div className="space-y-2">
                 {financial.bills.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0 text-sm">
+                  <div key={b.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 text-sm">
                     <div>
-                      <span className="font-medium text-slate-800">{b.name}</span>
-                      <p className="text-xs text-slate-400 capitalize">{b.category} · {FREQ_LABELS[b.frequency] || b.frequency}{b.is_split ? ` · split /${b.split_between}` : ''}</p>
+                      <span className="font-medium text-foreground">{b.name}</span>
+                      <p className="text-xs text-muted-foreground capitalize">{b.category} · {FREQ_LABELS[b.frequency] || b.frequency}{b.is_split ? ` · split /${b.split_between}` : ''}</p>
                     </div>
-                    <span className="text-slate-700">{formatMoney(b.amount, { currency, decimals: 2 })}</span>
+                    <span className="text-foreground/80">{formatMoney(b.amount, { currency, decimals: 2 })}</span>
                   </div>
                 ))}
               </div>
@@ -269,13 +269,13 @@ export default function AdminUserDetail() {
           )}
 
           {financial.savings_goals.length > 0 && (
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Savings goals</h3>
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Savings goals</h3>
               <div className="space-y-2">
                 {financial.savings_goals.map((g) => (
-                  <div key={g.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0 text-sm">
-                    <span className="font-medium text-slate-800">{g.name}</span>
-                    <span className="text-slate-700">{formatMoney(g.current_amount || 0, { currency, decimals: 2 })} / {formatMoney(g.target_amount, { currency, decimals: 2 })}</span>
+                  <div key={g.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 text-sm">
+                    <span className="font-medium text-foreground">{g.name}</span>
+                    <span className="text-foreground/80">{formatMoney(g.current_amount || 0, { currency, decimals: 2 })} / {formatMoney(g.target_amount, { currency, decimals: 2 })}</span>
                   </div>
                 ))}
               </div>
@@ -283,13 +283,13 @@ export default function AdminUserDetail() {
           )}
 
           {financial.trips.length > 0 && (
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Trips</h3>
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Trips</h3>
               <div className="space-y-2">
                 {financial.trips.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0 text-sm">
-                    <span className="font-medium text-slate-800">{t.name}</span>
-                    <span className="text-slate-500 text-xs">Target: {formatDate(t.target_date)}</span>
+                  <div key={t.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 text-sm">
+                    <span className="font-medium text-foreground">{t.name}</span>
+                    <span className="text-muted-foreground text-xs">Target: {formatDate(t.target_date)}</span>
                   </div>
                 ))}
               </div>
@@ -297,7 +297,7 @@ export default function AdminUserDetail() {
           )}
 
           {financial.bills.length === 0 && financial.savings_goals.length === 0 && financial.trips.length === 0 && financial.income_streams.length === 0 && (
-            <p className="text-sm text-slate-400 text-center py-8">This user has no financial records.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">This user has no financial records.</p>
           )}
         </motion.div>
       )}

@@ -59,37 +59,37 @@ export default function AdminUsers() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="font-heading text-2xl font-bold text-slate-900">User management</h1>
-        <p className="text-sm text-slate-500 mt-1">{total} registered {total === 1 ? 'user' : 'users'}</p>
+        <h1 className="font-heading text-2xl font-bold text-foreground">User management</h1>
+        <p className="text-sm text-muted-foreground mt-1">{total} registered {total === 1 ? 'user' : 'users'}</p>
       </div>
 
       {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <form onSubmit={onSearchSubmit} className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email or ID…"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9 bg-white"
+            className="pl-9 bg-card border-border"
           />
         </form>
         <Select value={sort} onValueChange={(v) => { setSort(v); setPage(1); }}>
-          <SelectTrigger className="sm:w-48 bg-white"><ArrowUpDown className="w-3.5 h-3.5 mr-1" /><SelectValue /></SelectTrigger>
+          <SelectTrigger className="sm:w-48 bg-card border-border"><ArrowUpDown className="w-3.5 h-3.5 mr-1" /><SelectValue /></SelectTrigger>
           <SelectContent>
             {SORT_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm mb-4">{error}</div>}
+      {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl p-4 text-sm mb-4">{error}</div>}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr className="text-left text-xs text-slate-500 uppercase tracking-wide">
+            <thead className="bg-muted/40 border-b border-border">
+              <tr className="text-left text-xs text-muted-foreground uppercase tracking-wide">
                 <th className="px-4 py-3 font-medium">User</th>
                 <th className="px-4 py-3 font-medium">Role</th>
                 <th className="px-4 py-3 font-medium">Status</th>
@@ -102,32 +102,32 @@ export default function AdminUsers() {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">Loading…</td></tr>
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">Loading…</td></tr>
               )}
               {!loading && items.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">No users found</td></tr>
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">No users found</td></tr>
               )}
               {!loading && items.map((u) => (
                 <tr
                   key={u.id}
                   onClick={() => navigate(`/admin/users/${u.id}`)}
-                  className="border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors"
+                  className="border-b border-border/50 last:border-0 hover:bg-muted/40 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">
-                    <p className="font-medium text-slate-900">{u.full_name || '—'}</p>
-                    <p className="text-xs text-slate-400">{u.email}</p>
+                    <p className="font-medium text-foreground">{u.full_name || '—'}</p>
+                    <p className="text-xs text-muted-foreground">{u.email}</p>
                   </td>
                   <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
                   <td className="px-4 py-3"><StatusBadge status={u.account_status} /></td>
-                  <td className="px-4 py-3 text-slate-600">{formatDate(u.created_date)}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{formatDate(u.created_date)}</td>
                   <td className="px-4 py-3">
                     {u.onboarded
-                      ? <span className="text-emerald-600 text-xs font-medium">Yes</span>
-                      : <span className="text-slate-400 text-xs">No</span>}
+                      ? <span className="text-emerald-400 text-xs font-medium">Yes</span>
+                      : <span className="text-muted-foreground text-xs">No</span>}
                   </td>
-                  <td className="px-4 py-3 text-center text-slate-700">{u.counts.bills}</td>
-                  <td className="px-4 py-3 text-center text-slate-700">{u.counts.savings_goals}</td>
-                  <td className="px-4 py-3 text-center text-slate-700">{u.counts.trips}</td>
+                  <td className="px-4 py-3 text-center text-foreground/80">{u.counts.bills}</td>
+                  <td className="px-4 py-3 text-center text-foreground/80">{u.counts.savings_goals}</td>
+                  <td className="px-4 py-3 text-center text-foreground/80">{u.counts.trips}</td>
                 </tr>
               ))}
             </tbody>
@@ -138,21 +138,21 @@ export default function AdminUsers() {
       {/* Pagination */}
       {total > pageSize && (
         <div className="flex items-center justify-between mt-4">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Page {page} of {totalPages} · {total} users
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-4 h-4" /> Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>
