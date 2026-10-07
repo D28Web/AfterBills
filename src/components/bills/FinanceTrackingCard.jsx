@@ -51,7 +51,7 @@ export default function FinanceTrackingCard({ bill, currency = '£' }) {
       {/* Key metrics grid */}
       <div className="grid grid-cols-2 gap-2 text-xs">
         {f.remainingBalance > 0 && (
-          <Metric icon={PoundSterling} label="Outstanding" value={fmt(f.remainingBalance)} />
+          <Metric icon={PoundSterling} label={f.balanceIsGenerated ? 'Outstanding (auto)' : 'Outstanding'} value={fmt(f.remainingBalance)} />
         )}
         {f.capitalRepaid > 0 && (
           <Metric icon={TrendingDown} label="Capital repaid" value={fmt(f.capitalRepaid)} tone="positive" />

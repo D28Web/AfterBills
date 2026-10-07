@@ -35,6 +35,66 @@ export function isFinanceBill(bill) {
   return !!bill?.finance_type;
 }
 
+/**
+ * Run a simple amortisation schedule to generate the outstanding balance,
+ * total interest paid, and capital repaid from the original balance, interest
+ * rate, regular payment, and the number of payments made so far.
+ *
+ * This is the reverse of the manual entry flow: instead of the user typing the
+ * outstanding balance, the app generates it from the amount paid off + interest.
+ *
+ * Returns null if the inputs needed for a meaningful calculation are missing.
+ */
+export function generateOutstandingBalance(bill) {
+  if (!bill) return null;
+  const originalBalance = parseFloat(bill.original_balance);
+  const rate = parseFloat(bill.interest_rate ?? bill.apr);
+  const payment = parseFloat(bill.amount);
+  if (!Number.isFinite(originalBalance) || originalBalance <= 0) return null;
+  if (!Number.isFinite(rate) || rate < 0) return null;
+  if (!Number.isFinite(payment) || payment <= 0) return null;
+
+  const paymentsPerYear = PAYMENTS_PER_YEAR[bill.frequency] || 12;
+  const monthsPerPayment = 12 / paymentsPerYear;
+
+  // Payments made since the agreement start date
+  let paymentsMade = 0;
+  if (bill.start_date) {
+    const startDate = new Date(bill.start_date);
+    if (!isNaN(startDate.getTime())) {
+      const monthsSinceStart = Math.max(0, monthsBetween(startDate, new Date()));
+      paymentsMade = Math.floor(monthsSinceStart / monthsPerPayment);
+    }
+  }
+  if (bill.remaining_term_months != null && bill.original_term_months != null) {
+    paymentsMade = Math.max(0, bill.original_term_months - bill.remaining_term_months);
+  }
+
+  const periodicRate = rate / 100 / paymentsPerYear;
+  let balance = originalBalance;
+  let totalInterest = 0;
+  let totalCapital = 0;
+
+  for (let i = 0; i < paymentsMade; i++) {
+    const interest = balance * periodicRate;
+    let capital = payment - interest;
+    if (capital < 0) capital = 0; // payment doesn't cover interest
+    if (capital > balance) capital = balance; // final payment
+    balance -= capital;
+    totalInterest += interest;
+    totalCapital += capital;
+    if (balance <= 0.005) { balance = 0; break; }
+  }
+
+  return {
+    remainingBalance: round2(balance),
+    totalInterestPaid: round2(totalInterest),
+    totalCapitalRepaid: round2(totalCapital),
+    totalPaid: round2(paymentsMade * payment),
+    paymentsMade,
+  };
+}
+
 // Which finance types should show the balloon payment field
 export function hasBalloonPayment(financeType) {
   return financeType === 'pcp' || financeType === 'hp';
@@ -68,7 +128,16 @@ export function calculateFinanceTracking(bill) {
   if (!bill?.finance_type) return null;
 
   const originalBalance = bill.original_balance || 0;
-  const remainingBalance = bill.remaining_balance || 0;
+  // If the user hasn't entered a remaining balance, try to generate it from
+  // the amortisation schedule (amount paid off + interest).
+  let remainingBalance = bill.remaining_balance || 0;
+  let generatedBalance = null;
+  if (!remainingBalance) {
+    generatedBalance = generateOutstandingBalance(bill);
+    if (generatedBalance) {
+      remainingBalance = generatedBalance.remainingBalance;
+    }
+  }
   const capitalRepaid = Math.max(0, originalBalance - remainingBalance);
   const percentRepaid = originalBalance > 0 ? (capitalRepaid / originalBalance) * 100 : 0;
 
@@ -141,6 +210,7 @@ export function calculateFinanceTracking(bill) {
     financeLabel: FINANCE_TYPE_LABELS[bill.finance_type] || 'Finance',
     originalBalance,
     remainingBalance,
+    balanceIsGenerated: !!generatedBalance,
     capitalRepaid,
     percentRepaid: round2(percentRepaid),
     paymentsMade,

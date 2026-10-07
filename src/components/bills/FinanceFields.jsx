@@ -7,8 +7,10 @@ import {
   hasBalloonPayment,
   usesInterestType,
   isMortgage,
+  generateOutstandingBalance,
 } from '@/lib/financeTracking';
 import { calculateRemainingMonths, formatTerm } from '@/lib/mortgageCalculations';
+import { Calculator } from 'lucide-react';
 
 // Conditional finance-specific fields for the Bill form.
 // Shown only when a finance_type is selected. Fields adapt to the chosen type.
@@ -42,6 +44,24 @@ export default function FinanceFields({ form, setForm }) {
             value={form.remaining_balance ?? ''}
             onChange={e => set('remaining_balance', e.target.value)}
           />
+          {(() => {
+            const gen = generateOutstandingBalance(form);
+            if (!gen) return null;
+            const matches = Number.isFinite(parseFloat(form.remaining_balance)) &&
+              Math.abs(parseFloat(form.remaining_balance) - gen.remainingBalance) < 0.01;
+            return (
+              <button
+                type="button"
+                onClick={() => set('remaining_balance', gen.remainingBalance)}
+                className="mt-1 flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
+                <Calculator className="w-3 h-3" />
+                {matches
+                  ? `Generated: ${gen.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${gen.paymentsMade} payments, ${gen.totalInterestPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} interest)`
+                  : `Calculate from payments: ${gen.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              </button>
+            );
+          })()}
         </div>
 
         <div>
