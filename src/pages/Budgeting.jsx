@@ -15,6 +15,7 @@ import GuidanceList from '@/components/budgeting/GuidanceList';
 import ScenarioModeller from '@/components/budgeting/ScenarioModeller';
 import RuleComparison from '@/components/budgeting/RuleComparison';
 import ClassificationList from '@/components/budgeting/ClassificationList';
+import DisclaimerNotice from '@/components/disclaimers/DisclaimerNotice';
 
 export default function Budgeting() {
   const queryClient = useQueryClient();
@@ -144,7 +145,10 @@ export default function Budgeting() {
 
       {/* Guidance */}
       <div>
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Recommendations</h3>
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Guidance</h3>
+          <DisclaimerNotice label="Not financial advice" />
+        </div>
         <GuidanceList guidance={guidance} />
       </div>
 

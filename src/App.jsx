@@ -28,6 +28,7 @@ import PaydayPlanner from '@/pages/PaydayPlanner';
 import Settings from '@/pages/Settings';
 import Reminders from '@/pages/Reminders';
 import ActivityHistory from '@/pages/ActivityHistory';
+import FinancialDisclaimer from '@/pages/FinancialDisclaimer';
 import AppLayout from '@/components/layout/AppLayout';
 import Onboarding from '@/pages/Onboarding';
 import AdminRoute from '@/components/admin/AdminRoute';
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/disclaimer" element={<FinancialDisclaimer />} />
 
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/welcome" replace />} />}>
         <Route element={<AppLayout />}>

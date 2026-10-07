@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { formatMoney, formatSignedMoney } from '@/lib/money';
 import { rateChangeScenario, formatTerm } from '@/lib/mortgageCalculations';
 import { CalendarClock, TrendingUp, TrendingDown, Percent, AlertTriangle } from 'lucide-react';
+import DisclaimerNotice from '@/components/disclaimers/DisclaimerNotice';
 
 /**
  * Rate-change scenario modeller for mortgage deal expiry planning.
@@ -64,7 +65,10 @@ export default function MortgageRateScenarios({ summary, currency = '£' }) {
 
       {/* Scenario table */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold text-foreground">If your rate changed to…</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-foreground">If your rate changed to…</p>
+          <DisclaimerNotice label="Illustrative only" />
+        </div>
         {scenarios.map((s, i) => (
           <div key={i} className="rounded-lg border border-border p-3 space-y-2">
             <div className="flex items-center justify-between">

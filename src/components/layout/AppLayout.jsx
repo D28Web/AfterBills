@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Users, Settings, Shield, Menu, X, Wallet, Bell, History, ShoppingBag, Scale } from 'lucide-react';
+import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Users, Settings, Shield, Menu, X, Wallet, Bell, History, ShoppingBag, Scale, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -67,7 +67,14 @@ export default function AppLayout() {
             );
           })}
         </nav>
-        <div className="px-3 pb-4">
+        <div className="px-3 pb-4 space-y-2">
+          <Link
+            to="/disclaimer"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Financial Disclaimer
+          </Link>
           <ThemeToggle variant="sidebar" />
         </div>
       </aside>

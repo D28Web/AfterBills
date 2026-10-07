@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, Receipt, Target, CheckCircle, ArrowRight, ArrowLeft, Plus, Trash2, Sparkles } from 'lucide-react';
+import { Wallet, Receipt, Target, CheckCircle, ArrowRight, ArrowLeft, Plus, Trash2, Sparkles, Info } from 'lucide-react';
+import { MAIN_DISCLAIMER } from '@/lib/disclaimers';
 import { ukTaxBreakdown } from '@/lib/ukTax';
 import { formatMoney, roundMoney } from '@/lib/money';
 import { FREQ_TO_MONTHLY } from '@/lib/income';
@@ -168,6 +169,11 @@ export default function Onboarding() {
                     </div>
                   ))}
                 </div>
+                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-left">
+                  <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">{MAIN_DISCLAIMER}</p>
+                </div>
+
                 <Button onClick={next} className="w-full gap-2 mt-2">
                   Let's Go <ArrowRight className="w-4 h-4" />
                 </Button>

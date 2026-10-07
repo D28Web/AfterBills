@@ -152,7 +152,12 @@ export default function Landing() {
       <footer className="border-t border-border py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="font-heading text-sm font-semibold">After<span className="text-primary">Bills</span></p>
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} AfterBills. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/disclaimer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Financial Disclaimer
+            </Link>
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} AfterBills. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>

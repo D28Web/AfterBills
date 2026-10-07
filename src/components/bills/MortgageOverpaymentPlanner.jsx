@@ -7,6 +7,9 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { formatMoney, roundMoney } from '@/lib/money';
 import { overpaymentScenario, amortize, formatTerm } from '@/lib/mortgageCalculations';
 import { AlertTriangle, TrendingDown, CalendarClock, PoundSterling, Zap } from 'lucide-react';
+import DisclaimerBlock from '@/components/disclaimers/DisclaimerBlock';
+import DisclaimerNotice from '@/components/disclaimers/DisclaimerNotice';
+import { OVERPAYMENT_DISCLAIMER } from '@/lib/disclaimers';
 
 const PRESETS = [25, 50, 100];
 
@@ -96,6 +99,10 @@ export default function MortgageOverpaymentPlanner({ summary, currency = '£', o
       </div>
 
       {/* Results */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-foreground">Projected impact</p>
+        <DisclaimerNotice label="Estimates only" />
+      </div>
       <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-muted/30 p-3">
         <ResultMetric icon={CalendarClock} label="Revised mortgage-free" value={scenario.newPayoffDate ? format(scenario.newPayoffDate, 'MMM yyyy') : '—'} />
         <ResultMetric icon={Zap} label="Time saved" value={scenario.monthsSaved > 0 ? formatTerm(scenario.monthsSaved) : 'No change'} tone="positive" />
@@ -143,11 +150,12 @@ export default function MortgageOverpaymentPlanner({ summary, currency = '£', o
 
       {/* Apply button */}
       {effectiveExtra > 0 && onApplyOverpayment && (
-        <div className="pt-1">
+        <div className="pt-1 space-y-2">
+          <DisclaimerBlock text={OVERPAYMENT_DISCLAIMER} />
           <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={() => onApplyOverpayment(effectiveExtra)}>
-            <TrendingDown className="w-3.5 h-3.5" /> Add £{effectiveExtra}/mo as planned overpayment
+            <TrendingDown className="w-3.5 h-3.5" /> Add {currency}{effectiveExtra}/mo as planned overpayment
           </Button>
-          <p className="text-xs text-muted-foreground mt-1.5">This is a test scenario. Applying adds it to your regular overpayment — it does not change your lender's actual payment.</p>
+          <p className="text-xs text-muted-foreground">This is a test scenario. Applying adds it to your regular overpayment — it does not change your lender's actual payment.</p>
         </div>
       )}
     </div>

@@ -20,6 +20,8 @@ import { base44 } from '@/api/base44Client';
 import MoneyTooltip from '@/components/charts/MoneyTooltip';
 import UKTaxSettings from '@/components/income/UKTaxSettings';
 import { ukTaxBreakdown } from '@/lib/ukTax';
+import DisclaimerNotice from '@/components/disclaimers/DisclaimerNotice';
+import { MAIN_DISCLAIMER } from '@/lib/disclaimers';
 
 const DEFAULT_TAX_SETTINGS = {
   grossAnnual: '', taxCode: '1257L', studentLoanPlan: 'none', pensionType: 'percent',
@@ -251,7 +253,10 @@ export default function WhatIfSimulator({ bills, income, primaryCtx, currency = 
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 md:col-span-2 space-y-4 min-w-0">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold font-heading">Simulated vs Current</h3>
+          <h3 className="text-sm font-semibold font-heading flex items-center gap-2">
+            Simulated vs Current
+            <DisclaimerNotice label="Illustrative only" />
+          </h3>
           <div className="flex gap-2">
             <Button variant="outline" onClick={reset} className="gap-2 text-xs h-8">
               <RotateCcw className="w-3.5 h-3.5" /> Reset
@@ -271,6 +276,10 @@ export default function WhatIfSimulator({ bills, income, primaryCtx, currency = 
                     {extraBills.length > 0 && `add ${extraBills.length} new bill(s). `}
                     Income changes are not saved here — set those in Settings. This cannot be undone.
                   </AlertDialogDescription>
+                  <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 mt-3">
+                    <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">{MAIN_DISCLAIMER}</p>
+                  </div>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>

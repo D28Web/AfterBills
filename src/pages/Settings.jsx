@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Plus } from 'lucide-react';
+import { Save, Plus, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import IncomeStreamForm from '@/components/income/IncomeStreamForm';
@@ -520,6 +520,26 @@ export default function Settings() {
           {getOtherStreams(incomeStreams).length === 0 && !showAddStream && (
             <p className="text-sm text-muted-foreground text-center py-3">No additional income streams yet</p>
           )}
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-card rounded-2xl border border-border p-6"
+      >
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold font-heading">Financial Disclaimer</h3>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              AfterBills provides planning tools and illustrative projections, not financial advice.
+            </p>
+            <Link to="/disclaimer" className="text-xs text-primary hover:underline mt-2 inline-block">
+              Read the full disclaimer
+            </Link>
+          </div>
         </div>
       </motion.div>
 

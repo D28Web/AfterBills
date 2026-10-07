@@ -12,6 +12,8 @@ import {
   Home, PoundSterling, TrendingDown, Percent, CalendarClock,
   PiggyBank, Gauge, AlertTriangle, Lightbulb,
 } from 'lucide-react';
+import DisclaimerBlock from '@/components/disclaimers/DisclaimerBlock';
+import { MAIN_DISCLAIMER } from '@/lib/disclaimers';
 
 const ICON_MAP = {
   CalendarClock, TrendingDown, Percent, PoundSterling, TrendingUp: AlertTriangle,
@@ -72,6 +74,8 @@ export default function MortgageDetailDialog({ bill, open, onOpenChange, currenc
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4 mt-4">
+            <DisclaimerBlock text={MAIN_DISCLAIMER} />
+
             {/* Progress */}
             {s.originalBalance > 0 && (
               <div>
