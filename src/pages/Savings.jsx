@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { billToMonthlyCost } from '@/lib/forecast';
 import { getPrimaryIncomeContext } from '@/lib/income';
 import { formatMoney, sumMoney, roundMoney, getSplitShare } from '@/lib/money';
+import { getRegularBills } from '@/lib/salarySacrifice';
 import { Plus, Target, Calendar, Trash2, Pencil, Plane } from 'lucide-react';
 import EmergencyFundCard from '@/components/savings/EmergencyFundCard';
 import SavingsGoalForm from '@/components/savings/SavingsGoalForm';
@@ -52,12 +53,13 @@ export default function Savings() {
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
   const income = primaryCtx.monthly_income;
   const currency = user?.currency || '£';
-  const monthlyBills = sumMoney(bills.map(b => billToMonthlyCost(b)));
+  const regularBills = getRegularBills(bills);
+  const monthlyBills = sumMoney(regularBills.map(b => billToMonthlyCost(b)));
   const monthlySpare = roundMoney(income - monthlyBills);
-  const monthlyEssential = getMonthlyEssentialExpenses(bills);
+  const monthlyEssential = getMonthlyEssentialExpenses(regularBills);
   const emergencyGoal = goals.find(g => g.is_emergency_fund || g.type === 'emergency_fund');
   const regularGoals = goals.filter(g => !g.is_emergency_fund && g.type !== 'emergency_fund');
-  const allMilestones = getMilestones({ goals, bills, emergencyGoal, primaryCtx, monthlySpare, currency });
+  const allMilestones = getMilestones({ goals, bills: regularBills, emergencyGoal, primaryCtx, monthlySpare, currency });
   const savingsMilestones = allMilestones.filter(m => m.type === 'savings' || m.type === 'emergency');
 
   const createMutation = useMutation({
@@ -161,7 +163,7 @@ export default function Savings() {
 
       <EmergencyFundCard
         goal={emergencyGoal}
-        bills={bills}
+        bills={regularBills}
         monthlySpare={monthlySpare}
         primaryCtx={primaryCtx}
         currency={currency}

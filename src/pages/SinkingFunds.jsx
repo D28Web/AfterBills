@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import { billToMonthlyCost } from '@/lib/forecast';
 import { getPrimaryIncomeContext } from '@/lib/income';
+import { getRegularBills } from '@/lib/salarySacrifice';
 import {
   getSinkingFundStats,
   getTotalSinkingFundMonthly,
   getTotalSetAside,
   getTotalTarget,
 } from '@/lib/sinkingFunds';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import SinkingFundCard from '@/components/sinking-funds/SinkingFundCard';
@@ -38,7 +39,8 @@ export default function SinkingFunds() {
   const totalSetAside = getTotalSetAside(funds);
   const totalTarget = getTotalTarget(funds);
 
-  const monthlyBills = sumMoney(bills.map(b => billToMonthlyCost(b)));
+  const regularBills = getRegularBills(bills);
+  const monthlyBills = sumMoney(regularBills.map(b => billToMonthlyCost(b)));
   const monthlySpare = roundMoney(primaryCtx.monthly_income - monthlyBills - monthlySinking);
 
   const createMutation = useMutation({

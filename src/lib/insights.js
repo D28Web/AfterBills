@@ -20,11 +20,11 @@ import { getBillOccurrencesInWindow, getPayCycles } from './payday';
 import {
   getEffectivePrimaryCycleIncome,
   getEffectivePrimaryMonthlyIncome,
-  getEffectiveStreamOccurrenceAmount,
 } from './income';
 import { getSinkingFundMonthlyContribution } from './sinkingFunds';
 import { getEmergencyFundStats } from './emergencyFund';
 import { getSignificantIncreases } from './contracts';
+import { getAdditionalIncomeInCycle } from './incomeCycle';
 import { roundMoney, sumMoney, formatMoney } from './money';
 
 const DEBT_CATEGORIES = ['loans', 'credit_cards'];
@@ -150,49 +150,12 @@ export function computeMonthMetrics(bills, incomeStreams, sinkingFunds, primaryC
   return { income, regularBills, debt, totalBills, sinkingFunds: sinkingFundTotal, leftAfterBills, savings };
 }
 
-/** Additional (non-primary) income paid within a pay-cycle window. */
-function getAdditionalIncomeInCycle(streams, cycleStart, cycleEnd) {
-  let total = 0;
-  (streams || []).forEach(stream => {
-    if (stream.is_primary) return;
-    if (stream.income_mode === 'salary') return;
-    if (stream.end_date) {
-      const endDate = startOfDay(new Date(stream.end_date));
-      if (cycleStart > endDate) return;
-    }
-    (stream.scheduled_changes || []).forEach(c => {
-      if (c.change_type === 'one_off' && c.effective_date) {
-        const d = startOfDay(new Date(c.effective_date));
-        if (d >= cycleStart && d <= cycleEnd) total += parseFloat(c.amount) || 0;
-      }
-    });
-    if (stream.frequency === 'irregular') {
-      if (!stream.next_payment_date) return;
-      const d = startOfDay(new Date(stream.next_payment_date));
-      if (d >= cycleStart && d <= cycleEnd) total += getEffectiveStreamOccurrenceAmount(stream, d);
-      return;
-    }
-    if (!stream.start_date) return;
-    const occs = getBillOccurrencesInWindow(stream, cycleStart, cycleEnd);
-    occs.forEach(d => {
-      let amt = getEffectiveStreamOccurrenceAmount(stream, d);
-      (stream.scheduled_changes || []).forEach(c => {
-        if (c.change_type === 'addition' && c.effective_date) {
-          const eff = startOfDay(new Date(c.effective_date));
-          const end = c.end_date ? startOfDay(new Date(c.end_date)) : null;
-          if (d >= eff && (!end || d <= end)) amt += parseFloat(c.amount) || 0;
-        }
-      });
-      total += roundMoney(amt);
-    });
-  });
-  return roundMoney(total);
-}
+// getAdditionalIncomeInCycle is imported from ./incomeCycle (shared with paydayPlanner)
 
 /** The six comparison metrics for a single pay cycle (any date range). */
 export function computeCycleMetrics(bills, incomeStreams, sinkingFunds, primaryCtx, monthlyIncome, cycleStart, cycleEnd) {
   const primaryAmount = roundMoney(getEffectivePrimaryCycleIncome(primaryCtx, cycleStart, monthlyIncome));
-  const extraIncome = getAdditionalIncomeInCycle(incomeStreams, cycleStart, cycleEnd);
+  const extraIncome = getAdditionalIncomeInCycle(incomeStreams, cycleStart, cycleEnd).total;
   const income = roundMoney(primaryAmount + extraIncome);
 
   let regularBills = 0;

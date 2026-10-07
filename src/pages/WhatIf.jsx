@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getPrimaryIncomeContext } from '@/lib/income';
+import { getRegularBills } from '@/lib/salarySacrifice';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ export default function WhatIf() {
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
   const realIncome = primaryCtx.monthly_income;
   const currency = user?.currency || '£';
+  const regularBills = getRegularBills(bills);
 
   const [activeTab, setActiveTab] = useState('what_if');
   const [loadedScenario, setLoadedScenario] = useState(null); // { id, type, data }
@@ -83,7 +85,7 @@ export default function WhatIf() {
         <TabsContent value="what_if" className="mt-4">
           <WhatIfSimulator
             key={tabKey('what_if')}
-            bills={bills}
+            bills={regularBills}
             income={realIncome}
             primaryCtx={primaryCtx}
             currency={currency}
@@ -95,7 +97,7 @@ export default function WhatIf() {
         <TabsContent value="affordability" className="mt-4">
           <AffordabilityChecker
             key={tabKey('affordability')}
-            bills={bills}
+            bills={regularBills}
             income={realIncome}
             primaryCtx={primaryCtx}
             currency={currency}
@@ -107,7 +109,7 @@ export default function WhatIf() {
         <TabsContent value="purchase" className="mt-4">
           <PurchasePlanner
             key={tabKey('purchase')}
-            bills={bills}
+            bills={regularBills}
             income={realIncome}
             primaryCtx={primaryCtx}
             currency={currency}

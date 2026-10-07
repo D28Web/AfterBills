@@ -4,11 +4,12 @@ import { base44 } from '@/api/base44Client';
 import { addMonths, subMonths, getDaysInMonth, startOfMonth, getDay, format } from 'date-fns';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CATEGORY_COLORS, CATEGORY_LABELS, getBillsForDay, getBillAmountForMonth, getEffectiveBillShare } from '@/lib/forecast';
+import { CATEGORY_COLORS, CATEGORY_LABELS, getBillsForDay, getEffectiveBillShare } from '@/lib/forecast';
 import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { getPrimaryIncomeContext } from '@/lib/income';
+import { getRegularBills } from '@/lib/salarySacrifice';
 import { getRenewalsForDay } from '@/lib/contracts';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -38,20 +39,21 @@ export default function CalendarView() {
   const year = currentDate.getFullYear();
   const daysInMonth = getDaysInMonth(currentDate);
   const firstDayOfWeek = getDay(startOfMonth(currentDate));
+  const regularBills = getRegularBills(bills);
 
   const dailyData = useMemo(() => {
     const data = {};
     let runningBalance = primaryCtx.monthly_income || 0;
     for (let day = 1; day <= daysInMonth; day++) {
       const dayDate = new Date(year, month, day);
-      const dayBills = getBillsForDay(bills, day, month, year);
+      const dayBills = getBillsForDay(regularBills, day, month, year);
       const dayTotal = sumMoney(dayBills.map(b => getEffectiveBillShare(b, dayDate)));
       runningBalance = roundMoney(runningBalance - dayTotal);
-      const dayRenewals = getRenewalsForDay(bills, day, month, year);
+      const dayRenewals = getRenewalsForDay(regularBills, day, month, year);
       data[day] = { bills: dayBills, total: dayTotal, balance: runningBalance, renewals: dayRenewals };
     }
     return data;
-  }, [bills, month, year, primaryCtx.monthly_income, daysInMonth]);
+  }, [regularBills, month, year, primaryCtx.monthly_income, daysInMonth]);
 
   const dayBills = selectedDay ? dailyData[selectedDay] : null;
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

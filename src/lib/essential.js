@@ -7,6 +7,7 @@
  */
 import { billToMonthlyCost } from './forecast';
 import { roundMoney, sumMoney } from './money';
+import { isSalarySacrifice } from './salarySacrifice';
 
 const ESSENTIAL_CATEGORIES = new Set([
   'housing', 'utilities', 'insurance', 'food', 'health',
@@ -37,7 +38,7 @@ export function isEssentialBill(bill) {
  */
 export function getMonthlyEssentialExpenses(bills = []) {
   return roundMoney(
-    sumMoney((bills || []).filter(b => isEssentialBill(b)).map(b => billToMonthlyCost(b)))
+    sumMoney((bills || []).filter(b => !isSalarySacrifice(b) && isEssentialBill(b)).map(b => billToMonthlyCost(b)))
   );
 }
 
@@ -46,6 +47,6 @@ export function getMonthlyEssentialExpenses(bills = []) {
  */
 export function getMonthlyNonEssentialExpenses(bills = []) {
   return roundMoney(
-    sumMoney((bills || []).filter(b => !isEssentialBill(b)).map(b => billToMonthlyCost(b)))
+    sumMoney((bills || []).filter(b => !isSalarySacrifice(b) && !isEssentialBill(b)).map(b => billToMonthlyCost(b)))
   );
 }
