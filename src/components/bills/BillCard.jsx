@@ -12,7 +12,7 @@ import FinanceTrackingCard from '@/components/bills/FinanceTrackingCard';
 import AnnualPaymentComparison from '@/components/bills/AnnualPaymentComparison';
 import AnnualFundProgress from '@/components/bills/AnnualFundProgress';
 import { isFinanceBill, FINANCE_TYPE_LABELS } from '@/lib/financeTracking';
-import { isEligibleForAnnualComparison } from '@/lib/annualPayment';
+import { isEligibleForAnnualComparison, calculateAnnualComparison } from '@/lib/annualPayment';
 
 export default function BillCard({ bill, currency = '£', onEdit, onDelete, goals = [], onCreateFund, onAddContribution }) {
   const hasPayoffTarget = !!bill.target_end_date && (bill.category === 'loans' || bill.category === 'credit_cards');
@@ -21,6 +21,7 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete, goal
     : 0;
   const [expanded, setExpanded] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState(false);
+  const [annualExpanded, setAnnualExpanded] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -131,14 +132,31 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete, goal
             <p className="text-xs text-muted-foreground mt-1 truncate">{bill.notes}</p>
           )}
           {isFinanceBill(bill) && <FinanceTrackingCard bill={bill} currency={currency} />}
-          {isEligibleForAnnualComparison(bill) && (
-            <AnnualPaymentComparison
-              bill={bill}
-              currency={currency}
-              onCreateFund={() => onCreateFund?.(bill)}
-              onGoToFund={() => {}}
-            />
-          )}
+          {isEligibleForAnnualComparison(bill) && (() => {
+            const comp = calculateAnnualComparison(bill);
+            if (!comp?.hasData) return null;
+            return (
+              <>
+                <button type="button" onClick={() => setAnnualExpanded(e => !e)} className="flex items-center gap-1 text-xs text-primary mt-2 hover:underline">
+                  <ChevronDown className={`w-3 h-3 transition-transform ${annualExpanded ? 'rotate-180' : ''}`} />
+                  Annual vs Monthly
+                  {comp.saving > 0
+                      ? <span className="text-emerald-600 dark:text-emerald-400 font-medium">· saves {formatMoney(comp.saving, { currency, decimals: 0 })}/yr</span>
+                      : comp.saving < 0
+                      ? <span className="text-muted-foreground">· monthly cheaper</span>
+                      : <span className="text-muted-foreground">· no difference</span>}
+                </button>
+                {annualExpanded && (
+                  <AnnualPaymentComparison
+                    bill={bill}
+                    currency={currency}
+                    onCreateFund={() => onCreateFund?.(bill)}
+                    onGoToFund={() => {}}
+                  />
+                )}
+              </>
+            );
+          })()}
           {bill.annual_fund_goal_id && (() => {
             const goal = goals.find(g => g.id === bill.annual_fund_goal_id);
             if (!goal) return null;
