@@ -369,7 +369,13 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date(), i
   if (user?.pay_frequency && user.pay_frequency !== 'monthly' && monthlyIncome > 0) {
     const multiplier = FREQ_TO_MONTHLY[user.pay_frequency];
     if (multiplier) {
-      const payCycles = computePayCycles(user, 16);
+      // Enough cycles to cover the full 12-month forecast window. Weekly pay
+      // needs ~53 cycles; fortnightly ~27; four-weekly ~14; quarterly ~5;
+      // annually ~2. Without this, later months get zero income and any
+      // scheduled wage change beyond the old 16-cycle window is lost.
+      const cyclesByFreq = { weekly: 56, fortnightly: 28, four_weekly: 15, quarterly: 5, annually: 2 };
+      const cycleCount = cyclesByFreq[user.pay_frequency] || 16;
+      const payCycles = computePayCycles(user, cycleCount);
       paydayIncomeByMonth = {};
       payCycles.forEach(cycleStart => {
         const cycleIncome = getEffectivePrimaryCycleIncome(user, cycleStart, monthlyIncome);
