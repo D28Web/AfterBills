@@ -171,6 +171,17 @@ export default function Settings() {
 
   const handleSave = () => {
     const isNonMonthly = ['weekly', 'fortnightly', 'four_weekly'].includes(form.pay_frequency);
+    // Form inputs are strings; the IncomeStream schema validates tax_settings
+    // numeric fields as numbers, so empty strings must be dropped and the
+    // rest parsed — otherwise the save is rejected and income never updates.
+    const numOrOmit = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : undefined; };
+    const cleanTaxSettings = (ts) => ({
+      ...ts,
+      grossAnnual: numOrOmit(ts.grossAnnual),
+      pensionValue: numOrOmit(ts.pensionValue),
+      salarySacrificeMonthly: numOrOmit(ts.salarySacrificeMonthly),
+      otherDeductionsMonthly: numOrOmit(ts.otherDeductionsMonthly),
+    });
     const streamData = {
       is_primary: true,
       name: incomeMode === 'salary' ? 'Salary' : 'Take-home pay',
@@ -180,7 +191,7 @@ export default function Settings() {
       start_date: (isNonMonthly || useStartDate) ? (form.pay_start_date || null) : null,
       pay_day: (!isNonMonthly && !useStartDate) ? (parseInt(form.pay_day) || 1) : null,
       pay_weekday: form.pay_weekday || 'none',
-      tax_settings: incomeMode === 'salary' ? taxSettings : null,
+      tax_settings: incomeMode === 'salary' ? cleanTaxSettings(taxSettings) : null,
     };
     savePrimary.mutate({ id: primaryStreamId, data: streamData });
     saveCurrency.mutate({ currency: form.currency });
