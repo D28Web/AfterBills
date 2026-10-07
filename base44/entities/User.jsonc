@@ -10,46 +10,6 @@
       ],
       "default": "user"
     },
-    "monthly_income": {
-      "type": "number",
-      "description": "Monthly income amount (normalised)"
-    },
-    "pay_frequency": {
-      "type": "string",
-      "enum": [
-        "weekly",
-        "fortnightly",
-        "four_weekly",
-        "monthly"
-      ],
-      "default": "monthly",
-      "description": "How often the user gets paid"
-    },
-    "pay_start_date": {
-      "type": "string",
-      "format": "date",
-      "description": "First known payday (YYYY-MM-DD). Used as anchor for weekly/fortnightly/four_weekly."
-    },
-    "pay_day": {
-      "type": "number",
-      "description": "Day of month for monthly pay (1-31), or -1 for last working day"
-    },
-    "pay_weekday": {
-      "type": "string",
-      "enum": [
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-        "last_working_day",
-        "none"
-      ],
-      "default": "none",
-      "description": "For weekly/fortnightly/four_weekly: the weekday paydays must land on. For monthly: last_working_day rule."
-    },
     "currency": {
       "type": "string",
       "default": "\u00a3",

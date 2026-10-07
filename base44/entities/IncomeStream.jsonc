@@ -8,23 +8,90 @@
     },
     "amount": {
       "type": "number",
-      "description": "Amount per occurrence"
+      "description": "Amount per occurrence. For salary (before-tax) mode this is 0; take-home is derived from tax_settings."
     },
     "frequency": {
       "type": "string",
       "enum": [
         "weekly",
         "fortnightly",
+        "four_weekly",
         "monthly",
         "quarterly",
         "annually"
       ],
-      "description": "How often this income is received"
+      "description": "How often this income is received / the pay schedule"
     },
     "start_date": {
       "type": "string",
       "format": "date",
-      "description": "The date this income stream started / is anchored to (YYYY-MM-DD)"
+      "description": "Anchor date (YYYY-MM-DD). For the primary stream this is the first known payday."
+    },
+    "is_primary": {
+      "type": "boolean",
+      "default": false,
+      "description": "True for the user's main income stream, which holds the pay schedule and tax settings."
+    },
+    "pay_day": {
+      "type": "number",
+      "description": "Day of month for monthly pay (1-31). Primary stream only."
+    },
+    "pay_weekday": {
+      "type": "string",
+      "enum": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+        "last_working_day",
+        "none"
+      ],
+      "default": "none",
+      "description": "Weekday rule for weekly/fortnightly/four_weekly pay, or last_working_day for monthly. Primary stream only."
+    },
+    "income_mode": {
+      "type": "string",
+      "enum": [
+        "net",
+        "salary"
+      ],
+      "default": "net",
+      "description": "net = take-home amount per cycle; salary = gross before tax, with UK tax applied via tax_settings."
+    },
+    "tax_settings": {
+      "type": "object",
+      "description": "UK tax configuration for salary (before-tax) mode.",
+      "properties": {
+        "grossAnnual": {
+          "type": "number",
+          "description": "Gross annual salary"
+        },
+        "taxCode": {
+          "type": "string",
+          "description": "UK tax code (e.g. 1257L)"
+        },
+        "studentLoanPlan": {
+          "type": "string"
+        },
+        "pensionType": {
+          "type": "string"
+        },
+        "pensionValue": {
+          "type": "number"
+        },
+        "pensionIsSalarySacrifice": {
+          "type": "boolean"
+        },
+        "salarySacrificeMonthly": {
+          "type": "number"
+        },
+        "otherDeductionsMonthly": {
+          "type": "number"
+        }
+      }
     },
     "notes": {
       "type": "string",
@@ -34,7 +101,44 @@
   "required": [
     "name",
     "amount",
-    "frequency",
-    "start_date"
-  ]
+    "frequency"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }
