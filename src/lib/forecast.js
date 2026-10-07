@@ -245,6 +245,22 @@ export function getBillOccurrencesInMonth(bill, month, year) {
 }
 
 /**
+ * Find the next occurrence of a bill on or after `fromDate`, scanning up to
+ * 13 months ahead so annual and quarterly bills resolve correctly. Returns
+ * a startOfDay Date, or null when no future occurrence exists.
+ */
+export function getNextBillOccurrence(bill, fromDate = new Date()) {
+  const from = startOfDay(fromDate);
+  for (let i = 0; i < 13; i++) {
+    const d = addMonths(startOfMonth(from), i);
+    const occs = getBillOccurrencesInMonth(bill, d.getMonth(), d.getFullYear());
+    const next = occs.map(x => startOfDay(x)).filter(x => x >= from).sort((a, b) => a - b)[0];
+    if (next) return next;
+  }
+  return null;
+}
+
+/**
  * Get the actual bill amount for a given month, summing the per-occurrence
  * effective amounts (scheduled changes applied per occurrence) and excluding
  * occurrences past an optional end date.

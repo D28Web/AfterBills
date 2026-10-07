@@ -22,6 +22,7 @@ import TripPlanner from '@/pages/TripPlanner';
 import SinkingFunds from '@/pages/SinkingFunds';
 import PaydayPlanner from '@/pages/PaydayPlanner';
 import Settings from '@/pages/Settings';
+import Reminders from '@/pages/Reminders';
 import AppLayout from '@/components/layout/AppLayout';
 import Onboarding from '@/pages/Onboarding';
 import AdminRoute from '@/components/admin/AdminRoute';
@@ -69,6 +70,7 @@ const AuthenticatedApp = () => {
           <Route path="/what-if" element={<WhatIf />} />
           <Route path="/trips" element={<TripPlanner />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/reminders" element={<Reminders />} />
         </Route>
 
         <Route element={<AdminRoute />}>

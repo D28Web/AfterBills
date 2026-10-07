@@ -1,0 +1,106 @@
+{
+  "name": "UserReminder",
+  "type": "object",
+  "properties": {
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "bill",
+        "savings_goal",
+        "sinking_fund"
+      ],
+      "description": "The kind of item this reminder is attached to"
+    },
+    "item_id": {
+      "type": "string",
+      "description": "ID of the linked bill, savings goal, or sinking fund"
+    },
+    "item_name": {
+      "type": "string",
+      "description": "Denormalised name of the linked item, for display when the item may have been deleted"
+    },
+    "reminder_type": {
+      "type": "string",
+      "enum": [
+        "bill_due",
+        "renewal",
+        "debt_repayment",
+        "savings_deadline",
+        "sinking_fund_target"
+      ],
+      "description": "Which event this reminder fires for"
+    },
+    "advance_days": {
+      "type": "number",
+      "default": 7,
+      "description": "How many days before the event to begin surfacing the reminder"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this reminder is currently active"
+    },
+    "target_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional deadline date. Required for savings_deadline reminders (savings goals carry no date of their own); ignored for other types."
+    }
+  },
+  "required": [
+    "item_type",
+    "item_id",
+    "item_name",
+    "reminder_type",
+    "advance_days"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -447,14 +447,6 @@ export function getInsights({ plannerData = [], forecast = [], bills = [], goals
   // Most expensive upcoming pay cycle (by total committed)
   const upcoming = (plannerData || []).slice(1); // exclude the current cycle
   if (upcoming.length > 0) {
-    const heaviest = upcoming.reduce((max, c) => (c.totalCommitted > max.totalCommitted ? c : max), upcoming[0]);
-    if (heaviest.totalCommitted > 0) {
-      const label = heaviest.index === 1 ? 'next pay cycle' : `your ${format(heaviest.cycle.start, 'd MMM')} pay cycle`;
-      insights.push({
-        tone: 'warn',
-        text: `Your most expensive pay cycle is ${label}, with ${formatMoney(heaviest.totalCommitted, { currency, decimals: 0 })} in commitments.`,
-      });
-    }
     // Strongest upcoming pay cycle (most left after commitments)
     const strongest = upcoming.reduce((max, c) => (c.amountLeft > max.amountLeft ? c : max), upcoming[0]);
     if (strongest.amountLeft > 0) {
@@ -487,21 +479,6 @@ export function getInsights({ plannerData = [], forecast = [], bills = [], goals
         text: `Your left-after-bills is ${dir} by ${formatMoney(Math.abs(trend), { currency, decimals: 0 })} over the next 3 months.`,
       });
     }
-  }
-
-  // Savings goals falling behind (remaining to save but no spare capacity)
-  const behindGoals = (goals || []).filter(g => {
-    if (g.is_emergency_fund) return false;
-    const target = parseFloat(g.target_amount) || 0;
-    const current = parseFloat(g.current_amount) || 0;
-    return target > 0 && current < target;
-  });
-  if (behindGoals.length > 0 && monthlySpare <= 0) {
-    const names = behindGoals.slice(0, 2).map(g => `“${g.name}”`).join(' and ');
-    insights.push({
-      tone: 'warn',
-      text: `${names} ${behindGoals.length === 1 ? 'is' : 'are'} falling behind — you have no spare left to save this month.`,
-    });
   }
 
   return insights;
