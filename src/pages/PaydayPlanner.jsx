@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { getPrimaryIncomeContext } from '@/lib/income';
+import { getRegularBills } from '@/lib/salarySacrifice';
 import { getPaydayPlannerData } from '@/lib/paydayPlanner';
 import { motion } from 'framer-motion';
 import { Wallet } from 'lucide-react';
@@ -24,7 +25,8 @@ export default function PaydayPlanner() {
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
   const currency = user?.currency || '£';
   const buffer = parseFloat(user?.preferred_buffer) || 0;
-  const plannerData = getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, tripExpenses, 6);
+  const regularBills = getRegularBills(bills);
+  const plannerData = getPaydayPlannerData(primaryCtx, regularBills, incomeStreams, sinkingFunds, tripExpenses, 6);
 
   if (!primaryCtx.monthly_income) {
     return (

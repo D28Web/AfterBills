@@ -4,6 +4,7 @@ import { generateForecast, getCategoryTotals, CATEGORY_COLORS, CATEGORY_LABELS, 
 import { getPrimaryIncomeContext, getOtherStreams } from '@/lib/income';
 import { getSignificantIncreases } from '@/lib/contracts';
 import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
+import { getRegularBills } from '@/lib/salarySacrifice';
 import MoneyTooltip from '@/components/charts/MoneyTooltip';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 import { TrendingUp } from 'lucide-react';
@@ -31,10 +32,11 @@ export default function Analytics() {
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
   const income = primaryCtx.monthly_income;
   const currency = user?.currency || '£';
-  const forecast = generateForecast(bills, income, new Date(), getOtherStreams(incomeStreams), primaryCtx);
-  const categoryTotals = getCategoryTotals(bills);
+  const regularBills = getRegularBills(bills);
+  const forecast = generateForecast(regularBills, income, new Date(), getOtherStreams(incomeStreams), primaryCtx);
+  const categoryTotals = getCategoryTotals(regularBills);
   const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
-  const totalMonthlyBills = sumMoney(bills.map(b => billToMonthlyCost(b)));
+  const totalMonthlyBills = sumMoney(regularBills.map(b => billToMonthlyCost(b)));
   const totalAnnualBills = roundMoney(totalMonthlyBills * 12);
   const billToIncomeRatio = income > 0 ? Math.round((totalMonthlyBills / income) * 100) : 0;
 

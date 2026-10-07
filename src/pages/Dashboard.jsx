@@ -32,11 +32,7 @@ import { useDisplayPeriod, DISPLAY_PERIOD_OPTIONS } from '@/lib/displayPeriod';
 import { getRegularBills, getMonthlySalarySacrifice } from '@/lib/salarySacrifice';
 import { SlidersHorizontal } from 'lucide-react';
 
-const FREQUENCY_OPTIONS = [
-  { label: 'Weekly', value: 'weekly' },
-  { label: '4-Weekly', value: 'four_weekly' },
-  { label: 'Monthly', value: 'monthly' },
-];
+const FREQUENCY_OPTIONS = DISPLAY_PERIOD_OPTIONS;
 
 export default function Dashboard() {
   const { data: user } = useQuery({
@@ -79,20 +75,20 @@ export default function Dashboard() {
   const { monthlyIncome, incomeStreams: forecastStreams, primaryCtx } = getForecastIncomeParams(incomeStreams, user);
   const currency = user?.currency || '£';
   const buffer = parseFloat(user?.preferred_buffer) || 0;
-  const plannerData = getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, tripExpenses, 6);
-  const safeToSpendCycle = plannerData[0];
   const regularBills = getRegularBills(bills);
   const salarySacrificeMonthly = getMonthlySalarySacrifice(bills);
+  const plannerData = getPaydayPlannerData(primaryCtx, regularBills, incomeStreams, sinkingFunds, tripExpenses, 6);
+  const safeToSpendCycle = plannerData[0];
   const forecast = generateForecast(regularBills, monthlyIncome, new Date(startDate + '-01'), forecastStreams, primaryCtx, sinkingFunds);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const totalMonthlyIncome = roundMoney(sumMoney(incomeStreams.map(s => getStreamMonthlyAmount(s))));
   const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
 
   const monthlySpare = roundMoney(currentMonth.income - currentMonth.totalBills);
-  const comparisons = getPeriodComparisons({ bills, incomeStreams, sinkingFunds, primaryCtx, monthlyIncome, currency });
+  const comparisons = getPeriodComparisons({ bills: regularBills, incomeStreams, sinkingFunds, primaryCtx, monthlyIncome, currency });
   const emergencyGoal = goals.find(g => g.is_emergency_fund);
-  const milestones = getMilestones({ goals, sinkingFunds, bills, emergencyGoal, primaryCtx, monthlySpare, currency });
-  const insights = getInsights({ plannerData, forecast, bills, goals, monthlySpare, currency });
+  const milestones = getMilestones({ goals, sinkingFunds, bills: regularBills, emergencyGoal, primaryCtx, monthlySpare, currency });
+  const insights = getInsights({ plannerData, forecast, bills: regularBills, goals, monthlySpare, currency });
 
   const multiplier = 1 / (FREQ_TO_MONTHLY[viewFrequency] || 1);
   const freqLabel = FREQUENCY_OPTIONS.find(f => f.value === viewFrequency)?.label ?? 'Monthly';
@@ -169,7 +165,7 @@ export default function Dashboard() {
         <StatCard
           title="Bills"
           value={scale(currentMonth.totalBills)}
-          subtitle={`${bills.length} active bills`}
+          subtitle={`${regularBills.length} active bills`}
           icon={Receipt}
         />
         <StatCard
