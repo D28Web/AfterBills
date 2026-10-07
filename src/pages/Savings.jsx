@@ -8,6 +8,7 @@ import { getRegularBills } from '@/lib/salarySacrifice';
 import { Plus, Target, Calendar, Trash2, Pencil, Plane } from 'lucide-react';
 import EmergencyFundCard from '@/components/savings/EmergencyFundCard';
 import SavingsGoalForm from '@/components/savings/SavingsGoalForm';
+import TripGoalDetail from '@/components/savings/TripGoalDetail';
 import { getMonthlyEssentialExpenses } from '@/lib/essential';
 import { getMilestones } from '@/lib/insights';
 import MilestonesStrip from '@/components/insights/MilestonesStrip';
@@ -82,6 +83,14 @@ export default function Savings() {
     mutationFn: id => base44.entities.SavingsGoal.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goals'] }),
   });
+
+  // Silent sync for trip goals — updates target/current from expenses & contributions
+  // without logging an activity entry (the expense/contribution itself is the activity)
+  const syncMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.SavingsGoal.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goals'] }),
+  });
+  const handleGoalSync = (goalId, data) => syncMutation.mutate({ id: goalId, data });
 
   // Trip migration: move existing Trip records into SavingsGoal with type='trip'
   useEffect(() => {
@@ -251,6 +260,15 @@ export default function Savings() {
                     }
                   }}
                 />
+
+                {goal.type === 'trip' && (
+                  <TripGoalDetail
+                    goal={goal}
+                    currency={currency}
+                    primaryCtx={primaryCtx}
+                    onGoalSync={handleGoalSync}
+                  />
+                )}
               </motion.div>
             );
           })}
