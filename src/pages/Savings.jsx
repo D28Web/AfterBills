@@ -42,7 +42,7 @@ export default function Savings() {
   const migrationRef = useRef(false);
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
-  const { data: goals = [] } = useQuery({ queryKey: ['goals'], queryFn: () => base44.entities.SavingsGoal.list() });
+  const { data: goals = [], isLoading: goalsLoading } = useQuery({ queryKey: ['goals'], queryFn: () => base44.entities.SavingsGoal.list() });
   const { data: bills = [] } = useQuery({ queryKey: ['bills'], queryFn: () => base44.entities.Bill.list() });
   const { data: incomeStreams = [] } = useQuery({ queryKey: ['income-streams'], queryFn: () => base44.entities.IncomeStream.list() });
 
@@ -95,6 +95,7 @@ export default function Savings() {
   // Trip migration: move existing Trip records into SavingsGoal with type='trip'
   useEffect(() => {
     if (migrationRef.current) return;
+    if (goalsLoading) return;
     if (!trips || trips.length === 0) return;
     migrationRef.current = true;
     const existingTripGoals = goals.filter(g => g.type === 'trip');
