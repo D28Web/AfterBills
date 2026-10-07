@@ -11,6 +11,7 @@ import UpcomingBills from '@/components/dashboard/UpcomingBills';
 import MonthHighlights from '@/components/dashboard/MonthHighlights';
 import PaydayCycles from '@/components/dashboard/PaydayCycles';
 import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
+import UpcomingCommitments from '@/components/dashboard/UpcomingCommitments';
 import IncomeBreakdown from '@/components/dashboard/IncomeBreakdown';
 import RenewalAlerts from '@/components/dashboard/RenewalAlerts';
 import { getSignificantIncreases } from '@/lib/contracts';
@@ -151,6 +152,8 @@ export default function Dashboard() {
       )}
 
       <ForecastChart forecast={forecast} currency={currency} user={primaryCtx} />
+
+      <UpcomingCommitments bills={bills} sinkingFunds={sinkingFunds} currency={currency} />
 
       <div className="grid md:grid-cols-2 gap-4">
         <UpcomingBills bills={bills} currency={currency} />
