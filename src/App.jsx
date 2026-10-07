@@ -16,6 +16,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
 import Bills from '@/pages/Bills';
 import Expenses from '@/pages/Expenses';
+import Budgeting from '@/pages/Budgeting';
 import CalendarView from '@/pages/CalendarView';
 import Analytics from '@/pages/Analytics';
 import Savings from '@/pages/Savings';
@@ -67,6 +68,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/bills" element={<Bills />} />
           <Route path="/expenses" element={<Expenses />} />
+          <Route path="/budgeting" element={<Budgeting />} />
           <Route path="/calendar" element={<CalendarView />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/savings" element={<Savings />} />

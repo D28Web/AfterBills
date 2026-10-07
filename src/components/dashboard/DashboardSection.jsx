@@ -9,6 +9,7 @@ import DebtSummary from './DebtSummary';
 import HeroSection from './HeroSection';
 import CompactPaydayPlanner from './CompactPaydayPlanner';
 import GoalsFundsSummary from './GoalsFundsSummary';
+import BudgetingSummary from './BudgetingSummary';
 
 // Maps a section key to its rendered content. Each section is a self-contained
 // block that works in the vertical stack regardless of position, preserving
@@ -60,6 +61,8 @@ export default function DashboardSection({ sectionKey, data }) {
           currency={data.currency}
         />
       );
+    case 'budgeting':
+      return <BudgetingSummary budget={data.budget} currency={data.currency} />;
     case 'debt':
       return <DebtSummary bills={data.bills} currency={data.currency} />;
     case 'forecast':

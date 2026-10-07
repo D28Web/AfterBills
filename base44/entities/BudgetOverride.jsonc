@@ -1,0 +1,92 @@
+{
+  "name": "BudgetOverride",
+  "type": "object",
+  "properties": {
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "bill",
+        "expense",
+        "savings_goal",
+        "sinking_fund"
+      ],
+      "description": "The kind of financial item this override applies to"
+    },
+    "item_id": {
+      "type": "string",
+      "description": "ID of the item to reclassify"
+    },
+    "item_name": {
+      "type": "string",
+      "description": "Denormalised item name for display when the item may have been deleted"
+    },
+    "budget_category": {
+      "type": "string",
+      "enum": [
+        "needs",
+        "wants",
+        "savings",
+        "investments",
+        "debt_repayment",
+        "giving",
+        "other"
+      ],
+      "description": "The budget category this item should be classified into"
+    }
+  },
+  "required": [
+    "item_type",
+    "item_id",
+    "budget_category"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

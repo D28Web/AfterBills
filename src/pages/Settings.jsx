@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { getOtherStreams, FREQ_TO_MONTHLY } from '@/lib/income';
 import { cn } from '@/lib/utils';
 import { useDisplayPeriod, DISPLAY_PERIOD_OPTIONS } from '@/lib/displayPeriod';
+import { BUDGET_RULES, RULE_KEYS, DEFAULT_RULE } from '@/lib/budgeting';
 import { logActivity } from '@/lib/activityLog';
 
 const DEFAULT_TAX_SETTINGS = {
@@ -59,6 +61,19 @@ export default function Settings() {
   const [primaryChanges, setPrimaryChanges] = useState([]);
   const loadedRef = useRef(false);
   const [displayPeriod, setDisplayPeriod] = useDisplayPeriod(user);
+  const [budgetingRule, setBudgetingRule] = useState(DEFAULT_RULE);
+
+  useEffect(() => {
+    if (user?.budgeting_rule) setBudgetingRule(user.budgeting_rule);
+  }, [user?.budgeting_rule]);
+
+  const handleRuleChange = (ruleKey) => {
+    setBudgetingRule(ruleKey);
+    base44.auth.updateMe({ budgeting_rule: ruleKey }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      toast.success('Budgeting rule updated');
+    }).catch(() => toast.error('Could not update rule'));
+  };
 
   const { data: incomeStreams = [], isLoading: streamsLoading } = useQuery({
     queryKey: ['income-streams'],
@@ -402,6 +417,20 @@ export default function Settings() {
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-1">Used as the default across all pages. Change it anywhere to update globally.</p>
+        </div>
+
+        <div>
+          <Label>Budgeting Rule</Label>
+          <Select value={budgetingRule} onValueChange={handleRuleChange}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {RULE_KEYS.map(key => (
+                <SelectItem key={key} value={key}>{BUDGET_RULES[key].label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-1">{BUDGET_RULES[budgetingRule]?.description}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">See your position and get personalised guidance on the <Link to="/budgeting" className="text-primary hover:underline">Budgeting</Link> page.</p>
         </div>
 
         <div>

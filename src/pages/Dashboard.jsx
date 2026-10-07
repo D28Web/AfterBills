@@ -15,6 +15,7 @@ import DashboardCustomize from '@/components/dashboard/DashboardCustomize';
 import { resolveLayout, getVisibleSections, MODE_PRESETS, MODE_LABELS, DASHBOARD_MODES, DEFAULT_MODE } from '@/lib/dashboardSections';
 import { useDisplayPeriod, DISPLAY_PERIOD_OPTIONS } from '@/lib/displayPeriod';
 import { getRegularBills, getMonthlySalarySacrifice } from '@/lib/salarySacrifice';
+import { calculateBudget } from '@/lib/budgeting';
 
 const FREQUENCY_OPTIONS = DISPLAY_PERIOD_OPTIONS;
 
@@ -49,6 +50,16 @@ export default function Dashboard() {
     queryFn: () => base44.entities.SavingsGoal.list(),
   });
 
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => base44.entities.Expense.list(),
+  });
+
+  const { data: overrides = [] } = useQuery({
+    queryKey: ['budget-overrides'],
+    queryFn: () => base44.entities.BudgetOverride.list(),
+  });
+
   const queryClient = useQueryClient();
   const [viewFrequency, setViewFrequency] = useDisplayPeriod(user);
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
@@ -71,12 +82,14 @@ export default function Dashboard() {
   const emergencyGoal = goals.find(g => g.is_emergency_fund);
   const milestones = getMilestones({ goals, sinkingFunds, bills: regularBills, emergencyGoal, primaryCtx, monthlySpare, currency });
   const insights = getInsights({ plannerData, forecast, bills: regularBills, goals, monthlySpare, currency });
+  const budget = user ? calculateBudget({ bills, expenses, sinkingFunds, goals, incomeStreams, user, overrides }) : null;
 
   const dashData = {
     monthlySpare, currentMonth, currency, incomeStreams,
     safeToSpendCycle, buffer, bills: regularBills, sinkingFunds, goals,
     forecast, plannerData, primaryCtx, emergencyGoal,
     comparisons, insights, milestones, salarySacrificeMonthly,
+    budget,
   };
 
   const handleSaveLayout = async (newLayout, newMode) => {
