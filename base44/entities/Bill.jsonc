@@ -163,6 +163,46 @@
       "format": "date",
       "description": "When the fixed-rate period ends (YYYY-MM-DD). For fixed-rate mortgages. Optional."
     },
+    "mortgage_deal_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Current mortgage deal/product start date (YYYY-MM-DD). The start of the current fixed/tracker/discount product, distinct from the overall mortgage start date."
+    },
+    "mortgage_deal_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Current mortgage deal/product end date (YYYY-MM-DD). When the current deal ends and the mortgage moves to a follow-on rate or needs remortgaging."
+    },
+    "annual_overpayment_allowance": {
+      "type": "number",
+      "description": "Annual overpayment allowance permitted by the lender without triggering early repayment charges. Optional."
+    },
+    "balance_reconciliation_history": {
+      "type": "array",
+      "description": "Manual balance reconciliations from lender statements. Each entry records the date, confirmed balance, and optional note. The most recent reconciliation is used as the current balance for future projections; historic balances are preserved, not overwritten.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "When the reconciliation was made (YYYY-MM-DD)"
+          },
+          "balance": {
+            "type": "number",
+            "description": "Confirmed outstanding balance from the lender statement"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note about this reconciliation"
+          }
+        },
+        "required": [
+          "date",
+          "balance"
+        ]
+      }
+    },
     "scheduled_changes": {
       "type": "array",
       "description": "Future-dated amount changes for this bill (e.g. rent increase, renewal price). Each change overrides the base amount from its effective date until its optional end date. Historical amounts are preserved in amount_history.",

@@ -14,7 +14,7 @@ import AttachmentsField from '@/components/common/AttachmentsField';
 import AmountHistoryEditor from '@/components/bills/AmountHistoryEditor';
 import FinanceFields from '@/components/bills/FinanceFields';
 import { FINANCE_TYPE_LABELS, FINANCE_TYPE_KEYS } from '@/lib/financeTracking';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, AlertTriangle } from 'lucide-react';
 
 export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) {
   const [form, setForm] = useState(() => {
@@ -28,6 +28,10 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
         scheduled_changes: bill.scheduled_changes || [],
         amount_history: bill.amount_history || [],
         attachments: bill.attachments || [],
+        mortgage_deal_start_date: bill.mortgage_deal_start_date || '',
+        mortgage_deal_end_date: bill.mortgage_deal_end_date || '',
+        annual_overpayment_allowance: bill.annual_overpayment_allowance ?? '',
+        balance_reconciliation_history: bill.balance_reconciliation_history || [],
       };
     }
     return {
@@ -62,6 +66,10 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       early_repayment_charge_type: '',
       property_value: '',
       fixed_rate_end_date: '',
+      mortgage_deal_start_date: '',
+      mortgage_deal_end_date: '',
+      annual_overpayment_allowance: '',
+      balance_reconciliation_history: [],
       notes: '',
       attachments: [],
       contract_start_date: '',
@@ -87,7 +95,7 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({
+    const data = {
       ...form,
       amount: parseFloat(form.amount),
       remaining_balance: form.remaining_balance === '' ? undefined : parseFloat(form.remaining_balance),
@@ -106,6 +114,10 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       early_repayment_charge_type: form.early_repayment_charge_type || undefined,
       property_value: form.property_value === '' ? undefined : parseFloat(form.property_value),
       fixed_rate_end_date: form.fixed_rate_end_date || null,
+      mortgage_deal_start_date: form.mortgage_deal_start_date || null,
+      mortgage_deal_end_date: form.mortgage_deal_end_date || null,
+      annual_overpayment_allowance: form.annual_overpayment_allowance === '' ? undefined : parseFloat(form.annual_overpayment_allowance),
+      balance_reconciliation_history: form.balance_reconciliation_history || [],
       contract_start_date: form.contract_start_date || null,
       contract_end_date: form.contract_end_date || null,
       renewal_date: form.renewal_date || null,
@@ -121,7 +133,27 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
           end_date: c.end_date || null,
         }))
         .filter(c => c.effective_date),
-    });
+    };
+
+    // Clean up finance-specific data when finance_type is removed.
+    // Preserves the recurring payment (amount) and loan-category balance fields.
+    if (!form.finance_type) {
+      ['interest_rate', 'interest_type', 'apr', 'original_term_months', 'remaining_term_months',
+       'agreement_end_date', 'balloon_payment', 'overpayment_amount', 'overpayment_frequency',
+       'early_repayment_charge', 'early_repayment_charge_type', 'property_value',
+       'fixed_rate_end_date', 'mortgage_deal_start_date', 'mortgage_deal_end_date',
+       'annual_overpayment_allowance'].forEach(f => { data[f] = null; });
+      data.balance_reconciliation_history = [];
+    }
+
+    // Clean up mortgage-specific data when finance_type is not mortgage
+    if (form.finance_type && form.finance_type !== 'mortgage') {
+      ['property_value', 'fixed_rate_end_date', 'mortgage_deal_start_date',
+       'mortgage_deal_end_date', 'annual_overpayment_allowance'].forEach(f => { data[f] = null; });
+      data.balance_reconciliation_history = [];
+    }
+
+    onSubmit(data);
   };
 
   const isLoan = form.category === 'loans' || form.category === 'credit_cards';
@@ -196,6 +228,12 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-1">Track the underlying balance, interest, and progress towards repayment.</p>
+          {bill?.finance_type === 'mortgage' && !form.finance_type && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3 shrink-0" />
+              Removing the mortgage classification will clear mortgage tracking data (deal dates, overpayment allowance, balance history). The recurring payment is preserved.
+            </p>
+          )}
         </div>
 
         <div className="sm:col-span-2 flex items-center gap-3">

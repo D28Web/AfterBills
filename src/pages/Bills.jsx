@@ -8,7 +8,10 @@ import { AnimatePresence } from 'framer-motion';
 import BillForm from '@/components/bills/BillForm';
 import BillCard from '@/components/bills/BillCard';
 import LoanPayoffCard from '@/components/bills/LoanPayoffCard';
+import MortgageTrackerCard from '@/components/bills/MortgageTrackerCard';
+import MortgageDetailDialog from '@/components/bills/MortgageDetailDialog';
 import { CATEGORY_LABELS } from '@/lib/forecast';
+import { Home } from 'lucide-react';
 import { formatMoney } from '@/lib/money';
 import { logActivity } from '@/lib/activityLog';
 import { getMilestones } from '@/lib/insights';
@@ -20,6 +23,7 @@ export default function Bills() {
   const [showForm, setShowForm] = useState(false);
   const [editingBill, setEditingBill] = useState(null);
   const [filterCategory, setFilterCategory] = useState('all');
+  const [mortgageDetail, setMortgageDetail] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -104,8 +108,9 @@ export default function Bills() {
 
   const currency = user?.currency || '£';
   const LOAN_CATS = ['loans', 'credit_cards'];
-  const loanBills = bills.filter(b => LOAN_CATS.includes(b.category));
-  const regularBills = bills.filter(b => !LOAN_CATS.includes(b.category));
+  const mortgageBills = bills.filter(b => b.finance_type === 'mortgage');
+  const loanBills = bills.filter(b => LOAN_CATS.includes(b.category) && b.finance_type !== 'mortgage');
+  const regularBills = bills.filter(b => !LOAN_CATS.includes(b.category) && b.finance_type !== 'mortgage');
   const filtered = filterCategory === 'all' ? regularBills : regularBills.filter(b => b.category === filterCategory);
   const debtMilestones = getMilestones({ bills, goals: [], sinkingFunds: [] }).filter(m => m.type === 'debt');
 
@@ -168,6 +173,29 @@ export default function Bills() {
         </div>
       )}
 
+      {mortgageBills.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-xl font-bold font-heading tracking-tight text-foreground flex items-center gap-2">
+              <Home className="w-5 h-5 text-primary" /> Mortgages
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">Track your mortgage balance, deal, and overpayment options</p>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {mortgageBills.map(bill => (
+              <MortgageTrackerCard
+                key={bill.id}
+                bill={bill}
+                currency={currency}
+                onEdit={b => { setEditingBill(b); setShowForm(true); }}
+                onDelete={b => deleteMutation.mutate(b.id)}
+                onShowDetail={b => setMortgageDetail(b)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {loanBills.length > 0 && (
         <div className="space-y-4">
           <div>
@@ -199,6 +227,17 @@ export default function Bills() {
           />
         </DialogContent>
       </Dialog>
+
+      <MortgageDetailDialog
+        bill={mortgageDetail}
+        open={!!mortgageDetail}
+        onOpenChange={v => { if (!v) setMortgageDetail(null); }}
+        currency={currency}
+        onUpdateBill={(id, updates) => {
+          updateMutation.mutate({ id, data: updates });
+          setMortgageDetail(prev => prev ? { ...prev, ...updates } : null);
+        }}
+      />
     </PageContainer>
   );
 }
