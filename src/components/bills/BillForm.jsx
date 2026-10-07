@@ -130,8 +130,8 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
     <form onSubmit={handleSubmit} className="space-y-4">
       <h3 className="text-lg font-semibold font-heading">{bill ? 'Edit Bill' : 'Add Bill'}</h3>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="sm:col-span-2">
           <Label>Bill Name</Label>
           <Input placeholder="e.g. Netflix" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
         </div>
@@ -173,7 +173,7 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
           </Select>
         </div>
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Spending Classification</Label>
           <Select value={String(form.essential)} onValueChange={v => setForm({ ...form, essential: v === 'true' })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -184,7 +184,7 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
           </Select>
         </div>
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Finance Type (optional)</Label>
           <Select value={form.finance_type || 'none'} onValueChange={v => setForm({ ...form, finance_type: v === 'none' ? '' : v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -198,17 +198,17 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
           <p className="text-xs text-muted-foreground mt-1">Track the underlying balance, interest, and progress towards repayment.</p>
         </div>
 
-        <div className="col-span-2 flex items-center gap-3">
+        <div className="sm:col-span-2 flex items-center gap-3">
           <Switch checked={form.is_recurring} onCheckedChange={v => setForm({ ...form, is_recurring: v })} />
           <Label>Recurring bill</Label>
         </div>
 
-        <div className="col-span-2 flex items-center gap-3">
+        <div className="sm:col-span-2 flex items-center gap-3">
           <Switch checked={form.is_salary_sacrifice} onCheckedChange={v => setForm({ ...form, is_salary_sacrifice: v })} />
           <Label>Salary sacrifice (pre-tax deduction)</Label>
         </div>
         {form.is_salary_sacrifice && (
-          <p className="col-span-2 text-xs text-muted-foreground -mt-2">
+          <p className="sm:col-span-2 text-xs text-muted-foreground -mt-2">
             Shown separately from regular bills and not deducted again from take-home pay.
           </p>
         )}
@@ -220,15 +220,15 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
           Optional details
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <div className="sm:col-span-2">
               <Label>End Date (optional)</Label>
               <Input type="date" value={form.end_date || ''} onChange={e => setForm({ ...form, end_date: e.target.value })} />
               <p className="text-xs text-muted-foreground mt-1">For temporary bills — stops after this date.</p>
             </div>
 
             {isLoan && (
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Label>Target end date (payoff goal)</Label>
                 <Input type="date" value={form.target_end_date || ''} onChange={e => setForm({ ...form, target_end_date: e.target.value })} />
               </div>
@@ -237,23 +237,23 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
               <FinanceFields form={form} setForm={setForm} />
             ) : isLoan ? (
               <>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <Label>Remaining balance</Label>
                   <Input type="number" step="0.01" placeholder="0.00" value={form.remaining_balance || ''} onChange={e => setForm({ ...form, remaining_balance: e.target.value })} />
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <Label>Original balance (optional)</Label>
                   <Input type="number" step="0.01" placeholder="0.00" value={form.original_balance || ''} onChange={e => setForm({ ...form, original_balance: e.target.value })} />
                 </div>
               </>
             ) : null}
 
-            <div className="col-span-2 flex items-center gap-3">
+            <div className="sm:col-span-2 flex items-center gap-3">
               <Switch checked={form.is_split} onCheckedChange={v => setForm({ ...form, is_split: v })} />
               <Label>Split this bill</Label>
             </div>
             {form.is_split && (
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Label>Split between (people)</Label>
                 <Input type="number" min="2" max="20" value={form.split_between} onChange={e => setForm({ ...form, split_between: parseInt(e.target.value) || 2 })} required />
                 {parseFloat(form.amount) > 0 && (
@@ -264,18 +264,18 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
               </div>
             )}
 
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <Label>Notes (optional)</Label>
               <Textarea placeholder="Add any notes..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
             </div>
 
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <AttachmentsField attachments={form.attachments || []} onChange={atts => setForm({ ...form, attachments: atts })} />
             </div>
 
-            <div className="col-span-2 border-t border-border pt-3">
+            <div className="sm:col-span-2 border-t border-border pt-3">
               <p className="text-xs font-semibold text-foreground mb-2">Contract & Renewal</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label>Contract Start</Label>
                   <Input type="date" value={form.contract_start_date || ''} onChange={e => setForm({ ...form, contract_start_date: e.target.value })} />
@@ -303,14 +303,14 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
               </div>
             </div>
 
-            <div className="col-span-2 border-t border-border pt-3">
+            <div className="sm:col-span-2 border-t border-border pt-3">
               <p className="text-xs font-semibold text-foreground mb-2">Scheduled Future Changes</p>
               <ScheduledChangesEditor changes={form.scheduled_changes || []} onChange={c => setForm({ ...form, scheduled_changes: c })} />
               <p className="text-xs text-muted-foreground mt-2">Schedule future amount changes (rent increases, renewal prices).</p>
             </div>
 
             {form.amount_history?.length > 0 && (
-              <div className="col-span-2 border-t border-border pt-3">
+              <div className="sm:col-span-2 border-t border-border pt-3">
                 <AmountHistoryEditor
                   history={form.amount_history}
                   currency={currency}

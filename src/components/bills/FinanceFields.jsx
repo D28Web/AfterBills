@@ -17,10 +17,10 @@ export default function FinanceFields({ form, setForm }) {
   const set = (key, value) => setForm({ ...form, [key]: value });
 
   return (
-    <div className="col-span-2 border-t border-border pt-3 space-y-3">
+    <div className="sm:col-span-2 border-t border-border pt-3 space-y-3">
       <p className="text-xs font-semibold text-foreground">Finance Details</p>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label>Original Amount Borrowed</Label>
           <Input
@@ -131,7 +131,7 @@ export default function FinanceFields({ form, setForm }) {
         )}
 
         {hasBalloonPayment(ft) && (
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Final / Balloon Payment</Label>
             <Input
               type="number"
@@ -148,7 +148,7 @@ export default function FinanceFields({ form, setForm }) {
       {/* Overpayments */}
       <div className="border-t border-border pt-3">
         <p className="text-xs font-semibold text-foreground mb-2">Overpayments (optional)</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>Overpayment Amount</Label>
             <Input
@@ -179,7 +179,7 @@ export default function FinanceFields({ form, setForm }) {
       {/* Early repayment charge */}
       <div className="border-t border-border pt-3">
         <p className="text-xs font-semibold text-foreground mb-2">Early Repayment Charge (optional)</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>ERC Amount / %</Label>
             <Input
