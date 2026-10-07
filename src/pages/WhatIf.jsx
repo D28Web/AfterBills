@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { FlaskConical, Plus, X, RotateCcw } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
+import PageContainer from '@/components/layout/PageContainer';
+import PageHeader from '@/components/layout/PageHeader';
 import UKTaxSettings from '@/components/income/UKTaxSettings';
 import { ukTaxBreakdown } from '@/lib/ukTax';
 
@@ -106,16 +108,16 @@ export default function WhatIf() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-foreground">What If</h2>
-          <p className="text-sm text-muted-foreground mt-1">Simulate changes and see the impact</p>
-        </div>
-        <Button variant="outline" onClick={reset} className="gap-2 text-sm">
-          <RotateCcw className="w-3.5 h-3.5" /> Reset
-        </Button>
-      </div>
+    <PageContainer maxWidth="wide" className="space-y-6">
+      <PageHeader
+        title="What If"
+        subtitle="Simulate changes and see the impact"
+        actions={
+          <Button variant="outline" onClick={reset} className="gap-2 text-sm">
+            <RotateCcw className="w-3.5 h-3.5" /> Reset
+          </Button>
+        }
+      />
 
       <div className="grid md:grid-cols-3 gap-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 md:col-span-1">
@@ -235,7 +237,7 @@ export default function WhatIf() {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 md:col-span-2 space-y-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 md:col-span-2 space-y-4 min-w-0">
           <h3 className="text-sm font-semibold font-heading">Simulated vs Current</h3>
 
           <div className="grid grid-cols-3 gap-3">
@@ -255,7 +257,7 @@ export default function WhatIf() {
             </div>
           </div>
 
-          <div className="h-64 md:h-72">
+          <div className="h-64 md:h-72 min-w-0 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -280,6 +282,6 @@ export default function WhatIf() {
           </div>
         </motion.div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

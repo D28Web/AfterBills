@@ -12,6 +12,8 @@ import IncomeStreamForm from '@/components/income/IncomeStreamForm';
 import IncomeStreamCard from '@/components/income/IncomeStreamCard';
 import UKTaxSettings from '@/components/income/UKTaxSettings';
 import AccountDataSection from '@/components/settings/AccountDataSection';
+import PageContainer from '@/components/layout/PageContainer';
+import PageHeader from '@/components/layout/PageHeader';
 import { ukTaxBreakdown } from '@/lib/ukTax';
 import { Switch } from '@/components/ui/switch';
 import { getOtherStreams } from '@/lib/income';
@@ -185,11 +187,8 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6 max-w-lg">
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-foreground">Settings</h2>
-        <p className="text-sm text-muted-foreground mt-1">Configure your income and preferences</p>
-      </div>
+    <PageContainer maxWidth="form" className="space-y-6">
+      <PageHeader title="Settings" subtitle="Configure your income and preferences" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -419,6 +418,6 @@ export default function Settings() {
       </motion.div>
 
       <AccountDataSection user={user} />
-    </div>
+    </PageContainer>
   );
 }

@@ -4,6 +4,8 @@ import { generateForecast, getCategoryTotals, CATEGORY_COLORS, CATEGORY_LABELS, 
 import { getPrimaryIncomeContext, getOtherStreams } from '@/lib/income';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 import { motion } from 'framer-motion';
+import PageContainer from '@/components/layout/PageContainer';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function Analytics() {
   const { data: user } = useQuery({
@@ -44,11 +46,8 @@ export default function Analytics() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-foreground">Analytics</h2>
-        <p className="text-sm text-muted-foreground mt-1">Understand your spending patterns</p>
-      </div>
+    <PageContainer maxWidth="wide" className="space-y-6">
+      <PageHeader title="Analytics" subtitle="Understand your spending patterns" />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4">
@@ -66,10 +65,10 @@ export default function Analytics() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 min-w-0">
           <h3 className="text-sm font-semibold font-heading mb-4">Spending by Category</h3>
           {categoryTotals.length > 0 ? (
-            <div className="h-64">
+            <div className="h-64 min-w-0 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -102,9 +101,9 @@ export default function Analytics() {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 min-w-0">
           <h3 className="text-sm font-semibold font-heading mb-4">Forecast Trend</h3>
-          <div className="h-64">
+          <div className="h-64 min-w-0 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={forecast.map(m => ({ name: m.shortLabel, remaining: m.remaining }))}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 90%)" />
@@ -118,9 +117,9 @@ export default function Analytics() {
         </motion.div>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 min-w-0">
         <h3 className="text-sm font-semibold font-heading mb-4">Monthly Bill Totals</h3>
-        <div className="h-64">
+        <div className="h-64 min-w-0 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={forecast.map(m => ({ name: m.shortLabel, bills: m.totalBills, remaining: m.remaining }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 90%)" />
@@ -133,6 +132,6 @@ export default function Analytics() {
           </ResponsiveContainer>
         </div>
       </motion.div>
-    </div>
+    </PageContainer>
   );
 }
