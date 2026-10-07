@@ -5,6 +5,8 @@ import { generateForecast, billToMonthlyCost } from '@/lib/forecast';
 import { getPrimaryIncomeContext } from '@/lib/income';
 import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import { Plus, Target, Calendar, Trash2 } from 'lucide-react';
+import EmergencyFundCard from '@/components/savings/EmergencyFundCard';
+import { getMonthlyEssentialExpenses } from '@/lib/essential';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +32,9 @@ export default function Savings() {
   const currency = user?.currency || '£';
   const monthlyBills = sumMoney(bills.map(b => billToMonthlyCost(b)));
   const monthlySpare = roundMoney(income - monthlyBills);
+  const monthlyEssential = getMonthlyEssentialExpenses(bills);
+  const emergencyGoal = goals.find(g => g.is_emergency_fund);
+  const regularGoals = goals.filter(g => !g.is_emergency_fund);
 
   const createMutation = useMutation({
     mutationFn: data => base44.entities.SavingsGoal.create(data),
@@ -83,9 +88,21 @@ export default function Savings() {
         </motion.div>
       )}
 
+      <EmergencyFundCard
+        goal={emergencyGoal}
+        bills={bills}
+        monthlySpare={monthlySpare}
+        primaryCtx={primaryCtx}
+        currency={currency}
+        monthlyEssential={monthlyEssential}
+        onCreate={(data) => createMutation.mutate(data)}
+        onUpdate={(id, data) => updateMutation.mutate({ id, data })}
+        onDelete={(id) => deleteMutation.mutate(id)}
+      />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <AnimatePresence>
-          {goals.map(goal => {
+          {regularGoals.map(goal => {
             const pct = goal.target_amount > 0 ? Math.min(100, ((goal.current_amount || 0) / goal.target_amount) * 100) : 0;
             return (
               <motion.div
@@ -142,7 +159,7 @@ export default function Savings() {
             );
           })}
         </AnimatePresence>
-        {goals.length === 0 && (
+        {regularGoals.length === 0 && (
           <div className="col-span-full text-center py-12 text-muted-foreground">
             <Target className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
             <p>No savings goals yet. Create one to start tracking.</p>

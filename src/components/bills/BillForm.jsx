@@ -7,27 +7,34 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { CATEGORY_LABELS } from '@/lib/forecast';
 import { formatMoney } from '@/lib/money';
+import { getDefaultEssential } from '@/lib/essential';
 import { X } from 'lucide-react';
 
 export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) {
-  const [form, setForm] = useState(bill || {
-    name: '',
-    amount: '',
-    start_date: new Date().toISOString().slice(0, 10),
-    category: 'other',
-    frequency: 'monthly',
-    is_recurring: true,
-    is_split: false,
-    split_between: 2,
-    target_end_date: '',
-    remaining_balance: '',
-    notes: '',
-    contract_start_date: '',
-    contract_end_date: '',
-    renewal_date: '',
-    notice_period_days: '',
-    intro_price_end_date: '',
-    expected_new_price: '',
+  const [form, setForm] = useState(() => {
+    if (bill) {
+      return { ...bill, essential: bill.essential ?? getDefaultEssential(bill.category) };
+    }
+    return {
+      name: '',
+      amount: '',
+      start_date: new Date().toISOString().slice(0, 10),
+      category: 'other',
+      frequency: 'monthly',
+      is_recurring: true,
+      essential: getDefaultEssential('other'),
+      is_split: false,
+      split_between: 2,
+      target_end_date: '',
+      remaining_balance: '',
+      notes: '',
+      contract_start_date: '',
+      contract_end_date: '',
+      renewal_date: '',
+      notice_period_days: '',
+      intro_price_end_date: '',
+      expected_new_price: '',
+    };
   });
 
   const handleSubmit = (e) => {
@@ -89,7 +96,7 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
 
         <div>
           <Label>Category</Label>
-          <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
+          <Select value={form.category} onValueChange={v => setForm({ ...form, category: v, essential: getDefaultEssential(v) })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
@@ -112,6 +119,18 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
               <SelectItem value="annually">Annually</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="col-span-2">
+          <Label>Spending Classification</Label>
+          <Select value={String(form.essential)} onValueChange={v => setForm({ ...form, essential: v === 'true' })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">Essential</SelectItem>
+              <SelectItem value="false">Non-essential</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-1">Used in affordability and emergency fund calculations. The default is a suggestion — change it as needed.</p>
         </div>
 
         <div className="col-span-2 flex items-center gap-3">

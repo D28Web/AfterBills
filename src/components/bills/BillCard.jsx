@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CATEGORY_COLORS, CATEGORY_LABELS, FREQUENCY_LABELS, getBillDueDay, getBillShare, formatDueDay } from '@/lib/forecast';
 import { formatMoney } from '@/lib/money';
+import { isEssentialBill } from '@/lib/essential';
 import { Pencil, Trash2, CalendarDays, Repeat, Users, Target, ChevronDown, RefreshCw, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -31,7 +32,17 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
           <div className="flex items-start justify-between gap-2">
             <div>
               <h4 className="text-sm font-semibold text-foreground truncate">{bill.name}</h4>
-              <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[bill.category]}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[bill.category]}</p>
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                  isEssentialBill(bill)
+                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+                    : "bg-muted text-muted-foreground"
+                )}>
+                  {isEssentialBill(bill) ? 'Essential' : 'Non-essential'}
+                </span>
+              </div>
             </div>
             <div className="text-right whitespace-nowrap">
               {bill.is_split && bill.split_between > 1 ? (

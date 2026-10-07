@@ -49,6 +49,10 @@
       "default": true,
       "description": "Whether the bill recurs"
     },
+    "essential": {
+      "type": "boolean",
+      "description": "Whether this bill is an essential expense (true) or non-essential (false). Null means unclassified \u2014 the category-based default is used until the user sets it. Used in affordability and emergency fund calculations."
+    },
     "target_end_date": {
       "type": "string",
       "format": "date",
