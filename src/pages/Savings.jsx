@@ -128,6 +128,13 @@ export default function Savings() {
   const getProjectedDate = (goal) => {
     const remaining = goal.target_amount - (goal.current_amount || 0);
     if (remaining <= 0) return 'Achieved!';
+    if (goal.target_date) {
+      const targetDate = new Date(goal.target_date);
+      const monthsUntilTarget = Math.max(1, Math.ceil(differenceInDays(targetDate, new Date()) / 30.44));
+      const requiredMonthly = remaining / monthsUntilTarget;
+      const onTrack = monthlySpare >= requiredMonthly;
+      return `${format(targetDate, 'MMM yyyy')} · ${onTrack ? 'On track' : 'Behind'}`;
+    }
     if (monthlySpare <= 0) return 'Increase income or reduce bills';
     const monthsNeeded = Math.ceil(remaining / monthlySpare);
     return format(addMonths(new Date(), monthsNeeded), 'MMM yyyy');

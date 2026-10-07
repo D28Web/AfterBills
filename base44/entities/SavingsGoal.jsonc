@@ -25,6 +25,11 @@
       "type": "number",
       "description": "Target amount to save"
     },
+    "target_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date by which you aim to reach this savings goal (YYYY-MM-DD). Optional."
+    },
     "current_amount": {
       "type": "number",
       "default": 0,
@@ -55,7 +60,7 @@
         "months"
       ],
       "default": "fixed",
-      "description": "fixed = a set target amount; months = target expressed as N months of essential expenses"
+      "description": "fixed = a set target amount; months = target expressed as N months of essential expenses to cover"
     },
     "target_months": {
       "type": "number",

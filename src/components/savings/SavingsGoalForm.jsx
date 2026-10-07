@@ -30,6 +30,7 @@ export default function SavingsGoalForm({ goal, onSubmit, onCancel, currency = '
         travel_date: goal.travel_date || '',
         current_amount: goal.current_amount != null ? String(goal.current_amount) : '',
         target_amount: goal.target_amount != null ? String(goal.target_amount) : '',
+        target_date: goal.target_date || '',
         notes: goal.notes || '',
         attachments: goal.attachments || [],
       };
@@ -39,6 +40,7 @@ export default function SavingsGoalForm({ goal, onSubmit, onCancel, currency = '
       type: 'general',
       target_amount: '',
       current_amount: '',
+      target_date: '',
       destination: '',
       travel_date: '',
       notes: '',
@@ -57,6 +59,7 @@ export default function SavingsGoalForm({ goal, onSubmit, onCancel, currency = '
       is_emergency_fund: isEmergency,
       destination: form.type === 'trip' ? (form.destination || null) : null,
       travel_date: form.type === 'trip' ? (form.travel_date || null) : null,
+      target_date: form.target_date || null,
       notes: form.notes || null,
       attachments: form.attachments || [],
     });
@@ -104,6 +107,11 @@ export default function SavingsGoalForm({ goal, onSubmit, onCancel, currency = '
       <div>
         <Label>Already Saved (optional)</Label>
         <Input type="number" step="0.01" placeholder="0.00" value={form.current_amount} onChange={e => setForm({ ...form, current_amount: e.target.value })} />
+      </div>
+
+      <div>
+        <Label>Target Date (optional)</Label>
+        <Input type="date" value={form.target_date} onChange={e => setForm({ ...form, target_date: e.target.value })} />
       </div>
 
       <div>
