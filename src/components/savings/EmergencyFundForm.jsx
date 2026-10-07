@@ -11,6 +11,7 @@ export default function EmergencyFundForm({ existing, monthlyEssential, currency
   const [targetMonths, setTargetMonths] = useState(existing?.target_months ? String(existing.target_months) : '3');
   const [targetAmount, setTargetAmount] = useState(existing?.target_amount ? String(existing.target_amount) : '');
   const [currentAmount, setCurrentAmount] = useState(existing?.current_amount ? String(existing.current_amount) : '0');
+  const [targetDate, setTargetDate] = useState(existing?.target_date || '');
 
   const computedTarget = targetType === 'months'
     ? roundMoney(monthlyEssential * (parseFloat(targetMonths) || 0))
@@ -25,6 +26,7 @@ export default function EmergencyFundForm({ existing, monthlyEssential, currency
       target_months: targetType === 'months' ? parseFloat(targetMonths) : null,
       target_amount: computedTarget,
       current_amount: parseFloat(currentAmount) || 0,
+      target_date: targetDate || null,
     });
   };
 
@@ -76,6 +78,11 @@ export default function EmergencyFundForm({ existing, monthlyEssential, currency
       <div>
         <Label>Already Saved</Label>
         <Input type="number" step="0.01" placeholder="0.00" value={currentAmount} onChange={e => setCurrentAmount(e.target.value)} />
+      </div>
+
+      <div>
+        <Label>Target Date (optional)</Label>
+        <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
       </div>
 
       <div className="flex gap-2 justify-end">

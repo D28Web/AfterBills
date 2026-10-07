@@ -101,7 +101,13 @@ export default function EmergencyFundCard({ goal, bills, monthlySpare, primaryCt
         </div>
       </div>
 
-      {stats.estimatedCompletion && (
+      {goal.target_date && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Calendar className="w-3 h-3" />
+          <span>Target: {format(new Date(goal.target_date), 'MMM yyyy')}</span>
+        </div>
+      )}
+      {!goal.target_date && stats.estimatedCompletion && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Calendar className="w-3 h-3" />
           <span>Estimated completion: {format(stats.estimatedCompletion, 'MMM yyyy')}</span>
