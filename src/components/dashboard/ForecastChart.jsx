@@ -2,6 +2,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { motion } from 'framer-motion';
 import { format, addMonths, startOfMonth, isSameMonth } from 'date-fns';
 import { getPayCycles } from '@/lib/payday';
+import { formatMoney } from '@/lib/money';
+import MoneyTooltip from '@/components/charts/MoneyTooltip';
 
 export default function ForecastChart({ forecast, currency = '£', user }) {
   const chartData = forecast.map(m => ({
@@ -25,23 +27,9 @@ export default function ForecastChart({ forecast, currency = '£', user }) {
     });
   }
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload) return null;
-    const isPayday = payCycleMonths.has(label);
-    return (
-      <div className="bg-card border border-border rounded-xl p-3 shadow-lg">
-        <div className="flex items-center gap-2 mb-1">
-          <p className="text-sm font-semibold text-foreground">{label}</p>
-          {isPayday && <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">Payday</span>}
-        </div>
-        {payload.map((p, i) => (
-          <p key={i} className="text-xs" style={{ color: p.color }}>
-            {p.name}: {currency}{Math.round(p.value).toLocaleString()}
-          </p>
-        ))}
-      </div>
-    );
-  };
+  const paydayBadge = (label) => payCycleMonths.has(label)
+    ? <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">Payday</span>
+    : null;
 
   return (
     <motion.div
@@ -73,8 +61,8 @@ export default function ForecastChart({ forecast, currency = '£', user }) {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 90%)" />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(220, 10%, 46%)' }} />
-            <YAxis tick={{ fontSize: 11, fill: 'hsl(220, 10%, 46%)' }} tickFormatter={v => `${currency}${v}`} />
-            <Tooltip content={<CustomTooltip />} />
+            <YAxis tick={{ fontSize: 11, fill: 'hsl(220, 10%, 46%)' }} tickFormatter={v => formatMoney(v, { currency })} />
+            <Tooltip content={<MoneyTooltip currency={currency} getBadge={paydayBadge} />} />
             <ReferenceLine y={0} stroke="hsl(0, 72%, 58%)" strokeDasharray="3 3" />
             {[...payCycleMonths].map(monthName => (
               <ReferenceLine

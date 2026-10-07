@@ -6,9 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { CATEGORY_LABELS } from '@/lib/forecast';
+import { formatMoney } from '@/lib/money';
 import { X } from 'lucide-react';
 
-export default function BillForm({ bill, onSubmit, onCancel }) {
+export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) {
   const [form, setForm] = useState(bill || {
     name: '',
     amount: '',
@@ -156,7 +157,7 @@ export default function BillForm({ bill, onSubmit, onCancel }) {
             />
             {parseFloat(form.amount) > 0 && (
               <p className="text-xs text-primary mt-1">
-                Your share: £{(parseFloat(form.amount) / (parseInt(form.split_between) || 1)).toFixed(2)} / {(parseInt(form.split_between) || 1)} people
+                Your share: {formatMoney(parseFloat(form.amount) / (parseInt(form.split_between) || 1), { currency, decimals: 2 })} / {(parseInt(form.split_between) || 1)} people
               </p>
             )}
           </div>

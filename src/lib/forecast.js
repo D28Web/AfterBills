@@ -1,4 +1,6 @@
 import { addMonths, addWeeks, getDaysInMonth, startOfDay, startOfMonth, isSameMonth, format, addDays } from 'date-fns';
+import { roundMoney, getSplitShare } from './money';
+import { FREQ_TO_MONTHLY } from './income';
 
 /**
  * Inline pay cycle stepping — returns array of cycle start dates.
@@ -81,21 +83,33 @@ function countOccurrencesInMonth(startDateStr, frequency, targetMonth, targetYea
  * Convert a bill to its monthly equivalent cost.
  */
 export function getBillShare(bill) {
-  if (bill.is_split && bill.split_between > 1) return bill.amount / bill.split_between;
-  return bill.amount;
+  return getSplitShare(bill);
 }
 
 export function billToMonthlyCost(bill) {
   const amount = getBillShare(bill);
   switch (bill.frequency) {
-    case 'weekly': return amount * 52 / 12;
-    case 'fortnightly': return amount * 26 / 12;
-    case 'four_weekly': return amount * 13 / 12;
-    case 'monthly': return amount;
-    case 'quarterly': return amount / 3;
-    case 'annually': return amount / 12;
-    default: return amount;
+    case 'weekly': return roundMoney(amount * 52 / 12);
+    case 'fortnightly': return roundMoney(amount * 26 / 12);
+    case 'four_weekly': return roundMoney(amount * 13 / 12);
+    case 'monthly': return roundMoney(amount);
+    case 'quarterly': return roundMoney(amount / 3);
+    case 'annually': return roundMoney(amount / 12);
+    default: return roundMoney(amount);
   }
+}
+
+/** Ordinal suffix for a day-of-month number (1st, 2nd, 3rd, 4th...). */
+export function ordinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
+
+/** "Due 5th"-style label for a bill's due day. */
+export function formatDueDay(bill) {
+  const day = getBillDueDay(bill);
+  return `Due ${day}${ordinal(day)}`;
 }
 
 /**
@@ -156,15 +170,15 @@ export function getBillAmountForMonth(bill, month, year) {
   const amount = getBillShare(bill);
   switch (bill.frequency) {
     case 'weekly':
-      return amount * countOccurrencesInMonth(bill.start_date, 'weekly', month, year);
+      return roundMoney(amount * countOccurrencesInMonth(bill.start_date, 'weekly', month, year));
     case 'fortnightly':
-      return amount * countOccurrencesInMonth(bill.start_date, 'fortnightly', month, year);
+      return roundMoney(amount * countOccurrencesInMonth(bill.start_date, 'fortnightly', month, year));
     case 'four_weekly':
-      return amount * countOccurrencesInMonth(bill.start_date, 'four_weekly', month, year);
-    case 'monthly': return amount;
-    case 'quarterly': return isBillDueInMonth(bill, month, year) ? amount : 0;
-    case 'annually': return isBillDueInMonth(bill, month, year) ? amount : 0;
-    default: return amount;
+      return roundMoney(amount * countOccurrencesInMonth(bill.start_date, 'four_weekly', month, year));
+    case 'monthly': return roundMoney(amount);
+    case 'quarterly': return roundMoney(isBillDueInMonth(bill, month, year) ? amount : 0);
+    case 'annually': return roundMoney(isBillDueInMonth(bill, month, year) ? amount : 0);
+    default: return roundMoney(amount);
   }
 }
 
@@ -180,19 +194,19 @@ export function getIncomeStreamAmountForMonth(stream, month, year) {
 
   switch (stream.frequency) {
     case 'weekly':
-      return stream.amount * countOccurrencesInMonth(stream.start_date, 'weekly', month, year);
+      return roundMoney(stream.amount * countOccurrencesInMonth(stream.start_date, 'weekly', month, year));
     case 'fortnightly':
-      return stream.amount * countOccurrencesInMonth(stream.start_date, 'fortnightly', month, year);
-    case 'monthly': return stream.amount;
+      return roundMoney(stream.amount * countOccurrencesInMonth(stream.start_date, 'fortnightly', month, year));
+    case 'monthly': return roundMoney(stream.amount);
     case 'quarterly': {
       const elapsed = (year - anchorYear) * 12 + (month - anchorMonth);
-      return elapsed % 3 === 0 ? stream.amount : 0;
+      return roundMoney(elapsed % 3 === 0 ? stream.amount : 0);
     }
     case 'annually': {
       const elapsed = (year - anchorYear) * 12 + (month - anchorMonth);
-      return elapsed % 12 === 0 ? stream.amount : 0;
+      return roundMoney(elapsed % 12 === 0 ? stream.amount : 0);
     }
-    default: return stream.amount;
+    default: return roundMoney(stream.amount);
   }
 }
 
@@ -208,13 +222,7 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date(), i
   // Pre-compute payday-aware income per month if user has non-monthly pay frequency
   let paydayIncomeByMonth = null;
   if (user?.pay_frequency && user.pay_frequency !== 'monthly' && monthlyIncome > 0) {
-    const FREQ_MULTIPLIER = {
-      weekly: 52 / 12,
-      fortnightly: 26 / 12,
-      four_weekly: 13 / 12,
-      annually: 1 / 12,
-    };
-    const multiplier = FREQ_MULTIPLIER[user.pay_frequency];
+    const multiplier = FREQ_TO_MONTHLY[user.pay_frequency];
     if (multiplier) {
       const cycleIncome = monthlyIncome / multiplier;
       // Inline payday stepping to avoid circular import with payday.js
@@ -265,9 +273,9 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date(), i
       year,
       label,
       shortLabel,
-      income: Math.round(totalIncome * 100) / 100,
-      totalBills: Math.round(totalBills * 100) / 100,
-      remaining: Math.round(remaining * 100) / 100,
+      income: roundMoney(totalIncome),
+      totalBills: roundMoney(totalBills),
+      remaining: roundMoney(remaining),
       bills: billsThisMonth,
     });
   }
@@ -349,7 +357,7 @@ export function getCategoryTotals(bills) {
   });
   return Object.entries(totals).map(([category, total]) => ({
     category,
-    total: Math.round(total * 100) / 100,
+    total: roundMoney(total),
   })).sort((a, b) => b.total - a.total);
 }
 

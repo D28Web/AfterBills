@@ -3,15 +3,16 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Calendar, Pencil, Trash2, Plus, PiggyBank, TrendingUp, Clock, Plane } from 'lucide-react';
 import { format, isBefore } from 'date-fns';
-import TripExpenseCard, { getExpenseShare } from '@/components/trips/TripExpenseCard';
+import TripExpenseCard from '@/components/trips/TripExpenseCard';
+import { getSplitShare, formatMoney, roundMoney } from '@/lib/money';
 import TripExpenseForm from '@/components/trips/TripExpenseForm';
 import TripContributionForm from '@/components/trips/TripContributionForm';
 
 export default function TripPlanCard({ trip, expenses, contributions, user, currency, cycles, trips = [], editingExpense, onEditExpense, onTogglePaidExpense, onUpdateExpense, onDeleteExpense, onEditTrip, onDeleteTrip, onAddContribution, onDeleteContribution }) {
   const [showContribution, setShowContribution] = useState(false);
 
-  const totalCost = expenses.reduce((s, e) => s + getExpenseShare(e), 0);
-  const paidAmount = expenses.filter(e => e.is_paid).reduce((s, e) => s + getExpenseShare(e), 0);
+  const totalCost = roundMoney(expenses.reduce((s, e) => s + getSplitShare(e), 0));
+  const paidAmount = roundMoney(expenses.filter(e => e.is_paid).reduce((s, e) => s + getSplitShare(e), 0));
   const outstanding = Math.max(0, totalCost - paidAmount);
 
   const tripContributions = contributions.filter(c => c.trip_name === trip.name).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -56,15 +57,15 @@ export default function TripPlanCard({ trip, expenses, contributions, user, curr
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="bg-muted/40 rounded-xl p-2">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Outstanding</p>
-          <p className="text-sm font-bold font-heading text-foreground">{currency}{outstanding.toFixed(0)}</p>
+          <p className="text-sm font-bold font-heading text-foreground">{formatMoney(outstanding, { currency })}</p>
         </div>
         <div className="bg-muted/40 rounded-xl p-2">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Saved</p>
-          <p className="text-sm font-bold font-heading text-primary">{currency}{saved.toFixed(0)}</p>
+          <p className="text-sm font-bold font-heading text-primary">{formatMoney(saved, { currency })}</p>
         </div>
         <div className="bg-muted/40 rounded-xl p-2">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Remaining</p>
-          <p className="text-sm font-bold font-heading text-destructive">{currency}{remaining.toFixed(0)}</p>
+          <p className="text-sm font-bold font-heading text-destructive">{formatMoney(remaining, { currency })}</p>
         </div>
       </div>
 
@@ -83,11 +84,11 @@ export default function TripPlanCard({ trip, expenses, contributions, user, curr
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />
             <span className="text-muted-foreground">Save</span>
-            <span className="font-bold font-heading text-primary">{currency}{perMonth.toFixed(0)}/mo</span>
+            <span className="font-bold font-heading text-primary">{formatMoney(perMonth, { currency })}/mo</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">{currency}{perCycle.toFixed(0)}</span>
+            <span className="font-medium">{formatMoney(perCycle, { currency })}</span>
             <span className="text-muted-foreground">/ pay cycle</span>
           </div>
         </div>
@@ -152,7 +153,7 @@ export default function TripPlanCard({ trip, expenses, contributions, user, curr
         {tripContributions.map(c => (
           <div key={c.id} className="flex items-center justify-between text-sm py-1">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-foreground font-medium">{currency}{c.amount.toFixed(2)}</span>
+              <span className="text-foreground font-medium">{formatMoney(c.amount, { currency, decimals: 2 })}</span>
               <span className="text-xs text-muted-foreground">{format(new Date(c.date), 'd MMM yyyy')}</span>
               {c.notes && <span className="text-xs text-muted-foreground truncate">· {c.notes}</span>}
             </div>

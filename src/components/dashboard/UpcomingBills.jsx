@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { CATEGORY_COLORS, CATEGORY_LABELS, getUpcomingBills, getBillDueDay, getBillShare } from '@/lib/forecast';
+import { CATEGORY_COLORS, CATEGORY_LABELS, getUpcomingBills, getBillDueDay, getBillShare, ordinal } from '@/lib/forecast';
+import { formatMoney } from '@/lib/money';
 import { CalendarDays } from 'lucide-react';
 
 export default function UpcomingBills({ bills, currency = '£' }) {
@@ -24,13 +25,13 @@ export default function UpcomingBills({ bills, currency = '£' }) {
               <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[bill.category]}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm font-semibold text-foreground">{currency}{getBillShare(bill).toFixed(2)}</p>
+              <p className="text-sm font-semibold text-foreground">{formatMoney(getBillShare(bill), { currency, decimals: 2 })}</p>
               {bill.is_split && bill.split_between > 1 && (
-                <p className="text-xs text-muted-foreground line-through">{currency}{bill.amount.toFixed(2)} total</p>
+                <p className="text-xs text-muted-foreground line-through">{formatMoney(bill.amount, { currency, decimals: 2 })} total</p>
               )}
               <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
                 <CalendarDays className="w-3 h-3" />
-                {getBillDueDay(bill)}{getOrdinal(getBillDueDay(bill))}
+                {getBillDueDay(bill)}{ordinal(getBillDueDay(bill))}
               </p>
             </div>
           </div>
@@ -41,10 +42,4 @@ export default function UpcomingBills({ bills, currency = '£' }) {
       </div>
     </motion.div>
   );
-}
-
-function getOrdinal(n) {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return s[(v - 20) % 10] || s[v] || s[0];
 }

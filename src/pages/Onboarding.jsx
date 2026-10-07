@@ -10,6 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wallet, Receipt, Target, CheckCircle, ArrowRight, ArrowLeft, Plus, Trash2, Sparkles } from 'lucide-react';
 import { ukTaxBreakdown } from '@/lib/ukTax';
+import { formatMoney, roundMoney } from '@/lib/money';
+import { FREQ_TO_MONTHLY } from '@/lib/income';
 
 const STEPS = ['Welcome', 'Income', 'Bills', 'Goals', 'Done'];
 
@@ -40,10 +42,6 @@ const BILL_FREQ_OPTIONS = [
   { value: 'quarterly', label: 'Quarterly' },
   { value: 'annually', label: 'Annually' },
 ];
-
-const FREQ_TO_MONTHLY = {
-  weekly: 52 / 12, fortnightly: 26 / 12, four_weekly: 13 / 12, monthly: 1, annually: 1 / 12,
-};
 
 function StepIndicator({ step }) {
   return (
@@ -89,7 +87,7 @@ export default function Onboarding() {
     : null;
   const monthlyIncome = ukBreakdown
     ? ukBreakdown.takeHomeMonthly
-    : rawIncome * (FREQ_TO_MONTHLY[income.pay_frequency] || 1);
+    : roundMoney(rawIncome * (FREQ_TO_MONTHLY[income.pay_frequency] || 1));
 
   const handleFinish = async () => {
     setSaving(true);
@@ -235,14 +233,14 @@ export default function Onboarding() {
 
                 {ukBreakdown && (
                   <div className="bg-muted rounded-xl p-3 space-y-1 text-sm">
-                    <div className="flex justify-between text-destructive/80"><span>Income Tax</span><span>−{income.currency}{ukBreakdown.incomeTax.toFixed(0)}</span></div>
-                    <div className="flex justify-between text-destructive/80"><span>National Insurance</span><span>−{income.currency}{ukBreakdown.nationalInsurance.toFixed(0)}</span></div>
-                    <div className="flex justify-between font-semibold text-primary border-t border-border pt-1"><span>Monthly Take-Home</span><span>{income.currency}{ukBreakdown.takeHomeMonthly.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-destructive/80"><span>Income Tax</span><span>−{formatMoney(ukBreakdown.incomeTax, { currency: income.currency })}</span></div>
+                    <div className="flex justify-between text-destructive/80"><span>National Insurance</span><span>−{formatMoney(ukBreakdown.nationalInsurance, { currency: income.currency })}</span></div>
+                    <div className="flex justify-between font-semibold text-primary border-t border-border pt-1"><span>Monthly Take-Home</span><span>{formatMoney(ukBreakdown.takeHomeMonthly, { currency: income.currency, decimals: 2 })}</span></div>
                   </div>
                 )}
 
                 {!ukBreakdown && rawIncome > 0 && income.pay_frequency !== 'monthly' && (
-                  <p className="text-xs text-muted-foreground">≈ {income.currency}{monthlyIncome.toFixed(2)} / month</p>
+                  <p className="text-xs text-muted-foreground">≈ {formatMoney(monthlyIncome, { currency: income.currency, decimals: 2 })} / month</p>
                 )}
 
                 <div>
@@ -399,7 +397,7 @@ export default function Onboarding() {
                 <div className="bg-muted rounded-xl p-4 text-sm space-y-2 text-left">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Monthly income</span>
-                    <span className="font-semibold">{income.currency}{monthlyIncome.toFixed(2)}</span>
+                    <span className="font-semibold">{formatMoney(monthlyIncome, { currency: income.currency, decimals: 2 })}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Bills to add</span>

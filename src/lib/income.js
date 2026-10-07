@@ -1,4 +1,5 @@
 import { ukTaxBreakdown } from './ukTax';
+import { roundMoney } from './money';
 
 // Multiplier to convert a per-occurrence amount into a monthly amount.
 export const FREQ_TO_MONTHLY = {
@@ -29,7 +30,7 @@ export function getStreamMonthlyAmount(stream) {
     const ts = stream.tax_settings || {};
     const grossAnnual = parseFloat(ts.grossAnnual) || 0;
     if (grossAnnual <= 0) return 0;
-    return ukTaxBreakdown({
+    return roundMoney(ukTaxBreakdown({
       grossAnnual,
       taxCode: ts.taxCode,
       studentLoanPlan: ts.studentLoanPlan,
@@ -38,10 +39,10 @@ export function getStreamMonthlyAmount(stream) {
       pensionIsSalarySacrifice: ts.pensionIsSalarySacrifice,
       salarySacrificeAnnual: (parseFloat(ts.salarySacrificeMonthly) || 0) * 12,
       otherDeductionsAnnual: (parseFloat(ts.otherDeductionsMonthly) || 0) * 12,
-    }).takeHomeMonthly;
+    }).takeHomeMonthly);
   }
   const raw = parseFloat(stream.amount) || 0;
-  return raw * (FREQ_TO_MONTHLY[stream.frequency] || 1);
+  return roundMoney(raw * (FREQ_TO_MONTHLY[stream.frequency] || 1));
 }
 
 // Build a user-like context (monthly_income + pay schedule) from the primary

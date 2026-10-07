@@ -1,21 +1,42 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateForecast, billToMonthlyCost } from '@/lib/forecast';
-import { getPrimaryIncomeContext } from '@/lib/income';
+import { getPrimaryIncomeContext, FREQ_TO_MONTHLY } from '@/lib/income';
+import { getPayCycles, getBillsInCycle, formatCycleLabel } from '@/lib/payday';
+import { formatMoney, formatSignedMoney, sumMoney, roundMoney } from '@/lib/money';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { FlaskConical, Plus, X, RotateCcw } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { FlaskConical, Plus, X, RotateCcw, CheckCircle2, AlertTriangle, CalendarClock, Wallet } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
+import MoneyTooltip from '@/components/charts/MoneyTooltip';
 import UKTaxSettings from '@/components/income/UKTaxSettings';
 import { ukTaxBreakdown } from '@/lib/ukTax';
 
+const DEFAULT_TAX_SETTINGS = {
+  grossAnnual: '', taxCode: '1257L', studentLoanPlan: 'none', pensionType: 'percent',
+  pensionValue: '', pensionIsSalarySacrifice: false, salarySacrificeMonthly: '', otherDeductionsMonthly: '',
+};
+
 export default function WhatIf() {
+  const queryClient = useQueryClient();
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
   const { data: bills = [] } = useQuery({ queryKey: ['bills'], queryFn: () => base44.entities.Bill.list() });
   const { data: incomeStreams = [] } = useQuery({ queryKey: ['income-streams'], queryFn: () => base44.entities.IncomeStream.list() });
@@ -27,17 +48,9 @@ export default function WhatIf() {
   const [simIncome, setSimIncome] = useState(null);
   const [extraBills, setExtraBills] = useState([]);
   const [removedBillIds, setRemovedBillIds] = useState([]);
+  const [amountOverrides, setAmountOverrides] = useState({});
   const [incomeMode, setIncomeMode] = useState('per_cycle');
-  const [taxSettings, setTaxSettings] = useState({
-    grossAnnual: '',
-    taxCode: '1257L',
-    studentLoanPlan: 'none',
-    pensionType: 'percent',
-    pensionValue: '',
-    pensionIsSalarySacrifice: false,
-    salarySacrificeMonthly: '',
-    otherDeductionsMonthly: '',
-  });
+  const [taxSettings, setTaxSettings] = useState(DEFAULT_TAX_SETTINGS);
 
   const salaryMonthlyIncome = useMemo(() => {
     const gross = parseFloat(taxSettings.grossAnnual) || 0;
@@ -51,11 +64,15 @@ export default function WhatIf() {
       pensionIsSalarySacrifice: taxSettings.pensionIsSalarySacrifice,
       salarySacrificeAnnual: (parseFloat(taxSettings.salarySacrificeMonthly) || 0) * 12,
       otherDeductionsAnnual: (parseFloat(taxSettings.otherDeductionsMonthly) || 0) * 12,
-    }).takeHomeAnnual / 12;
+    }).takeHomeMonthly;
   }, [taxSettings]);
 
   const effectiveIncome = incomeMode === 'salary' ? salaryMonthlyIncome : (simIncome !== null ? simIncome : realIncome);
-  const activeBills = bills.filter(b => !removedBillIds.includes(b.id));
+
+  // Build the simulated bill set: existing bills (minus removed, with amount overrides) + hypothetical ones.
+  const activeBills = bills
+    .filter(b => !removedBillIds.includes(b.id))
+    .map(b => amountOverrides[b.id] != null ? { ...b, amount: amountOverrides[b.id] } : b);
   const allBills = [...activeBills, ...extraBills];
 
   const realForecast = useMemo(() => generateForecast(bills, realIncome, new Date(), [], primaryCtx), [bills, realIncome, primaryCtx]);
@@ -67,10 +84,33 @@ export default function WhatIf() {
     simulated: simForecast[i]?.remaining || 0,
   }));
 
-  const simMonthlyBills = allBills.reduce((sum, b) => sum + billToMonthlyCost(b), 0);
-  const simRemaining = effectiveIncome - simMonthlyBills;
-  const realRemaining = realIncome - bills.reduce((sum, b) => sum + billToMonthlyCost(b), 0);
-  const diff = simRemaining - realRemaining;
+  // Monthly left-after-bills
+  const simMonthlyBills = sumMoney(allBills.map(b => billToMonthlyCost(b)));
+  const realMonthlyBills = sumMoney(bills.map(b => billToMonthlyCost(b)));
+  const simRemaining = roundMoney(effectiveIncome - simMonthlyBills);
+  const realRemaining = roundMoney(realIncome - realMonthlyBills);
+  const monthlyDiff = roundMoney(simRemaining - realRemaining);
+
+  // Annual disposable income = sum of remaining across the 12-month forecast
+  const simAnnual = sumMoney(simForecast.map(m => m.remaining));
+  const realAnnual = sumMoney(realForecast.map(m => m.remaining));
+  const annualDiff = roundMoney(simAnnual - realAnnual);
+
+  // Tightest pay cycle (smallest spare) under the simulation
+  const tightestCycle = useMemo(() => {
+    if (!effectiveIncome) return null;
+    const freq = primaryCtx.pay_frequency || 'monthly';
+    const cycleIncome = effectiveIncome / (FREQ_TO_MONTHLY[freq] || 1);
+    const cycles = getPayCycles(primaryCtx, 13);
+    let tightest = null;
+    cycles.forEach((cycle, i) => {
+      const cycleBills = getBillsInCycle(allBills, cycle.start, cycle.end);
+      const total = roundMoney(cycleBills.reduce((s, b) => s + (b.monthAmount || b.amount), 0));
+      const spare = roundMoney(cycleIncome - total);
+      if (!tightest || spare < tightest.spare) tightest = { cycle, i, spare, total };
+    });
+    return tightest;
+  }, [allBills, effectiveIncome, primaryCtx]);
 
   const addExtraBill = () => {
     setExtraBills([...extraBills, { id: `extra-${Date.now()}`, name: 'New Bill', amount: 50, start_date: new Date().toISOString().slice(0, 10), category: 'other', frequency: 'monthly' }]);
@@ -80,32 +120,38 @@ export default function WhatIf() {
     setSimIncome(null);
     setExtraBills([]);
     setRemovedBillIds([]);
+    setAmountOverrides({});
     setIncomeMode('per_cycle');
-    setTaxSettings({
-      grossAnnual: '',
-      taxCode: '1257L',
-      studentLoanPlan: 'none',
-      pensionType: 'percent',
-      pensionValue: '',
-      pensionIsSalarySacrifice: false,
-      salarySacrificeMonthly: '',
-      otherDeductionsMonthly: '',
-    });
+    setTaxSettings(DEFAULT_TAX_SETTINGS);
   };
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload) return null;
-    return (
-      <div className="bg-card border border-border rounded-xl p-3 shadow-lg">
-        <p className="text-sm font-semibold mb-1">{label}</p>
-        {payload.map((p, i) => (
-          <p key={i} className="text-xs" style={{ color: p.color }}>
-            {p.name}: {currency}{Math.round(p.value).toLocaleString()}
-          </p>
-        ))}
-      </div>
-    );
-  };
+  const hasChanges = extraBills.length > 0 || removedBillIds.length > 0 ||
+    Object.keys(amountOverrides).length > 0 || (incomeMode === 'per_cycle' && simIncome !== null && simIncome !== realIncome) ||
+    (incomeMode === 'salary' && parseFloat(taxSettings.grossAnnual) > 0);
+
+  const applyMutation = useMutation({
+    mutationFn: async () => {
+      // Delete removed bills
+      await Promise.all(removedBillIds.map(id => base44.entities.Bill.delete(id)));
+      // Update overridden amounts
+      await Promise.all(
+        Object.entries(amountOverrides)
+          .filter(([id]) => !removedBillIds.includes(id))
+          .map(([id, amount]) => base44.entities.Bill.update(id, { amount }))
+      );
+      // Create hypothetical bills
+      await Promise.all(extraBills.map(b => base44.entities.Bill.create({
+        name: b.name, amount: b.amount, start_date: b.start_date, category: b.category,
+        frequency: b.frequency, is_recurring: true,
+      })));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bills'] });
+      toast.success('Simulation applied to your bills');
+      reset();
+    },
+    onError: () => toast.error('Could not apply changes — please try again'),
+  });
 
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
@@ -113,13 +159,40 @@ export default function WhatIf() {
         title="What If"
         subtitle="Simulate changes and see the impact"
         actions={
-          <Button variant="outline" onClick={reset} className="gap-2 text-sm">
-            <RotateCcw className="w-3.5 h-3.5" /> Reset
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={reset} className="gap-2 text-sm">
+              <RotateCcw className="w-3.5 h-3.5" /> Reset
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button className="gap-2 text-sm" disabled={!hasChanges || applyMutation.isPending}>
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Apply
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Apply simulation to your bills?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently {removedBillIds.length > 0 && `delete ${removedBillIds.length} bill(s), `}
+                    {Object.keys(amountOverrides).length > 0 && `update ${Object.keys(amountOverrides).length} bill amount(s), `}
+                    {extraBills.length > 0 && `add ${extraBills.length} new bill(s). `}
+                    Income changes are not saved here — set those in Settings. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => applyMutation.mutate()} disabled={applyMutation.isPending}>
+                    {applyMutation.isPending ? 'Applying...' : 'Apply changes'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         }
       />
 
       <div className="grid md:grid-cols-3 gap-4">
+        {/* Controls */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 md:col-span-1">
           <h3 className="text-sm font-semibold font-heading mb-4 flex items-center gap-2">
             <FlaskConical className="w-4 h-4 text-primary" /> Controls
@@ -175,9 +248,54 @@ export default function WhatIf() {
               />
             )}
 
+            {/* Adjust existing bills: remove or change amount */}
+            <div>
+              <Label className="text-xs mb-2 block">Adjust Existing Bills</Label>
+              <div className="space-y-1 max-h-56 overflow-y-auto">
+                {bills.map(b => {
+                  const removed = removedBillIds.includes(b.id);
+                  const overridden = amountOverrides[b.id] != null;
+                  return (
+                    <div key={b.id} className={`flex items-center gap-2 text-xs rounded px-1.5 py-1 ${removed ? 'opacity-40' : 'hover:bg-muted'}`}>
+                      <input
+                        type="checkbox"
+                        checked={removed}
+                        onChange={e => {
+                          setRemovedBillIds(e.target.checked
+                            ? [...removedBillIds, b.id]
+                            : removedBillIds.filter(id => id !== b.id));
+                        }}
+                        className="rounded shrink-0"
+                        title="Remove from simulation"
+                      />
+                      <span className="truncate flex-1">{b.name}</span>
+                      <Input
+                        type="number"
+                        disabled={removed}
+                        placeholder={String(b.amount)}
+                        value={overridden ? amountOverrides[b.id] : ''}
+                        onChange={e => {
+                          const v = e.target.value;
+                          setAmountOverrides(prev => {
+                            const next = { ...prev };
+                            if (v === '') delete next[b.id];
+                            else next[b.id] = parseFloat(v) || 0;
+                            return next;
+                          });
+                        }}
+                        className={`h-7 w-20 text-xs ${overridden ? 'border-primary' : ''}`}
+                      />
+                    </div>
+                  );
+                })}
+                {bills.length === 0 && <p className="text-xs text-muted-foreground px-2 py-1">No bills yet</p>}
+              </div>
+            </div>
+
+            {/* Add hypothetical bills */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label className="text-xs">Simulated Bills</Label>
+                <Label className="text-xs">Add Hypothetical Bills</Label>
                 <Button variant="ghost" size="sm" onClick={addExtraBill} className="h-7 text-xs gap-1">
                   <Plus className="w-3 h-3" /> Add
                 </Button>
@@ -212,73 +330,101 @@ export default function WhatIf() {
                 ))}
               </div>
             </div>
-
-            <div>
-              <Label className="text-xs mb-2 block">Remove Existing Bills</Label>
-              <div className="space-y-1 max-h-40 overflow-y-auto">
-                {bills.map(b => (
-                  <label key={b.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted rounded px-2 py-1">
-                    <input
-                      type="checkbox"
-                      checked={removedBillIds.includes(b.id)}
-                      onChange={e => {
-                        setRemovedBillIds(e.target.checked
-                          ? [...removedBillIds, b.id]
-                          : removedBillIds.filter(id => id !== b.id));
-                      }}
-                      className="rounded"
-                    />
-                    <span className="truncate flex-1">{b.name}</span>
-                    <span className="text-muted-foreground">{currency}{b.amount}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
           </div>
         </motion.div>
 
+        {/* Results */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 md:col-span-2 space-y-4 min-w-0">
           <h3 className="text-sm font-semibold font-heading">Simulated vs Current</h3>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-muted rounded-xl p-3">
-              <p className="text-xs text-muted-foreground">Current</p>
-              <p className="text-lg font-bold font-heading">{currency}{realRemaining.toFixed(0)}</p>
-            </div>
-            <div className="bg-accent rounded-xl p-3">
-              <p className="text-xs text-muted-foreground">Simulated</p>
-              <p className="text-lg font-bold font-heading">{currency}{simRemaining.toFixed(0)}</p>
-            </div>
-            <div className={`rounded-xl p-3 ${diff >= 0 ? 'bg-primary/10' : 'bg-destructive/10'}`}>
-              <p className="text-xs text-muted-foreground">Difference</p>
-              <p className={`text-lg font-bold font-heading ${diff >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                {diff >= 0 ? '+' : ''}{currency}{diff.toFixed(0)}
-              </p>
+          {/* Monthly left-after-bills */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1"><Wallet className="w-3 h-3" /> Monthly left after bills</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground">Current</p>
+                <p className="text-lg font-bold font-heading">{formatMoney(realRemaining, { currency })}</p>
+              </div>
+              <div className="bg-accent rounded-xl p-3">
+                <p className="text-xs text-muted-foreground">Simulated</p>
+                <p className="text-lg font-bold font-heading">{formatMoney(simRemaining, { currency })}</p>
+              </div>
+              <div className={`rounded-xl p-3 ${monthlyDiff >= 0 ? 'bg-primary/10' : 'bg-destructive/10'}`}>
+                <p className="text-xs text-muted-foreground">Difference</p>
+                <p className={`text-lg font-bold font-heading ${monthlyDiff >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                  {formatSignedMoney(monthlyDiff, { currency })}
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="h-64 md:h-72 min-w-0 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="currentGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(210, 70%, 55%)" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="hsl(210, 70%, 55%)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="simGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(168, 56%, 42%)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="hsl(168, 56%, 42%)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 90%)" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${currency}${v}`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Area type="monotone" dataKey="current" name="Current" stroke="hsl(210, 70%, 55%)" fill="url(#currentGrad)" strokeWidth={2} />
-                <Area type="monotone" dataKey="simulated" name="Simulated" stroke="hsl(168, 56%, 42%)" fill="url(#simGrad)" strokeWidth={2.5} />
-              </AreaChart>
-            </ResponsiveContainer>
+          {/* Annual disposable + tightest cycle */}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="bg-muted rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-2">Annual disposable income</p>
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">Current</p>
+                  <p className="text-base font-bold font-heading">{formatMoney(realAnnual, { currency })}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Simulated</p>
+                  <p className={`text-base font-bold font-heading ${annualDiff >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                    {formatMoney(simAnnual, { currency })}
+                  </p>
+                </div>
+              </div>
+              <p className={`text-xs mt-1 ${annualDiff >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                {formatSignedMoney(annualDiff, { currency })} / year
+              </p>
+            </div>
+
+            <div className="bg-muted rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1"><CalendarClock className="w-3 h-3" /> Tightest pay cycle</p>
+              {tightestCycle ? (
+                <>
+                  <p className="text-sm font-semibold text-foreground">{formatCycleLabel(tightestCycle.cycle, tightestCycle.i)}</p>
+                  <p className={`text-base font-bold font-heading ${tightestCycle.spare < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                    {formatSignedMoney(tightestCycle.spare, { currency, decimals: 2 })} spare
+                  </p>
+                  {tightestCycle.spare < 0 && (
+                    <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                      <AlertTriangle className="w-3 h-3" /> Bills exceed income this cycle
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Set income to see cycle detail</p>
+              )}
+            </div>
+          </div>
+
+          {/* 12-month forecast */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">12-month forecast</p>
+            <div className="h-56 md:h-64 min-w-0 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="currentGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(210, 70%, 55%)" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="hsl(210, 70%, 55%)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="simGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(168, 56%, 42%)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="hsl(168, 56%, 42%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 90%)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v, { currency })} />
+                  <Tooltip content={<MoneyTooltip currency={currency} />} />
+                  <Legend />
+                  <Area type="monotone" dataKey="current" name="Current" stroke="hsl(210, 70%, 55%)" fill="url(#currentGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="simulated" name="Simulated" stroke="hsl(168, 56%, 42%)" fill="url(#simGrad)" strokeWidth={2.5} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </motion.div>
       </div>

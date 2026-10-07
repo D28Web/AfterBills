@@ -4,21 +4,16 @@ import { ChevronRight, ChevronDown, Sparkles, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { getPayCycles, getBillsInCycle, getBillsNotInCycle } from '@/lib/payday';
 import { CATEGORY_COLORS } from '@/lib/forecast';
+import { formatMoney, formatSignedMoney, roundMoney } from '@/lib/money';
+import { FREQ_TO_MONTHLY } from '@/lib/income';
 import { cn } from '@/lib/utils';
-
-const FREQ_MULTIPLIER = {
-  weekly: 52 / 12,
-  fortnightly: 26 / 12,
-  four_weekly: 13 / 12,
-  monthly: 1,
-};
 
 export default function NoBillDuePeriods({ user, bills, currency = '£' }) {
   const [expanded, setExpanded] = useState(null);
 
   const monthlyIncome = user?.monthly_income || 0;
   const freq = user?.pay_frequency || 'monthly';
-  const cycleIncome = monthlyIncome / (FREQ_MULTIPLIER[freq] || 1);
+  const cycleIncome = monthlyIncome / (FREQ_TO_MONTHLY[freq] || 1);
 
   const cycles = getPayCycles(user, 13);
 
@@ -26,8 +21,8 @@ export default function NoBillDuePeriods({ user, bills, currency = '£' }) {
   const cycleData = cycles.map((cycle, i) => {
     const due = getBillsInCycle(bills, cycle.start, cycle.end);
     const notDue = getBillsNotInCycle(bills, due, cycle.start, cycle.end);
-    const totalBills = due.reduce((s, b) => s + b.amount, 0);
-    const spare = cycleIncome - totalBills;
+    const totalBills = roundMoney(due.reduce((s, b) => s + b.amount, 0));
+    const spare = roundMoney(cycleIncome - totalBills);
     return { cycle, i, due, notDue, totalBills, spare };
   });
 
@@ -97,7 +92,7 @@ export default function NoBillDuePeriods({ user, bills, currency = '£' }) {
                     {format(cycle.start, 'd MMM')} – {format(cycle.end, 'd MMM')}
                     {extraVsTypical > 0 && (
                       <span className="ml-2 text-green-600 dark:text-green-400 font-medium">
-                        +{currency}{Math.round(extraVsTypical)} extra available
+                        {formatSignedMoney(extraVsTypical, { currency })} extra available
                       </span>
                     )}
                   </p>
@@ -105,7 +100,7 @@ export default function NoBillDuePeriods({ user, bills, currency = '£' }) {
 
                 {/* Spare */}
                 <div className="flex-shrink-0 text-right mr-1">
-                  <p className="text-sm font-bold text-primary">{currency}{Math.round(spare)}</p>
+                  <p className="text-sm font-bold text-primary">{formatMoney(spare, { currency })}</p>
                   <p className="text-[10px] text-muted-foreground">spare</p>
                 </div>
 
@@ -129,7 +124,7 @@ export default function NoBillDuePeriods({ user, bills, currency = '£' }) {
                       {/* Income */}
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Income this cycle</span>
-                        <span className="font-semibold text-primary">+{currency}{cycleIncome.toFixed(2)}</span>
+                        <span className="font-semibold text-primary">{formatSignedMoney(cycleIncome, { currency, decimals: 2 })}</span>
                       </div>
 
                       {/* Bills due */}
@@ -143,7 +138,7 @@ export default function NoBillDuePeriods({ user, bills, currency = '£' }) {
                                 <span className="truncate text-foreground">{bill.name}</span>
                                 <span className="text-xs text-muted-foreground flex-shrink-0">{format(bill.dueDate, 'd MMM')}</span>
                               </div>
-                              <span className="text-destructive/80 font-medium ml-2 flex-shrink-0">−{currency}{bill.amount.toFixed(2)}</span>
+                              <span className="text-destructive/80 font-medium ml-2 flex-shrink-0">−{formatMoney(bill.amount, { currency, decimals: 2 })}</span>
                             </div>
                           ))}
                         </div>
@@ -167,7 +162,7 @@ export default function NoBillDuePeriods({ user, bills, currency = '£' }) {
                                 falls outside this pay period
                               </span>
                             </div>
-                            <span className="text-muted-foreground/60 font-medium ml-2 flex-shrink-0 line-through text-xs">{currency}{bill.amount.toFixed(2)}</span>
+                            <span className="text-muted-foreground/60 font-medium ml-2 flex-shrink-0 line-through text-xs">{formatMoney(bill.amount, { currency, decimals: 2 })}</span>
                           </div>
                         ))}
                       </div>
@@ -177,7 +172,7 @@ export default function NoBillDuePeriods({ user, bills, currency = '£' }) {
                         {notDue.map((bill, j) => (
                           <p key={j} className="text-xs text-green-700 dark:text-green-400 font-medium">
                             Your {bill.name.toLowerCase()} is not due in this pay cycle. This gives you{' '}
-                            <span className="font-bold">{currency}{bill.amount.toFixed(2)}</span> more available than a normal cycle.
+                            <span className="font-bold">{formatMoney(bill.amount, { currency, decimals: 2 })}</span> more available than a normal cycle.
                           </p>
                         ))}
                         <p className="text-xs text-green-600 dark:text-green-500 mt-1">
@@ -188,7 +183,7 @@ export default function NoBillDuePeriods({ user, bills, currency = '£' }) {
                       {/* Total remaining */}
                       <div className="flex justify-between text-sm font-semibold border-t border-green-200/60 dark:border-green-900/30 pt-2 text-primary">
                         <span>Money left after bills</span>
-                        <span>+{currency}{spare.toFixed(2)}</span>
+                        <span>{formatSignedMoney(spare, { currency, decimals: 2 })}</span>
                       </div>
                     </div>
                   </motion.div>

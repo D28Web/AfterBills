@@ -147,6 +147,7 @@ export default function Bills() {
         <DialogContent className="max-w-md">
           <BillForm
             bill={editingBill}
+            currency={currency}
             onSubmit={handleSubmit}
             onCancel={() => { setShowForm(false); setEditingBill(null); }}
           />

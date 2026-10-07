@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateForecast, getCategoryTotals, CATEGORY_COLORS, CATEGORY_LABELS, billToMonthlyCost } from '@/lib/forecast';
 import { getPrimaryIncomeContext, getOtherStreams } from '@/lib/income';
+import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
+import MoneyTooltip from '@/components/charts/MoneyTooltip';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 import { motion } from 'framer-motion';
 import PageContainer from '@/components/layout/PageContainer';
@@ -28,22 +30,12 @@ export default function Analytics() {
   const currency = user?.currency || '£';
   const forecast = generateForecast(bills, income, new Date(), getOtherStreams(incomeStreams), primaryCtx);
   const categoryTotals = getCategoryTotals(bills);
-  const avgSpare = forecast.reduce((sum, m) => sum + m.remaining, 0) / 12;
-  const totalMonthlyBills = bills.reduce((sum, b) => sum + billToMonthlyCost(b), 0);
-  const totalAnnualBills = totalMonthlyBills * 12;
+  const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
+  const totalMonthlyBills = sumMoney(bills.map(b => billToMonthlyCost(b)));
+  const totalAnnualBills = roundMoney(totalMonthlyBills * 12);
   const billToIncomeRatio = income > 0 ? Math.round((totalMonthlyBills / income) * 100) : 0;
 
   const pieColors = categoryTotals.map(c => CATEGORY_COLORS[c.category]);
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div className="bg-card border border-border rounded-xl p-3 shadow-lg">
-        <p className="text-xs font-semibold text-foreground">{payload[0].name || payload[0].payload?.name}</p>
-        <p className="text-xs text-muted-foreground">{currency}{Math.round(payload[0].value).toLocaleString()}</p>
-      </div>
-    );
-  };
 
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
@@ -52,11 +44,11 @@ export default function Analytics() {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Avg Spare / Month</p>
-          <p className="text-2xl font-bold font-heading mt-1">{currency}{avgSpare.toFixed(0)}</p>
+          <p className="text-2xl font-bold font-heading mt-1">{formatMoney(avgSpare, { currency })}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Annual Bills</p>
-          <p className="text-2xl font-bold font-heading mt-1">{currency}{totalAnnualBills.toFixed(0)}</p>
+          <p className="text-2xl font-bold font-heading mt-1">{formatMoney(totalAnnualBills, { currency })}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4 col-span-2 lg:col-span-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Bill-to-Income Ratio</p>
@@ -84,7 +76,7 @@ export default function Analytics() {
                       <Cell key={i} fill={pieColors[i]} />
                     ))}
                   </Pie>
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<MoneyTooltip currency={currency} />} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -108,8 +100,8 @@ export default function Analytics() {
               <LineChart data={forecast.map(m => ({ name: m.shortLabel, remaining: m.remaining }))}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 90%)" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${currency}${v}`} />
-                <Tooltip content={<CustomTooltip />} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v, { currency })} />
+                <Tooltip content={<MoneyTooltip currency={currency} />} />
                 <Line type="monotone" dataKey="remaining" stroke="hsl(168, 56%, 42%)" strokeWidth={2.5} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -124,8 +116,8 @@ export default function Analytics() {
             <BarChart data={forecast.map(m => ({ name: m.shortLabel, bills: m.totalBills, remaining: m.remaining }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 90%)" />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${currency}${v}`} />
-              <Tooltip content={<CustomTooltip />} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatMoney(v, { currency })} />
+              <Tooltip content={<MoneyTooltip currency={currency} />} />
               <Bar dataKey="bills" name="Bills" fill="hsl(210, 70%, 55%)" radius={[6, 6, 0, 0]} />
               <Bar dataKey="remaining" name="Remaining" fill="hsl(168, 56%, 42%)" radius={[6, 6, 0, 0]} />
             </BarChart>

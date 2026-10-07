@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import BillSubcategoryForm from '@/components/bills/BillSubcategoryForm';
+import { formatMoney } from '@/lib/money';
 
 export default function BillSubcategoryList({ bill, currency = '£' }) {
   const [showForm, setShowForm] = useState(false);
@@ -47,14 +48,14 @@ export default function BillSubcategoryList({ bill, currency = '£' }) {
         <div className="flex justify-between text-xs mb-1">
           <span className="text-muted-foreground">Allocated budget</span>
           <span className={over ? 'text-destructive font-medium' : 'text-muted-foreground'}>
-            {currency}{allocated.toFixed(2)} / {currency}{total.toFixed(2)}
+            {formatMoney(allocated, { currency, decimals: 2 })} / {formatMoney(total, { currency, decimals: 2 })}
           </span>
         </div>
         <div className="h-2 rounded-full bg-muted overflow-hidden">
           <div className={`h-full rounded-full ${over ? 'bg-destructive' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
         </div>
         {over && (
-          <p className="text-xs text-destructive mt-1">Over budget by {currency}{(allocated - total).toFixed(2)}</p>
+          <p className="text-xs text-destructive mt-1">Over budget by {formatMoney(allocated - total, { currency, decimals: 2 })}</p>
         )}
       </div>
 
@@ -65,7 +66,7 @@ export default function BillSubcategoryList({ bill, currency = '£' }) {
           <div key={c.id} className="flex items-center justify-between gap-2 bg-muted/50 rounded-lg px-3 py-2">
             <span className="text-sm font-medium text-foreground truncate">{c.name}</span>
             <div className="flex items-center gap-1 shrink-0">
-              <span className="text-sm text-muted-foreground">{currency}{c.budget_amount.toFixed(2)}</span>
+              <span className="text-sm text-muted-foreground">{formatMoney(c.budget_amount, { currency, decimals: 2 })}</span>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditing(c); setShowForm(false); }}>
                 <Pencil className="w-3 h-3" />
               </Button>

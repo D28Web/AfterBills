@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ukTaxBreakdown, getCurrentTaxYear } from '@/lib/ukTax';
+import { formatMoney } from '@/lib/money';
 import { Info, Calculator } from 'lucide-react';
 
 const FREQ_DIVISOR = {
@@ -24,7 +25,7 @@ function Row({ label, value, currency, negative, bold, muted }) {
     <div className={`flex items-center justify-between text-sm ${bold ? 'font-semibold' : ''} ${muted ? 'text-muted-foreground' : ''}`}>
       <span>{label}</span>
       <span className={negative ? 'text-destructive/80' : bold ? 'text-primary' : ''}>
-        {negative ? '−' : ''}{currency}{Math.abs(value).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        {negative ? '−' : ''}{formatMoney(Math.abs(value), { currency, decimals: 2 })}
       </span>
     </div>
   );

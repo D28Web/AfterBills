@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { addDays, addMonths, addYears, format } from 'date-fns';
 import { CATEGORY_COLORS, CATEGORY_LABELS, getBillShare } from '@/lib/forecast';
+import { formatMoney, roundMoney } from '@/lib/money';
 
 function addPeriod(date, freq) {
   switch (freq) {
@@ -31,11 +32,11 @@ export default function LoanPayoffCard({ bill, currency = '£', onEdit, onDelete
   const periodsToPayoff = hasData ? Math.ceil(balance / payment) : 0;
   const cap = Math.min(periodsToPayoff, 600);
 
-  const points = [{ date: today.getTime(), label: format(today, 'MMM yy'), balance: Math.round(balance * 100) / 100 }];
+  const points = [{ date: today.getTime(), label: format(today, 'MMM yy'), balance: roundMoney(balance) }];
   for (let i = 1; i <= cap; i++) {
     const nd = addPeriod(new Date(points[i - 1].date), bill.frequency);
     const nb = Math.max(0, balance - i * payment);
-    points.push({ date: nd.getTime(), label: format(nd, 'MMM yy'), balance: Math.round(nb * 100) / 100 });
+    points.push({ date: nd.getTime(), label: format(nd, 'MMM yy'), balance: roundMoney(nb) });
   }
   const projectedDate = hasData ? new Date(points[points.length - 1].date) : null;
   const targetDate = bill.target_end_date ? new Date(bill.target_end_date) : null;
@@ -86,11 +87,11 @@ export default function LoanPayoffCard({ bill, currency = '£', onEdit, onDelete
       <div className="grid grid-cols-2 gap-3 mt-4">
         <div>
           <p className="text-xs text-muted-foreground">Remaining</p>
-          <p className="text-lg font-bold font-heading text-foreground">{currency}{balance.toFixed(2)}</p>
+          <p className="text-lg font-bold font-heading text-foreground">{formatMoney(balance, { currency, decimals: 2 })}</p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Payment / {bill.frequency}</p>
-          <p className="text-lg font-bold font-heading text-foreground">{currency}{payment.toFixed(2)}</p>
+          <p className="text-lg font-bold font-heading text-foreground">{formatMoney(payment, { currency, decimals: 2 })}</p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingDown className="w-3 h-3" /> Projected payoff</p>
@@ -135,7 +136,7 @@ export default function LoanPayoffCard({ bill, currency = '£', onEdit, onDelete
               />
               <Tooltip
                 labelFormatter={(l) => format(new Date(l), 'd MMM yyyy')}
-                formatter={(v) => [`${currency}${Number(v).toFixed(2)}`, 'Balance']}
+                formatter={(v) => [formatMoney(v, { currency, decimals: 2 }), 'Balance']}
                 contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
               />
               {targetDate && (

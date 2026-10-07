@@ -5,6 +5,7 @@ import { addMonths, subMonths, getDaysInMonth, startOfMonth, getDay, format } fr
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORY_COLORS, CATEGORY_LABELS, getBillsForDay, getBillAmountForMonth } from '@/lib/forecast';
+import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { getPrimaryIncomeContext } from '@/lib/income';
@@ -42,8 +43,8 @@ export default function CalendarView() {
     let runningBalance = primaryCtx.monthly_income || 0;
     for (let day = 1; day <= daysInMonth; day++) {
       const dayBills = getBillsForDay(bills, day, month, year);
-      const dayTotal = dayBills.reduce((sum, b) => sum + b.amount, 0);
-      runningBalance -= dayTotal;
+      const dayTotal = sumMoney(dayBills.map(b => b.amount));
+      runningBalance = roundMoney(runningBalance - dayTotal);
       data[day] = { bills: dayBills, total: dayTotal, balance: runningBalance };
     }
     return data;
@@ -128,13 +129,13 @@ export default function CalendarView() {
                       <p className="text-sm font-medium">{b.name}</p>
                       <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[b.category]}</p>
                     </div>
-                    <p className="text-sm font-semibold">{currency}{b.amount.toFixed(2)}</p>
+                    <p className="text-sm font-semibold">{formatMoney(b.amount, { currency, decimals: 2 })}</p>
                   </div>
                 ))}
                 <div className="border-t border-border pt-2 mt-2 flex justify-between">
                   <span className="text-xs text-muted-foreground">Est. balance after</span>
                   <span className={cn("text-sm font-bold", dayBills.balance < 0 ? "text-destructive" : "text-primary")}>
-                    {currency}{dayBills.balance.toFixed(2)}
+                    {formatMoney(dayBills.balance, { currency, decimals: 2 })}
                   </span>
                 </div>
               </div>

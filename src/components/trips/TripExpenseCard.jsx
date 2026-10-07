@@ -1,5 +1,6 @@
 import { Check, Clock, Pencil, Trash2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getSplitShare, formatMoney } from '@/lib/money';
 
 const CATEGORY_COLORS = {
   travel: 'text-blue-500 bg-blue-50',
@@ -21,8 +22,7 @@ const CATEGORY_LABELS = {
   other: 'Other',
 };
 
-export const getExpenseShare = (e) =>
-  e.is_split && e.split_between > 1 ? e.amount / e.split_between : e.amount;
+export const getExpenseShare = getSplitShare;
 
 export default function TripExpenseCard({ expense, currency, onTogglePaid, onEdit, onDelete }) {
   const colorClass = CATEGORY_COLORS[expense.category] || CATEGORY_COLORS.other;
@@ -68,13 +68,13 @@ export default function TripExpenseCard({ expense, currency, onTogglePaid, onEdi
         {isSplit ? (
           <>
             <p className={`text-sm font-bold font-heading ${expense.is_paid ? 'text-primary' : 'text-foreground'}`}>
-              {currency}{share.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatMoney(share, { currency, decimals: 2 })}
             </p>
-            <p className="text-xs text-muted-foreground line-through">{currency}{expense.amount.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground line-through">{formatMoney(expense.amount, { currency, decimals: 2 })}</p>
           </>
         ) : (
           <p className={`text-sm font-bold font-heading ${expense.is_paid ? 'text-primary' : 'text-foreground'}`}>
-            {currency}{expense.amount.toLocaleString()}
+            {formatMoney(expense.amount, { currency, decimals: 2 })}
           </p>
         )}
       </div>

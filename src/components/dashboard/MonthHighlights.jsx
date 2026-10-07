@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
+import { formatMoney } from '@/lib/money';
 
 export default function MonthHighlights({ forecast, currency = '£' }) {
   if (!forecast.length) return null;
@@ -24,7 +25,7 @@ export default function MonthHighlights({ forecast, currency = '£' }) {
           <div>
             <p className="text-xs text-muted-foreground">Lightest month</p>
             <p className="text-sm font-semibold text-foreground">{lightest.label}</p>
-            <p className="text-xs text-primary">{currency}{lightest.totalBills.toFixed(0)} in bills</p>
+            <p className="text-xs text-primary">{formatMoney(lightest.totalBills, { currency })} in bills</p>
           </div>
         </div>
 
@@ -35,7 +36,7 @@ export default function MonthHighlights({ forecast, currency = '£' }) {
           <div>
             <p className="text-xs text-muted-foreground">Heaviest month</p>
             <p className="text-sm font-semibold text-foreground">{heaviest.label}</p>
-            <p className="text-xs text-destructive">{currency}{heaviest.totalBills.toFixed(0)} in bills</p>
+            <p className="text-xs text-destructive">{formatMoney(heaviest.totalBills, { currency })} in bills</p>
           </div>
         </div>
 
@@ -71,7 +72,7 @@ export default function MonthHighlights({ forecast, currency = '£' }) {
                   />
                 </div>
                 <span className="text-xs font-medium w-16 text-right text-foreground">
-                  {currency}{m.remaining.toFixed(0)}
+                  {formatMoney(m.remaining, { currency })}
                 </span>
               </div>
             ))}

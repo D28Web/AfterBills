@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateForecast, billToMonthlyCost } from '@/lib/forecast';
 import { getPrimaryIncomeContext } from '@/lib/income';
+import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import { Plus, Target, Calendar, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,8 +28,8 @@ export default function Savings() {
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
   const income = primaryCtx.monthly_income;
   const currency = user?.currency || '£';
-  const monthlyBills = bills.reduce((sum, b) => sum + billToMonthlyCost(b), 0);
-  const monthlySpare = income - monthlyBills;
+  const monthlyBills = sumMoney(bills.map(b => billToMonthlyCost(b)));
+  const monthlySpare = roundMoney(income - monthlyBills);
 
   const createMutation = useMutation({
     mutationFn: data => base44.entities.SavingsGoal.create(data),
@@ -77,7 +78,7 @@ export default function Savings() {
       {monthlySpare > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-accent rounded-2xl border border-border p-4">
           <p className="text-sm text-accent-foreground">
-            You have approximately <span className="font-bold">{currency}{monthlySpare.toFixed(0)}</span> spare each month for savings
+            You have approximately <span className="font-bold">{formatMoney(monthlySpare, { currency })}</span> spare each month for savings
           </p>
         </motion.div>
       )}
@@ -102,7 +103,7 @@ export default function Savings() {
                     <div>
                       <h4 className="text-sm font-semibold">{goal.name}</h4>
                       <p className="text-xs text-muted-foreground">
-                        {currency}{(goal.current_amount || 0).toFixed(0)} of {currency}{goal.target_amount.toFixed(0)}
+                        {formatMoney(goal.current_amount || 0, { currency })} of {formatMoney(goal.target_amount, { currency })}
                       </p>
                     </div>
                   </div>

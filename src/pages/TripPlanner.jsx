@@ -7,7 +7,8 @@ import { Plus, Plane, Wallet, CheckCircle2, AlertCircle, PiggyBank } from 'lucid
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import TripExpenseForm from '@/components/trips/TripExpenseForm';
-import TripExpenseCard, { getExpenseShare } from '@/components/trips/TripExpenseCard';
+import TripExpenseCard from '@/components/trips/TripExpenseCard';
+import { getSplitShare, formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import TripPlanCard from '@/components/trips/TripPlanCard';
 import TripForm from '@/components/trips/TripForm';
 import { getPayCycles } from '@/lib/payday';
@@ -79,9 +80,9 @@ export default function TripPlanner() {
     return top.filter(e => e.trip_name === tripFilter);
   }, [expenses, assignedNames, tripFilter]);
 
-  const totalCost = filtered.reduce((s, e) => s + getExpenseShare(e), 0);
-  const totalPaid = filtered.filter(e => e.is_paid).reduce((s, e) => s + getExpenseShare(e), 0);
-  const totalUnpaid = totalCost - totalPaid;
+  const totalCost = roundMoney(sumMoney(filtered.map(e => getSplitShare(e))));
+  const totalPaid = roundMoney(sumMoney(filtered.filter(e => e.is_paid).map(e => getSplitShare(e))));
+  const totalUnpaid = roundMoney(totalCost - totalPaid);
   const paidCount = filtered.filter(e => e.is_paid).length;
 
   const unpaidItems = filtered.filter(e => !e.is_paid);
@@ -106,15 +107,15 @@ export default function TripPlanner() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1"><Plane className="w-4 h-4" /><span className="text-xs uppercase tracking-wider">Total Cost</span></div>
-          <p className="text-2xl font-bold font-heading">{currency}{totalCost.toLocaleString()}</p>
+          <p className="text-2xl font-bold font-heading">{formatMoney(totalCost, { currency })}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1"><CheckCircle2 className="w-4 h-4 text-primary" /><span className="text-xs uppercase tracking-wider">Paid</span></div>
-          <p className="text-2xl font-bold font-heading text-primary">{currency}{totalPaid.toLocaleString()}</p>
+          <p className="text-2xl font-bold font-heading text-primary">{formatMoney(totalPaid, { currency })}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1"><AlertCircle className="w-4 h-4 text-destructive" /><span className="text-xs uppercase tracking-wider">To Pay</span></div>
-          <p className="text-2xl font-bold font-heading text-destructive">{currency}{totalUnpaid.toLocaleString()}</p>
+          <p className="text-2xl font-bold font-heading text-destructive">{formatMoney(totalUnpaid, { currency })}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1"><Wallet className="w-4 h-4" /><span className="text-xs uppercase tracking-wider">Progress</span></div>

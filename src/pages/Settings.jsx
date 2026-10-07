@@ -15,8 +15,10 @@ import AccountDataSection from '@/components/settings/AccountDataSection';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import { ukTaxBreakdown } from '@/lib/ukTax';
+import { formatMoney, roundMoney } from '@/lib/money';
+import { FREQUENCY_LABELS } from '@/lib/forecast';
 import { Switch } from '@/components/ui/switch';
-import { getOtherStreams } from '@/lib/income';
+import { getOtherStreams, FREQ_TO_MONTHLY } from '@/lib/income';
 
 const DEFAULT_TAX_SETTINGS = {
   grossAnnual: '',
@@ -77,7 +79,7 @@ export default function Settings() {
       // Legacy fallback: income still stored on the User entity
       setUseStartDate(!!user.pay_start_date);
       const freq = user.pay_frequency || 'monthly';
-      const freqToMonthly = { weekly: 52 / 12, fortnightly: 26 / 12, monthly: 1, four_weekly: 13 / 12, annually: 1 / 12 };
+      const freqToMonthly = FREQ_TO_MONTHLY;
       const stored = user.monthly_income || 0;
       const perFreq = stored / (freqToMonthly[freq] || 1);
       setForm({
@@ -124,23 +126,7 @@ export default function Settings() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me'] }),
   });
 
-  const FREQ_TO_MONTHLY = {
-    weekly: 52 / 12,
-    fortnightly: 26 / 12,
-    monthly: 1,
-    four_weekly: 13 / 12,
-    annually: 1 / 12,
-  };
-
-  const FREQ_LABEL = {
-    weekly: 'Weekly',
-    fortnightly: 'Fortnightly',
-    monthly: 'Monthly',
-    four_weekly: 'Four-Weekly',
-    annually: 'Annual',
-  };
-
-  const freqLabel = FREQ_LABEL[form.pay_frequency] || 'Monthly';
+  const freqLabel = FREQUENCY_LABELS[form.pay_frequency] || 'Monthly';
   const rawIncome = parseFloat(form.monthly_income) || 0;
 
   // For annually + UK tax, compute take-home first
@@ -164,7 +150,7 @@ export default function Settings() {
 
   const monthlyEquivalent = incomeMode === 'salary'
     ? (salaryBreakdown ? salaryBreakdown.takeHomeMonthly : 0)
-    : (ukBreakdown ? ukBreakdown.takeHomeMonthly : rawIncome * (FREQ_TO_MONTHLY[form.pay_frequency] || 1));
+    : (ukBreakdown ? ukBreakdown.takeHomeMonthly : roundMoney(rawIncome * (FREQ_TO_MONTHLY[form.pay_frequency] || 1)));
 
   // Only show monthly equivalent hint for weekly and fortnightly
   const showMonthlyHint = ['weekly', 'fortnightly'].includes(form.pay_frequency) && rawIncome > 0;
@@ -229,7 +215,7 @@ export default function Settings() {
             />
             {showMonthlyHint && (
               <p className="text-xs text-muted-foreground mt-1">
-                ≈ {form.currency || '£'}{monthlyEquivalent.toFixed(2)} / month
+                ≈ {formatMoney(monthlyEquivalent, { currency: form.currency || '£', decimals: 2 })} / month
               </p>
             )}
           </div>
@@ -258,19 +244,19 @@ export default function Settings() {
               <div className="bg-muted rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Gross Annual</span>
-                  <span>{form.currency || '£'}{ukBreakdown.grossAnnual.toLocaleString()}</span>
+                  <span>{formatMoney(ukBreakdown.grossAnnual, { currency: form.currency || '£' })}</span>
                 </div>
                 <div className="flex justify-between text-destructive/80">
                   <span>Income Tax</span>
-                  <span>− {form.currency || '£'}{ukBreakdown.incomeTax.toFixed(0)}</span>
+                  <span>− {formatMoney(ukBreakdown.incomeTax, { currency: form.currency || '£' })}</span>
                 </div>
                 <div className="flex justify-between text-destructive/80">
                   <span>National Insurance</span>
-                  <span>− {form.currency || '£'}{ukBreakdown.nationalInsurance.toFixed(0)}</span>
+                  <span>− {formatMoney(ukBreakdown.nationalInsurance, { currency: form.currency || '£' })}</span>
                 </div>
                 <div className="flex justify-between font-semibold border-t border-border pt-2 text-primary">
                   <span>Est. Monthly Take-Home</span>
-                  <span>{form.currency || '£'}{ukBreakdown.takeHomeMonthly.toFixed(2)}</span>
+                  <span>{formatMoney(ukBreakdown.takeHomeMonthly, { currency: form.currency || '£', decimals: 2 })}</span>
                 </div>
                 <p className="text-xs text-muted-foreground pt-1">Estimate only. Does not account for pension, student loans, or other deductions.</p>
               </div>
@@ -278,7 +264,7 @@ export default function Settings() {
 
             {!useUkTax && rawIncome > 0 && (
               <p className="text-xs text-muted-foreground">
-                ≈ {form.currency || '£'}{monthlyEquivalent.toFixed(2)} / month (gross)
+                ≈ {formatMoney(monthlyEquivalent, { currency: form.currency || '£', decimals: 2 })} / month (gross)
               </p>
             )}
           </div>

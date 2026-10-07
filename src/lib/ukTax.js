@@ -4,6 +4,8 @@
  * All figures are estimates — not financial advice.
  */
 
+import { roundMoney } from './money';
+
 // ─── Tax Year Configurations ────────────────────────────────────────────────
 // Add a new entry each April to keep rules current.
 const TAX_YEARS = {
@@ -193,16 +195,16 @@ export function ukTaxBreakdown({
 
   return {
     taxYearLabel: config.label,
-    grossAnnual: gross,
-    salarySacrifice: sacrifice,
-    pensionDeduction: pensionAnnual,
+    grossAnnual: roundMoney(gross),
+    salarySacrifice: roundMoney(sacrifice),
+    pensionDeduction: roundMoney(pensionAnnual),
     pensionIsSalarySacrifice: !!pensionIsSalarySacrifice,
-    incomeTax: Math.max(0, incomeTax),
-    nationalInsurance: Math.max(0, nationalInsurance),
-    studentLoanDeduction: Math.max(0, studentLoanDeduction),
-    otherDeductions: otherDeductionsAnnual || 0,
-    takeHomeAnnual: Math.max(0, takeHomeAnnual),
-    takeHomeMonthly: Math.max(0, takeHomeAnnual) / 12,
+    incomeTax: roundMoney(Math.max(0, incomeTax)),
+    nationalInsurance: roundMoney(Math.max(0, nationalInsurance)),
+    studentLoanDeduction: roundMoney(Math.max(0, studentLoanDeduction)),
+    otherDeductions: roundMoney(otherDeductionsAnnual || 0),
+    takeHomeAnnual: roundMoney(Math.max(0, takeHomeAnnual)),
+    takeHomeMonthly: roundMoney(Math.max(0, takeHomeAnnual) / 12),
   };
 }
 

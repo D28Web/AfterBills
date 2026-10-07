@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateForecast } from '@/lib/forecast';
+import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import { Wallet, Receipt, PiggyBank, TrendingUp, CalendarDays } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import ForecastChart from '@/components/dashboard/ForecastChart';
@@ -9,15 +10,15 @@ import UpcomingBills from '@/components/dashboard/UpcomingBills';
 import MonthHighlights from '@/components/dashboard/MonthHighlights';
 import PaydayCycles from '@/components/dashboard/PaydayCycles';
 import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
-import { getPrimaryIncomeContext, getOtherStreams } from '@/lib/income';
+import { getPrimaryIncomeContext, getOtherStreams, FREQ_TO_MONTHLY } from '@/lib/income';
 import { format, startOfMonth } from 'date-fns';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 
 const FREQUENCY_OPTIONS = [
-  { label: 'Weekly', value: 'weekly', multiplier: 12 / 52 },
-  { label: '4-Weekly', value: 'four_weekly', multiplier: 12 / 13 },
-  { label: 'Monthly', value: 'monthly', multiplier: 1 },
+  { label: 'Weekly', value: 'weekly' },
+  { label: '4-Weekly', value: 'four_weekly' },
+  { label: 'Monthly', value: 'monthly' },
 ];
 
 export default function Dashboard() {
@@ -44,12 +45,12 @@ export default function Dashboard() {
   const currency = user?.currency || '£';
   const forecast = generateForecast(bills, income, new Date(startDate + '-01'), getOtherStreams(incomeStreams), primaryCtx);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
-  const avgSpare = forecast.reduce((sum, m) => sum + m.remaining, 0) / 12;
+  const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
 
-  const multiplier = FREQUENCY_OPTIONS.find(f => f.value === viewFrequency)?.multiplier ?? 1;
+  const multiplier = 1 / (FREQ_TO_MONTHLY[viewFrequency] || 1);
   const freqLabel = FREQUENCY_OPTIONS.find(f => f.value === viewFrequency)?.label ?? 'Monthly';
 
-  const scale = (val) => (val * multiplier).toFixed(0);
+  const scale = (val) => formatMoney(val * multiplier, { currency });
 
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
@@ -90,26 +91,26 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard
           title="Remaining"
-          value={`${currency}${scale(income - currentMonth.totalBills)}`}
+          value={scale(income - currentMonth.totalBills)}
           subtitle={freqLabel}
           icon={Wallet}
           variant="primary"
         />
         <StatCard
           title="Bills"
-          value={`${currency}${scale(currentMonth.totalBills)}`}
+          value={scale(currentMonth.totalBills)}
           subtitle={`${bills.length} active bills`}
           icon={Receipt}
         />
         <StatCard
           title="Income"
-          value={`${currency}${scale(income)}`}
+          value={scale(income)}
           subtitle={freqLabel}
           icon={PiggyBank}
         />
         <StatCard
           title="Avg Spare"
-          value={`${currency}${scale(avgSpare)}`}
+          value={scale(avgSpare)}
           subtitle={freqLabel}
           icon={TrendingUp}
         />

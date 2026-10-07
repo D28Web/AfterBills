@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CATEGORY_COLORS, CATEGORY_LABELS, FREQUENCY_LABELS, getBillDueDay, getBillShare } from '@/lib/forecast';
+import { CATEGORY_COLORS, CATEGORY_LABELS, FREQUENCY_LABELS, getBillDueDay, getBillShare, formatDueDay } from '@/lib/forecast';
+import { formatMoney } from '@/lib/money';
 import { Pencil, Trash2, CalendarDays, Repeat, Users, Target, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -33,21 +34,21 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
             <div className="text-right whitespace-nowrap">
               {bill.is_split && bill.split_between > 1 ? (
                 <>
-                  <p className="text-lg font-bold font-heading text-primary">{currency}{getBillShare(bill).toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground line-through">{currency}{bill.amount.toFixed(2)} total</p>
+                  <p className="text-lg font-bold font-heading text-primary">{formatMoney(getBillShare(bill), { currency, decimals: 2 })}</p>
+                  <p className="text-xs text-muted-foreground line-through">{formatMoney(bill.amount, { currency, decimals: 2 })} total</p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end mt-0.5">
                     <Users className="w-3 h-3" /> {bill.split_between} people
                   </p>
                 </>
               ) : (
-                <p className="text-lg font-bold font-heading text-foreground">{currency}{bill.amount.toFixed(2)}</p>
+                <p className="text-lg font-bold font-heading text-foreground">{formatMoney(bill.amount, { currency, decimals: 2 })}</p>
               )}
             </div>
           </div>
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <CalendarDays className="w-3 h-3" />
-              {`Due ${getBillDueDay(bill)}${[,'st','nd','rd'][getBillDueDay(bill) % 10 > 3 || Math.floor(getBillDueDay(bill) % 100 / 10) === 1 ? 0 : getBillDueDay(bill) % 10] || 'th'}`}
+              {formatDueDay(bill)}
             </span>
             <span className="flex items-center gap-1">
               <Repeat className="w-3 h-3" />

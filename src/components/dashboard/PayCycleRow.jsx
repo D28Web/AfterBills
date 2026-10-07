@@ -3,11 +3,8 @@ import { format, differenceInDays } from 'date-fns';
 import { Wallet, ChevronRight, ChevronDown, Sparkles, AlertTriangle } from 'lucide-react';
 import { getBillsInCycle } from '@/lib/payday';
 import { CATEGORY_COLORS } from '@/lib/forecast';
+import { formatMoney, formatSignedMoney } from '@/lib/money';
 import { cn } from '@/lib/utils';
-
-export function formatSpare(spare, currency) {
-  return `${spare >= 0 ? '+' : '−'}${currency}${Math.abs(spare).toFixed(0)}`;
-}
 
 export default function PayCycleRow({ cycle, index, cycleIncome, housingBills, bills, currency = '£', isOpen, onToggle }) {
   const cycleBills = getBillsInCycle(bills, cycle.start, cycle.end);
@@ -45,15 +42,15 @@ export default function PayCycleRow({ cycle, index, cycleIncome, housingBills, b
               {isBillFree && <span className="ml-1.5 text-green-600 dark:text-green-400">✓ bill-free</span>}
               {!isBillFree && isMortgageFree && <span className="ml-1.5 text-green-600 dark:text-green-400">💰 mortgage-free</span>}
             </span>
-            <span className={cn('text-xs font-bold', spareClass)}>{formatSpare(spare, currency)} spare</span>
+            <span className={cn('text-xs font-bold', spareClass)}>{formatSignedMoney(spare, { currency })} spare</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden flex">
             <div className="h-full bg-destructive/70 rounded-l-full transition-all" style={{ width: `${billPercent}%` }} />
             <div className="h-full bg-primary/60 transition-all" style={{ width: `${sparePercent}%` }} />
           </div>
           <div className="flex justify-between mt-0.5">
-            <span className="text-[10px] text-muted-foreground">{cycleBills.length} bill{cycleBills.length !== 1 ? 's' : ''} · {currency}{totalBills.toFixed(0)}</span>
-            <span className="text-[10px] text-muted-foreground">{currency}{cycleIncome.toFixed(0)} income</span>
+            <span className="text-[10px] text-muted-foreground">{cycleBills.length} bill{cycleBills.length !== 1 ? 's' : ''} · {formatMoney(totalBills, { currency })}</span>
+            <span className="text-[10px] text-muted-foreground">{formatMoney(cycleIncome, { currency })} income</span>
           </div>
         </div>
 
@@ -77,7 +74,7 @@ export default function PayCycleRow({ cycle, index, cycleIncome, housingBills, b
                   <Wallet className="w-3.5 h-3.5 text-primary" />
                   <span className="text-muted-foreground">Pay received</span>
                 </div>
-                <span className="font-semibold text-primary">+{currency}{cycleIncome.toFixed(2)}</span>
+                <span className="font-semibold text-primary">{formatSignedMoney(cycleIncome, { currency, decimals: 2 })}</span>
               </div>
 
               <Highlight show={isMortgageFree && !isBillFree} text="No mortgage this cycle — great month to save extra!" />
@@ -91,7 +88,7 @@ export default function PayCycleRow({ cycle, index, cycleIncome, housingBills, b
                       <span className="text-foreground truncate">{bill.name}</span>
                       <span className="text-xs text-muted-foreground flex-shrink-0">{format(bill.dueDate, 'd MMM')}</span>
                     </div>
-                    <span className="text-destructive/80 font-medium ml-2 flex-shrink-0">−{currency}{(bill.monthAmount || bill.amount).toFixed(2)}</span>
+                    <span className="text-destructive/80 font-medium ml-2 flex-shrink-0">−{formatMoney(bill.monthAmount || bill.amount, { currency, decimals: 2 })}</span>
                   </div>
                 ))
               )}
@@ -99,7 +96,7 @@ export default function PayCycleRow({ cycle, index, cycleIncome, housingBills, b
               <div className={cn('flex items-center justify-between text-sm font-semibold border-t border-border/50 pt-2', spareClass)}>
                 {spare < 0 && <AlertTriangle className="w-3.5 h-3.5 mr-1" />}
                 <span>Remaining after bills</span>
-                <span>{spare >= 0 ? '+' : '−'}{currency}{Math.abs(spare).toFixed(2)}</span>
+                <span>{formatSignedMoney(spare, { currency, decimals: 2 })}</span>
               </div>
             </div>
           </motion.div>

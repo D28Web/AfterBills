@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { formatMoney } from '@/lib/money';
 
 const CATEGORIES = [
   { value: 'travel', label: 'Travel' },
@@ -128,7 +129,7 @@ export default function TripExpenseForm({ tripName, expense, onSubmit, onCancel,
           />
           {parseFloat(form.amount) > 0 && (
             <p className="text-xs text-primary mt-1">
-              Your share: {currency}{(parseFloat(form.amount) / (parseInt(form.split_between) || 1)).toFixed(2)} / {parseInt(form.split_between) || 1} people
+              Your share: {formatMoney(parseFloat(form.amount) / (parseInt(form.split_between) || 1), { currency, decimals: 2 })} / {parseInt(form.split_between) || 1} people
             </p>
           )}
         </div>
