@@ -33,7 +33,7 @@ const getDefaultForm = (type) => {
     case 'savings_goal': return { name: '', target_amount: '' };
     case 'sinking_fund': return { name: '', target_amount: '', target_date: '' };
     case 'debt': return { name: '', amount: '', remaining_balance: '', category: 'loans', frequency: 'monthly', start_date: today() };
-    case 'one_off': return { name: '', amount: '', category: 'other', start_date: today() };
+    case 'one_off': return { name: '', amount: '', category: 'other', date: today() };
     default: return {};
   }
 };
@@ -105,12 +105,12 @@ export default function QuickAddDialog({ variant = 'sidebar' }) {
           logActivity('debt_updated', 'debt', result.name, `Added debt "${result.name}"`);
           break;
         case 'one_off':
-          result = await base44.entities.Bill.create({
+          result = await base44.entities.Expense.create({
             name: form.name, amount: parseFloat(form.amount), category: form.category,
-            start_date: form.start_date, end_date: form.start_date, is_recurring: false,
+            date: form.date || today(),
           });
-          queryClient.invalidateQueries({ queryKey: ['bills'] });
-          logActivity('bill_created', 'bill', result.name, `Added one-off expense "${result.name}"`);
+          queryClient.invalidateQueries({ queryKey: ['expenses'] });
+          logActivity('bill_created', 'bill', result.name, `Logged expense "${result.name}"`);
           break;
       }
       setCreated(result);
@@ -124,10 +124,10 @@ export default function QuickAddDialog({ variant = 'sidebar' }) {
   };
 
   const handleEditDetails = () => {
-    if (type === 'bill' || type === 'debt' || type === 'one_off' || type === 'income') {
+    if (type === 'bill' || type === 'debt' || type === 'income') {
       setStep('fullEditor');
     } else {
-      const routes = { savings_goal: '/savings', sinking_fund: '/sinking-funds' };
+      const routes = { savings_goal: '/savings', sinking_fund: '/sinking-funds', one_off: '/expenses' };
       navigate(routes[type]);
       handleClose(false);
     }

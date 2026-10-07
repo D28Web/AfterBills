@@ -1,0 +1,121 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "What the expense was for"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Amount spent"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "When the expense occurred (YYYY-MM-DD)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "food",
+        "transport",
+        "shopping",
+        "entertainment",
+        "health",
+        "gifts",
+        "travel",
+        "household",
+        "bills",
+        "other"
+      ],
+      "default": "other",
+      "description": "Spending category for tracking where money goes"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "card",
+        "cash",
+        "bank_transfer",
+        "direct_debit",
+        "other"
+      ],
+      "description": "How the expense was paid (optional)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    },
+    "attachments": {
+      "type": "array",
+      "description": "Optional supporting documents (receipts). Files are stored privately and accessible only to the owner.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Filename"
+          },
+          "file_uri": {
+            "type": "string",
+            "description": "Private storage URI"
+          },
+          "uploaded_date": {
+            "type": "string",
+            "format": "date",
+            "description": "When the file was uploaded (YYYY-MM-DD)"
+          }
+        },
+        "required": [
+          "name",
+          "file_uri"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "amount",
+    "date",
+    "category"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

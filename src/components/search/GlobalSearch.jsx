@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
-  Receipt, Wallet, Target, PiggyBank, CreditCard, Plane, FlaskConical,
+  Receipt, Wallet, Target, PiggyBank, CreditCard, Plane, FlaskConical, ShoppingBag,
   Search, Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
@@ -17,6 +17,7 @@ const TYPE_META = {
   sinking_fund: { label: 'Sinking Fund', icon: PiggyBank, route: '/sinking-funds' },
   trip: { label: 'Trip', icon: Plane, route: '/trips' },
   scenario: { label: 'Scenario', icon: FlaskConical, route: '/what-if' },
+  expense: { label: 'Expense', icon: ShoppingBag, route: '/expenses' },
 };
 
 const SCENARIO_TYPE_LABELS = {
@@ -50,13 +51,14 @@ export default function GlobalSearch({ variant = 'sidebar' }) {
     const timer = setTimeout(async () => {
       try {
         const q = { name: { $regex: term, $options: 'i' } };
-        const [bills, income, goals, funds, trips, scenarios] = await Promise.all([
+        const [bills, income, goals, funds, trips, scenarios, expenseResults] = await Promise.all([
           base44.entities.Bill.filter(q, { limit: 5 }),
           base44.entities.IncomeStream.filter(q, { limit: 5 }),
           base44.entities.SavingsGoal.filter(q, { limit: 5 }),
           base44.entities.SinkingFund.filter(q, { limit: 5 }),
           base44.entities.Trip.filter(q, { limit: 5 }),
           base44.entities.Scenario.filter(q, { limit: 5 }),
+          base44.entities.Expense.filter(q, { limit: 5 }),
         ]);
 
         const items = [
@@ -87,6 +89,10 @@ export default function GlobalSearch({ variant = 'sidebar' }) {
           ...extractItems(scenarios).map(s => ({
             id: s.id, type: 'scenario', name: s.name,
             summary: SCENARIO_TYPE_LABELS[s.type] || s.type,
+          })),
+          ...extractItems(expenseResults).map(e => ({
+            id: e.id, type: 'expense', name: e.name,
+            summary: `${formatMoney(e.amount, { currency })}${e.date ? ' · ' + e.date : ''}`,
           })),
         ];
         setResults(items);

@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Users, Settings, Shield, Menu, X, Wallet, Bell, History } from 'lucide-react';
+import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Users, Settings, Shield, Menu, X, Wallet, Bell, History, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +11,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/bills', label: 'Bills', icon: Receipt },
+  { path: '/expenses', label: 'Expenses', icon: ShoppingBag },
   { path: '/calendar', label: 'Calendar', icon: Calendar },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/savings', label: 'Savings', icon: Target },

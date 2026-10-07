@@ -2,6 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CATEGORY_LABELS } from '@/lib/forecast';
+import { EXPENSE_CATEGORIES } from '@/lib/expenses';
 
 const FREQ_OPTIONS = [
   { value: 'weekly', label: 'Weekly' },
@@ -18,7 +19,7 @@ const NAME_PLACEHOLDERS = {
   savings_goal: 'e.g. Holiday Fund',
   sinking_fund: 'e.g. Car Insurance',
   debt: 'e.g. Car Loan',
-  one_off: 'e.g. Dentist',
+  one_off: 'e.g. Coffee, Parking',
 };
 
 // Minimal form fields for Quick Add — only the essentials needed to create
@@ -30,10 +31,12 @@ export default function QuickAddFormFields({ type, form, setForm }) {
   const showAmount = ['bill', 'income', 'debt', 'one_off'].includes(type);
   const showTarget = ['savings_goal', 'sinking_fund'].includes(type);
   const showFreq = ['bill', 'income', 'debt'].includes(type);
-  const showCategory = type === 'bill' || type === 'one_off';
+  const showBillCategory = type === 'bill';
+  const showExpenseCategory = type === 'one_off';
   const showDebtType = type === 'debt';
   const showRemainingBalance = type === 'debt';
   const showTargetDate = type === 'sinking_fund';
+  const showExpenseDate = type === 'one_off';
 
   return (
     <div className="space-y-3">
@@ -76,7 +79,7 @@ export default function QuickAddFormFields({ type, form, setForm }) {
         </div>
       )}
 
-      {showCategory && (
+      {showBillCategory && (
         <div>
           <Label>Category</Label>
           <Select value={form.category} onValueChange={setSelect('category')}>
@@ -89,6 +92,27 @@ export default function QuickAddFormFields({ type, form, setForm }) {
                 ))}
             </SelectContent>
           </Select>
+        </div>
+      )}
+
+      {showExpenseCategory && (
+        <div>
+          <Label>Category</Label>
+          <Select value={form.category} onValueChange={setSelect('category')}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {EXPENSE_CATEGORIES.map(c => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {showExpenseDate && (
+        <div>
+          <Label>Date</Label>
+          <Input type="date" value={form.date || ''} onChange={set('date')} required />
         </div>
       )}
 
