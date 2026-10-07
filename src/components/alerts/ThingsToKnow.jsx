@@ -7,6 +7,7 @@ import { getActiveReminders } from '@/lib/reminders';
 import {
   AlertOctagon, ShieldAlert, Receipt, CalendarClock, RefreshCw, TrendingUp,
   Target, PiggyBank, CreditCard, Bell, Info, AlertTriangle, X, Check, Settings2,
+  Trophy, Lightbulb,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ const ICON_BY_TYPE = {
   debt_milestone: CreditCard,
   scheduled_change: CalendarClock,
   reminder: Bell,
+  insight: Lightbulb,
+  milestone: Trophy,
 };
 
 const PRIORITY_META = {
@@ -48,6 +51,13 @@ const PRIORITY_META = {
     rowClass: 'bg-primary/5 border-primary/20',
     badge: 'bg-primary/10 text-primary',
   },
+  good: {
+    label: 'Good News',
+    icon: TrendingUp,
+    iconClass: 'text-emerald-600 dark:text-emerald-400',
+    rowClass: 'bg-emerald-50/60 border-emerald-200/60 dark:bg-emerald-900/10 dark:border-emerald-800/30',
+    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  },
 };
 
 export default function ThingsToKnow({
@@ -60,6 +70,10 @@ export default function ThingsToKnow({
   buffer = 0,
   monthlySpare = 0,
   currency = '£',
+  insights = [],
+  milestones = [],
+  maxItems = null,
+  viewAllUrl = null,
 }) {
   const queryClient = useQueryClient();
 
@@ -86,8 +100,24 @@ export default function ThingsToKnow({
       buffer, monthlySpare, currency, dismissedKeys,
     });
     const activeReminders = getActiveReminders({ reminders, bills, goals, sinkingFunds, currency });
-    return [...alerts, ...activeReminders];
-  }, [bills, incomeStreams, sinkingFunds, goals, forecast, plannerData, buffer, monthlySpare, currency, dismissedKeys, reminders]);
+    const insightItems = (insights || []).map((ins, i) => ({
+      key: `insight-${i}`,
+      type: 'insight',
+      title: ins.text,
+      message: '',
+      priority: ins.tone === 'warn' ? 'attention' : ins.tone === 'good' ? 'good' : 'information',
+      dismissible: false,
+    }));
+    const milestoneItems = (milestones || []).map((m, i) => ({
+      key: `milestone-${i}`,
+      type: 'milestone',
+      title: m.label,
+      message: '',
+      priority: m.tone === 'good' ? 'good' : 'information',
+      dismissible: false,
+    }));
+    return [...alerts, ...activeReminders, ...insightItems, ...milestoneItems];
+  }, [bills, incomeStreams, sinkingFunds, goals, forecast, plannerData, buffer, monthlySpare, currency, dismissedKeys, reminders, insights, milestones]);
 
   const dismiss = useMutation({
     mutationFn: (alertKey) => base44.entities.DismissedAlert.create({ alert_key: alertKey }),
@@ -118,12 +148,25 @@ export default function ThingsToKnow({
 
   if (items.length === 0) return null;
 
-  const grouped = { important: [], attention: [], information: [] };
+  const totalItems = items.length;
+  const grouped = { important: [], attention: [], good: [], information: [] };
   items.forEach(it => {
     const p = grouped[it.priority] ? it.priority : 'information';
     grouped[p].push(it);
   });
-  const order = ['important', 'attention', 'information'].filter(p => grouped[p].length > 0);
+  let order = ['important', 'attention', 'good', 'information'].filter(p => grouped[p].length > 0);
+
+  // When maxItems is set, limit to the highest-priority items.
+  if (maxItems) {
+    let count = 0;
+    for (const p of order) {
+      if (count >= maxItems) { grouped[p] = []; continue; }
+      const take = Math.min(maxItems - count, grouped[p].length);
+      grouped[p] = grouped[p].slice(0, take);
+      count += take;
+    }
+    order = order.filter(p => grouped[p].length > 0);
+  }
 
   return (
     <motion.div
@@ -206,6 +249,16 @@ export default function ThingsToKnow({
           </div>
         );
       })}
+
+      {maxItems && totalItems > maxItems && viewAllUrl && (
+        <div className="pt-1">
+          <Link to={viewAllUrl}>
+            <Button variant="ghost" size="sm" className="w-full text-xs">
+              View all {totalItems} items
+            </Button>
+          </Link>
+        </div>
+      )}
     </motion.div>
   );
 }

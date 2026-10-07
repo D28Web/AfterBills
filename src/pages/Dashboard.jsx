@@ -1,36 +1,20 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { generateForecast } from '@/lib/forecast';
-import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
-import { Wallet, Receipt, PiggyBank, TrendingUp, CalendarDays } from 'lucide-react';
-import StatCard from '@/components/dashboard/StatCard';
-import ForecastChart from '@/components/dashboard/ForecastChart';
-import UpcomingBills from '@/components/dashboard/UpcomingBills';
-import MonthHighlights from '@/components/dashboard/MonthHighlights';
-import PaydayCycles from '@/components/dashboard/PaydayCycles';
-import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
-import UpcomingCommitments from '@/components/dashboard/UpcomingCommitments';
-import IncomeBreakdown from '@/components/dashboard/IncomeBreakdown';
-import ThingsToKnow from '@/components/alerts/ThingsToKnow';
-import SafeToSpendCard from '@/components/payday-planner/SafeToSpendCard';
-import BufferIndicator from '@/components/payday-planner/BufferIndicator';
+import { roundMoney } from '@/lib/money';
+import { CalendarDays, SlidersHorizontal } from 'lucide-react';
 import { getPaydayPlannerData } from '@/lib/paydayPlanner';
-import { getForecastIncomeParams, getStreamMonthlyAmount, FREQ_TO_MONTHLY } from '@/lib/income';
+import { getForecastIncomeParams } from '@/lib/income';
 import { getPeriodComparisons, getMilestones, getInsights } from '@/lib/insights';
-import PeriodComparisonCard from '@/components/insights/PeriodComparisonCard';
-import MilestonesStrip from '@/components/insights/MilestonesStrip';
-import InsightsList from '@/components/insights/InsightsList';
 import { format, startOfMonth } from 'date-fns';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import DashboardSection from '@/components/dashboard/DashboardSection';
 import DashboardCustomize from '@/components/dashboard/DashboardCustomize';
-import { resolveLayout, getVisibleSections } from '@/lib/dashboardSections';
+import { resolveLayout, getVisibleSections, MODE_PRESETS, MODE_LABELS, DASHBOARD_MODES, DEFAULT_MODE } from '@/lib/dashboardSections';
 import { useDisplayPeriod, DISPLAY_PERIOD_OPTIONS } from '@/lib/displayPeriod';
 import { getRegularBills, getMonthlySalarySacrifice } from '@/lib/salarySacrifice';
-import { SlidersHorizontal } from 'lucide-react';
 
 const FREQUENCY_OPTIONS = DISPLAY_PERIOD_OPTIONS;
 
@@ -69,7 +53,8 @@ export default function Dashboard() {
   const [viewFrequency, setViewFrequency] = useDisplayPeriod(user);
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
   const [customizeOpen, setCustomizeOpen] = useState(false);
-  const layout = resolveLayout(user?.dashboard_layout);
+  const currentMode = user?.dashboard_mode || DEFAULT_MODE;
+  const layout = resolveLayout(user?.dashboard_layout, currentMode);
   const visibleSections = getVisibleSections(layout);
 
   const { monthlyIncome, incomeStreams: forecastStreams, primaryCtx } = getForecastIncomeParams(incomeStreams, user);
@@ -81,34 +66,32 @@ export default function Dashboard() {
   const safeToSpendCycle = plannerData[0];
   const forecast = generateForecast(regularBills, monthlyIncome, new Date(startDate + '-01'), forecastStreams, primaryCtx, sinkingFunds);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
-  const totalMonthlyIncome = roundMoney(sumMoney(incomeStreams.map(s => getStreamMonthlyAmount(s))));
-  const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
-
   const monthlySpare = roundMoney(currentMonth.income - currentMonth.totalBills);
   const comparisons = getPeriodComparisons({ bills: regularBills, incomeStreams, sinkingFunds, primaryCtx, monthlyIncome, currency });
   const emergencyGoal = goals.find(g => g.is_emergency_fund);
   const milestones = getMilestones({ goals, sinkingFunds, bills: regularBills, emergencyGoal, primaryCtx, monthlySpare, currency });
   const insights = getInsights({ plannerData, forecast, bills: regularBills, goals, monthlySpare, currency });
 
-  const multiplier = 1 / (FREQ_TO_MONTHLY[viewFrequency] || 1);
-  const freqLabel = FREQUENCY_OPTIONS.find(f => f.value === viewFrequency)?.label ?? 'Monthly';
-
-  const scale = (val) => formatMoney(val * multiplier, { currency });
-
   const dashData = {
     monthlySpare, currentMonth, currency, incomeStreams,
     safeToSpendCycle, buffer, bills: regularBills, sinkingFunds, goals,
     forecast, plannerData, primaryCtx, emergencyGoal,
-    comparisons, insights, salarySacrificeMonthly,
+    comparisons, insights, milestones, salarySacrificeMonthly,
   };
 
-  const handleSaveLayout = async (newLayout) => {
+  const handleSaveLayout = async (newLayout, newMode) => {
     try {
-      await base44.auth.updateMe({ dashboard_layout: newLayout });
+      await base44.auth.updateMe({ dashboard_layout: newLayout, dashboard_mode: newMode });
       queryClient.invalidateQueries({ queryKey: ['me'] });
-    } catch (e) {
+    } catch {
       // silently fail — layout still works locally until refresh
     }
+  };
+
+  const handleModeChange = (mode) => {
+    const preset = MODE_PRESETS[mode];
+    if (!preset) return;
+    handleSaveLayout(preset, mode);
   };
 
   return (
@@ -143,6 +126,21 @@ export default function Dashboard() {
                 </button>
               ))}
             </div>
+            <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
+              {DASHBOARD_MODES.map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => handleModeChange(mode)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                    currentMode === mode
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {MODE_LABELS[mode]}
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => setCustomizeOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -154,42 +152,11 @@ export default function Dashboard() {
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <StatCard
-          title="Remaining"
-          value={scale(currentMonth.income - currentMonth.totalBills)}
-          subtitle={freqLabel}
-          icon={Wallet}
-          variant="primary"
-        />
-        <StatCard
-          title="Bills"
-          value={scale(currentMonth.totalBills)}
-          subtitle={`${regularBills.length} active bills`}
-          icon={Receipt}
-        />
-        <StatCard
-          title="Income"
-          value={scale(totalMonthlyIncome)}
-          subtitle={`${incomeStreams.length} ${incomeStreams.length === 1 ? 'source' : 'sources'}`}
-          icon={PiggyBank}
-        />
-        <StatCard
-          title="Avg Spare"
-          value={scale(avgSpare)}
-          subtitle={freqLabel}
-          icon={TrendingUp}
-        />
-      </div>
-
-      {milestones.filter(m => m.type !== 'debt').length > 0 && (
-        <MilestonesStrip milestones={milestones.filter(m => m.type !== 'debt')} />
-      )}
-
       <DashboardCustomize
         open={customizeOpen}
         onOpenChange={setCustomizeOpen}
         layout={layout}
+        currentMode={currentMode}
         onSave={handleSaveLayout}
       />
       {visibleSections.map(key => (
