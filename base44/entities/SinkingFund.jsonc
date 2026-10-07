@@ -1,0 +1,107 @@
+{
+  "name": "SinkingFund",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the sinking fund (e.g. Car Insurance, MOT, Christmas, Holiday)"
+    },
+    "target_amount": {
+      "type": "number",
+      "description": "Total amount to set aside by the target date"
+    },
+    "target_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date by which the fund should be fully saved (YYYY-MM-DD)"
+    },
+    "current_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Amount already set aside. User-entered planning data only, not linked to bank balances."
+    },
+    "linked_bill_id": {
+      "type": "string",
+      "description": "Optional ID of a linked Bill this fund is reserving for"
+    },
+    "contribution_frequency": {
+      "type": "string",
+      "enum": [
+        "weekly",
+        "fortnightly",
+        "four_weekly",
+        "monthly",
+        "quarterly",
+        "annually"
+      ],
+      "default": "monthly",
+      "description": "How often the user plans to contribute to this fund"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium",
+      "description": "Priority of this sinking fund"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed"
+      ],
+      "default": "active",
+      "description": "Whether the fund is actively being saved toward or completed"
+    }
+  },
+  "required": [
+    "name",
+    "target_amount",
+    "target_date"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
