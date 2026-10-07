@@ -13,6 +13,7 @@ import ScheduledChangesEditor from '@/components/bills/ScheduledChangesEditor';
 import AttachmentsField from '@/components/common/AttachmentsField';
 import AmountHistoryEditor from '@/components/bills/AmountHistoryEditor';
 import FinanceFields from '@/components/bills/FinanceFields';
+import AnnualPaymentFields from '@/components/bills/AnnualPaymentFields';
 import { FINANCE_TYPE_LABELS, FINANCE_TYPE_KEYS } from '@/lib/financeTracking';
 import { ChevronDown, AlertTriangle } from 'lucide-react';
 
@@ -32,6 +33,10 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
         mortgage_deal_end_date: bill.mortgage_deal_end_date || '',
         annual_overpayment_allowance: bill.annual_overpayment_allowance ?? '',
         balance_reconciliation_history: bill.balance_reconciliation_history || [],
+        monthly_cost: bill.monthly_cost ?? '',
+        annual_cost: bill.annual_cost ?? '',
+        offers_both_options: bill.offers_both_options || false,
+        target_payment_method: bill.target_payment_method || '',
       };
     }
     return {
@@ -78,6 +83,10 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       notice_period_days: '',
       intro_price_end_date: '',
       expected_new_price: '',
+      monthly_cost: '',
+      annual_cost: '',
+      offers_both_options: false,
+      target_payment_method: '',
     };
   });
 
@@ -90,7 +99,8 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       bill.intro_price_end_date || bill.expected_new_price ||
       (bill.scheduled_changes && bill.scheduled_changes.length) ||
       bill.remaining_balance != null || bill.original_balance != null || bill.target_end_date ||
-      bill.finance_type);
+      bill.finance_type ||
+      bill.offers_both_options || bill.monthly_cost != null || bill.annual_cost != null);
   });
 
   const handleSubmit = (e) => {
@@ -124,6 +134,10 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       notice_period_days: form.notice_period_days ? parseInt(form.notice_period_days) : null,
       intro_price_end_date: form.intro_price_end_date || null,
       expected_new_price: form.expected_new_price === '' ? undefined : parseFloat(form.expected_new_price),
+      monthly_cost: form.monthly_cost === '' ? undefined : parseFloat(form.monthly_cost),
+      annual_cost: form.annual_cost === '' ? undefined : parseFloat(form.annual_cost),
+      offers_both_options: form.offers_both_options || false,
+      target_payment_method: form.target_payment_method || undefined,
       end_date: form.end_date || null,
       scheduled_changes: (form.scheduled_changes || [])
         .map(c => ({
@@ -340,6 +354,8 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
                 </div>
               </div>
             </div>
+
+            <AnnualPaymentFields form={form} setForm={setForm} currency={currency} />
 
             <div className="sm:col-span-2 border-t border-border pt-3">
               <p className="text-xs font-semibold text-foreground mb-2">Scheduled Future Changes</p>

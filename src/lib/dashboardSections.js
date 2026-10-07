@@ -16,6 +16,7 @@ export const SECTION_KEYS = [
   'payday_planner',
   'upcoming_commitments',
   'things_to_know',
+  'annual_payments',
   'goals_funds',
   'budgeting',
   'debt',
@@ -31,6 +32,7 @@ export const SECTION_LABELS = {
   payday_planner: 'Payday Planner',
   upcoming_commitments: 'Upcoming Commitments',
   things_to_know: 'Things to Know',
+  annual_payments: 'Annual Payment Savings',
   goals_funds: 'Goals & Funds',
   budgeting: 'Budgeting Rule',
   debt: 'Debt',
@@ -52,11 +54,11 @@ export const MODE_LABELS = {
 
 export const MODE_PRESETS = {
   simple: {
-    order: ['hero', 'payday_planner', 'upcoming_commitments', 'things_to_know', 'goals_funds', 'budgeting', 'debt', 'forecast'],
+    order: ['hero', 'payday_planner', 'upcoming_commitments', 'things_to_know', 'annual_payments', 'goals_funds', 'budgeting', 'debt', 'forecast'],
     hidden: ['income_breakdown', 'period_comparison', 'pay_periods', 'full_insights'],
   },
   planning: {
-    order: ['hero', 'payday_planner', 'upcoming_commitments', 'things_to_know', 'goals_funds', 'budgeting', 'debt', 'forecast', 'income_breakdown', 'period_comparison'],
+    order: ['hero', 'payday_planner', 'upcoming_commitments', 'things_to_know', 'annual_payments', 'goals_funds', 'budgeting', 'debt', 'forecast', 'income_breakdown', 'period_comparison'],
     hidden: ['pay_periods', 'full_insights'],
   },
   detailed: {

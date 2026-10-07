@@ -21,6 +21,7 @@ import { getEffectiveBillShare, getNextBillOccurrence } from './forecast';
 import { getUpcomingRenewals, getIntroPriceExpiries } from './contracts';
 import { getSinkingFundStats } from './sinkingFunds';
 import { formatMoney } from './money';
+import { generateAnnualPaymentSuggestions } from './annualPayment';
 
 const DEBT_CATEGORIES = ['loans', 'credit_cards'];
 const DEBT_MILESTONE_THRESHOLDS = [50, 75, 100];
@@ -308,6 +309,7 @@ export function getAlerts({
     ...getBehindFundAlerts(sinkingFunds, currency),
     ...getDebtMilestoneAlerts(bills, currency),
     ...getUpcomingChangeAlerts(bills, incomeStreams, currency),
+    ...generateAnnualPaymentSuggestions(bills, goals, monthlySpare, currency),
   ];
   const dismissed = new Set(dismissedKeys);
   return all.filter(a => !dismissed.has(a.key)).sort(priorityThenDate);

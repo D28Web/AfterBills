@@ -13,6 +13,7 @@ import MortgageDetailDialog from '@/components/bills/MortgageDetailDialog';
 import { CATEGORY_LABELS } from '@/lib/forecast';
 import { Home } from 'lucide-react';
 import { formatMoney } from '@/lib/money';
+import { calculateAnnualComparison } from '@/lib/annualPayment';
 import { logActivity } from '@/lib/activityLog';
 import { getMilestones } from '@/lib/insights';
 import MilestonesStrip from '@/components/insights/MilestonesStrip';
@@ -35,6 +36,52 @@ export default function Bills() {
     queryKey: ['bills'],
     queryFn: () => base44.entities.Bill.list(),
   });
+
+  const { data: goals = [] } = useQuery({
+    queryKey: ['goals'],
+    queryFn: () => base44.entities.SavingsGoal.list(),
+  });
+
+  const createGoalMutation = useMutation({
+    mutationFn: data => base44.entities.SavingsGoal.create(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goals'] }),
+  });
+
+  const updateGoalMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.SavingsGoal.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goals'] }),
+  });
+
+  const linkBillMutation = useMutation({
+    mutationFn: ({ billId, goalId }) => base44.entities.Bill.update(billId, { annual_fund_goal_id: goalId, target_payment_method: 'annual' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bills'] }),
+  });
+
+  const handleCreateFund = (bill) => {
+    const comp = calculateAnnualComparison(bill);
+    const goalData = {
+      name: `${bill.name} Annual Fund`,
+      type: 'annual_expense',
+      target_amount: comp.annualCost,
+      current_amount: 0,
+      is_annual_fund: true,
+      linked_bill_id: bill.id,
+      savings_scope: bill.bill_assignment === 'shared' ? 'household' : 'personal',
+      household_member_id: bill.household_member_id || null,
+    };
+    createGoalMutation.mutate(goalData, {
+      onSuccess: (goal) => {
+        linkBillMutation.mutate({ billId: bill.id, goalId: goal.id });
+      },
+    });
+  };
+
+  const handleAddContribution = (goal, amount) => {
+    updateGoalMutation.mutate({
+      id: goal.id,
+      data: { current_amount: Math.round((goal.current_amount || 0) + amount) },
+    });
+  };
 
   const createMutation = useMutation({
     mutationFn: data => base44.entities.Bill.create(data),
@@ -160,8 +207,11 @@ export default function Bills() {
                 key={bill.id}
                 bill={bill}
                 currency={currency}
+                goals={goals}
                 onEdit={b => { setEditingBill(b); setShowForm(true); }}
                 onDelete={b => deleteMutation.mutate(b.id)}
+                onCreateFund={handleCreateFund}
+                onAddContribution={handleAddContribution}
               />
             ))}
           </AnimatePresence>

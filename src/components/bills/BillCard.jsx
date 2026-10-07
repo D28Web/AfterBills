@@ -9,9 +9,12 @@ import { format, differenceInCalendarDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import BillSubcategoryList from '@/components/bills/BillSubcategoryList';
 import FinanceTrackingCard from '@/components/bills/FinanceTrackingCard';
+import AnnualPaymentComparison from '@/components/bills/AnnualPaymentComparison';
+import AnnualFundProgress from '@/components/bills/AnnualFundProgress';
 import { isFinanceBill, FINANCE_TYPE_LABELS } from '@/lib/financeTracking';
+import { isEligibleForAnnualComparison } from '@/lib/annualPayment';
 
-export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
+export default function BillCard({ bill, currency = '£', onEdit, onDelete, goals = [], onCreateFund, onAddContribution }) {
   const hasPayoffTarget = !!bill.target_end_date && (bill.category === 'loans' || bill.category === 'credit_cards');
   const monthsLeft = hasPayoffTarget
     ? Math.max(0, (new Date(bill.target_end_date).getFullYear() * 12 + new Date(bill.target_end_date).getMonth()) - (new Date().getFullYear() * 12 + new Date().getMonth()))
@@ -128,6 +131,26 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
             <p className="text-xs text-muted-foreground mt-1 truncate">{bill.notes}</p>
           )}
           {isFinanceBill(bill) && <FinanceTrackingCard bill={bill} currency={currency} />}
+          {isEligibleForAnnualComparison(bill) && (
+            <AnnualPaymentComparison
+              bill={bill}
+              currency={currency}
+              onCreateFund={() => onCreateFund?.(bill)}
+              onGoToFund={() => {}}
+            />
+          )}
+          {bill.annual_fund_goal_id && (() => {
+            const goal = goals.find(g => g.id === bill.annual_fund_goal_id);
+            if (!goal) return null;
+            return (
+              <AnnualFundProgress
+                bill={bill}
+                goal={goal}
+                currency={currency}
+                onAddContribution={onAddContribution}
+              />
+            );
+          })()}
           <button type="button" onClick={() => setExpanded(e => !e)} className="flex items-center gap-1 text-xs text-primary mt-2 hover:underline">
             <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
             Subcategories

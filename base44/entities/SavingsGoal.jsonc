@@ -75,6 +75,15 @@
       "type": "string",
       "description": "ID of the household member this goal belongs to (optional, for household support)"
     },
+    "linked_bill_id": {
+      "type": "string",
+      "description": "ID of the linked Bill this goal is for. Used by annual payment funds to track progress towards a future annual bill payment."
+    },
+    "is_annual_fund": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if this is an annual payment fund for a linked bill. Annual funds help the user build towards paying a bill annually instead of monthly. Once the bill is switched to annual, the fund continues as a rolling fund for future renewals."
+    },
     "notes": {
       "type": "string",
       "description": "Optional notes"

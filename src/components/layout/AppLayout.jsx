@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Users, Settings, Shield, Menu, X, Wallet, Bell, History, ShoppingBag, Scale, FileText } from 'lucide-react';
+import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Users, Settings, Shield, Menu, X, Wallet, Bell, History, ShoppingBag, Scale, FileText, TrendingDown } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { path: '/sinking-funds', label: 'Sinking Funds', icon: PiggyBank },
   { path: '/payday-planner', label: 'Payday Planner', icon: Wallet },
   { path: '/what-if', label: 'Planning', icon: FlaskConical },
+  { path: '/annual-payments', label: 'Annual Savings', icon: TrendingDown },
   { path: '/budgeting', label: 'Budgeting', icon: Scale },
   { path: '/household', label: 'Household', icon: Users },
   { path: '/settings', label: 'Settings', icon: Settings },

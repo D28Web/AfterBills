@@ -10,6 +10,7 @@ import HeroSection from './HeroSection';
 import CompactPaydayPlanner from './CompactPaydayPlanner';
 import GoalsFundsSummary from './GoalsFundsSummary';
 import BudgetingSummary from './BudgetingSummary';
+import AnnualPaymentSummary from './AnnualPaymentSummary';
 
 // Maps a section key to its rendered content. Each section is a self-contained
 // block that works in the vertical stack regardless of position, preserving
@@ -47,6 +48,14 @@ export default function DashboardSection({ sectionKey, data }) {
           milestones={data.milestones}
           maxItems={3}
           viewAllUrl="/reminders"
+        />
+      );
+    case 'annual_payments':
+      return (
+        <AnnualPaymentSummary
+          bills={data.bills}
+          goals={data.goals}
+          currency={data.currency}
         />
       );
     case 'goals_funds':

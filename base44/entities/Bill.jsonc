@@ -76,6 +76,30 @@
       "type": "string",
       "description": "ID of the household member this bill belongs to (optional, for household support)"
     },
+    "monthly_cost": {
+      "type": "number",
+      "description": "Monthly payment amount if the provider offers monthly payment. Used for the annual vs monthly comparison. Optional \u2014 when absent, the monthly cost is derived from the current amount and frequency."
+    },
+    "annual_cost": {
+      "type": "number",
+      "description": "Annual payment amount if the provider offers annual payment. Used for the annual vs monthly comparison. Optional \u2014 when absent, the annual cost is derived from the monthly cost."
+    },
+    "offers_both_options": {
+      "type": "boolean",
+      "description": "Whether the provider offers both monthly and annual payment options. When true and both costs are entered, the bill is eligible for the annual vs monthly comparison."
+    },
+    "annual_fund_goal_id": {
+      "type": "string",
+      "description": "ID of the linked SavingsGoal used to build towards paying this bill annually. The goal tracks progress towards the annual payment amount."
+    },
+    "target_payment_method": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "annual"
+      ],
+      "description": "The payment method the user is building towards. Set to 'annual' when the user is transitioning from monthly to annual payment. Once the bill frequency is changed to 'annually', the transition is complete."
+    },
     "finance_type": {
       "type": "string",
       "enum": [
@@ -270,7 +294,7 @@
     "renewal_date": {
       "type": "string",
       "format": "date",
-      "description": "Next renewal date for the contract (YYYY-MM-DD). Optional."
+      "description": "Next renewal date for the contract (YYYY-MM-DD). Also used as the annual payment date for annual vs monthly comparison. Optional."
     },
     "notice_period_days": {
       "type": "number",

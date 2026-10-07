@@ -5,7 +5,7 @@ import { billToMonthlyCost } from '@/lib/forecast';
 import { getPrimaryIncomeContext } from '@/lib/income';
 import { formatMoney, sumMoney, roundMoney, getSplitShare } from '@/lib/money';
 import { getRegularBills } from '@/lib/salarySacrifice';
-import { Plus, Target, Calendar, Trash2, Pencil, Plane } from 'lucide-react';
+import { Plus, Target, Calendar, Trash2, Pencil, Plane, RefreshCw } from 'lucide-react';
 import EmergencyFundCard from '@/components/savings/EmergencyFundCard';
 import SavingsGoalForm from '@/components/savings/SavingsGoalForm';
 import TripGoalDetail from '@/components/savings/TripGoalDetail';
@@ -207,6 +207,11 @@ export default function Savings() {
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
                           {TYPE_LABELS[goal.type || 'general'] || 'General'}
                         </span>
+                        {goal.is_annual_fund && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/10 text-primary flex items-center gap-1">
+                            <RefreshCw className="w-2.5 h-2.5" /> Annual Fund
+                          </span>
+                        )}
                         {goal.destination && <span className="text-xs text-muted-foreground">· {goal.destination}</span>}
                       </div>
                     </div>
@@ -245,6 +250,17 @@ export default function Savings() {
                     </span>
                   </div>
                 )}
+
+                {goal.is_annual_fund && goal.linked_bill_id && (() => {
+                  const linkedBill = bills.find(b => b.id === goal.linked_bill_id);
+                  if (!linkedBill) return null;
+                  return (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-primary/5 rounded-lg p-2">
+                      <RefreshCw className="w-3 h-3 text-primary shrink-0" />
+                      <span>Funds future annual payment for <span className="font-medium text-foreground">{linkedBill.name}</span></span>
+                    </div>
+                  );
+                })()}
 
                 <Input
                   type="number"

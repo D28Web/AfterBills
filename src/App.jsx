@@ -21,6 +21,7 @@ import CalendarView from '@/pages/CalendarView';
 import Analytics from '@/pages/Analytics';
 import Savings from '@/pages/Savings';
 import WhatIf from '@/pages/WhatIf';
+import AnnualPayments from '@/pages/AnnualPayments';
 import TripPlanner from '@/pages/TripPlanner';
 import Household from '@/pages/Household';
 import SinkingFunds from '@/pages/SinkingFunds';
@@ -77,6 +78,7 @@ const AuthenticatedApp = () => {
           <Route path="/sinking-funds" element={<SinkingFunds />} />
           <Route path="/payday-planner" element={<PaydayPlanner />} />
           <Route path="/what-if" element={<WhatIf />} />
+          <Route path="/annual-payments" element={<AnnualPayments />} />
           <Route path="/trips" element={<TripPlanner />} />
           <Route path="/household" element={<Household />} />
           <Route path="/settings" element={<Settings />} />
