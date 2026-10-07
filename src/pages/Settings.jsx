@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, LogOut, Plus } from 'lucide-react';
+import { Save, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import IncomeStreamForm from '@/components/income/IncomeStreamForm';
 import IncomeStreamCard from '@/components/income/IncomeStreamCard';
 import UKTaxSettings from '@/components/income/UKTaxSettings';
+import AccountDataSection from '@/components/settings/AccountDataSection';
 import { ukTaxBreakdown } from '@/lib/ukTax';
 import { Switch } from '@/components/ui/switch';
 import { getOtherStreams } from '@/lib/income';
@@ -417,17 +418,7 @@ export default function Settings() {
         </div>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-2xl border border-border p-6"
-      >
-        <h3 className="text-sm font-semibold font-heading mb-1">Account</h3>
-        <p className="text-xs text-muted-foreground mb-4">{user?.email}</p>
-        <Button variant="outline" className="gap-2 text-destructive" onClick={() => base44.auth.logout()}>
-          <LogOut className="w-4 h-4" /> Sign Out
-        </Button>
-      </motion.div>
+      <AccountDataSection user={user} />
     </div>
   );
 }
