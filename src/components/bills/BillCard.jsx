@@ -73,13 +73,13 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete, goal
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-x-3 gap-y-1 flex-wrap mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <CalendarDays className="w-3 h-3" />
+              <CalendarDays className="w-3 h-3 shrink-0" />
               {formatDueDay(bill)}
             </span>
             <span className="flex items-center gap-1">
-              <Repeat className="w-3 h-3" />
+              <Repeat className="w-3 h-3 shrink-0" />
               {FREQUENCY_LABELS[bill.frequency] || bill.frequency}
             </span>
             {bill.end_date && (

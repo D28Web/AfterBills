@@ -32,18 +32,22 @@ export default function AnnualPaymentComparison({ bill, currency = '£', onCreat
   return (
     <div className="mt-3 rounded-lg bg-muted/40 border border-border p-3 space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold text-foreground flex items-center gap-1.5 shrink-0">
           <TrendingDown className="w-3.5 h-3.5" />
           Annual vs Monthly
         </span>
-        {comp.annualCheaper ? (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+        {comp.saving > 0 ? (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 shrink-0">
             Annual saves {formatMoney(comp.saving, { currency, decimals: 0 })}/yr
           </span>
-        ) : (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
+        ) : comp.saving < 0 ? (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground shrink-0">
             Monthly is cheaper
+          </span>
+        ) : (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground shrink-0">
+            No difference
           </span>
         )}
       </div>
@@ -51,7 +55,7 @@ export default function AnnualPaymentComparison({ bill, currency = '£', onCreat
       {/* Comparison */}
       <div className="grid grid-cols-2 gap-2">
         <div className={cn(
-          "rounded-lg p-2.5 border text-xs",
+          "rounded-lg p-2.5 border text-xs min-w-0",
           currentMethod === 'monthly' ? "border-primary/30 bg-primary/5" : "border-border"
         )}>
           <p className="text-muted-foreground font-medium">Pay monthly</p>
@@ -67,7 +71,7 @@ export default function AnnualPaymentComparison({ bill, currency = '£', onCreat
         </div>
 
         <div className={cn(
-          "rounded-lg p-2.5 border text-xs",
+          "rounded-lg p-2.5 border text-xs min-w-0",
           currentMethod === 'annual' ? "border-primary/30 bg-primary/5" : "border-border"
         )}>
           <p className="text-muted-foreground font-medium">Pay annually</p>
@@ -84,17 +88,22 @@ export default function AnnualPaymentComparison({ bill, currency = '£', onCreat
       </div>
 
       {/* Saving / no saving message */}
-      {comp.annualCheaper ? (
+      {comp.saving > 0 ? (
         <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
           <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
           <span>
             Annual saves {formatMoney(comp.saving, { currency, decimals: 2 })}/year ({comp.percentageSaving}%)
           </span>
         </div>
-      ) : (
+      ) : comp.saving < 0 ? (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Info className="w-3.5 h-3.5 shrink-0" />
           <span>Annual payment costs {formatMoney(Math.abs(comp.saving), { currency, decimals: 2 })}/year more — monthly is the better option here.</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Info className="w-3.5 h-3.5 shrink-0" />
+          <span>Both options cost the same — no saving from paying annually.</span>
         </div>
       )}
 

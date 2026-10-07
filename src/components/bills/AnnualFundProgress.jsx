@@ -29,12 +29,12 @@ export default function AnnualFundProgress({ bill, goal, currency = '£', onAddC
 
     return (
       <div className="mt-3 rounded-lg bg-accent/30 border border-border p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5" />
-            Rolling Annual Fund
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-semibold text-foreground flex items-center gap-1.5 min-w-0">
+            <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Rolling Annual Fund</span>
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 shrink-0">
             On annual
           </span>
         </div>
@@ -72,37 +72,37 @@ export default function AnnualFundProgress({ bill, goal, currency = '£', onAddC
 
   return (
     <div className="mt-3 rounded-lg bg-accent/30 border border-border p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-          <PiggyBank className="w-3.5 h-3.5" />
-          Annual Payment Fund
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold text-foreground flex items-center gap-1.5 min-w-0">
+          <PiggyBank className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">Annual Payment Fund</span>
         </span>
         {progress.isFullyFunded ? (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 flex items-center gap-1">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 flex items-center gap-1 shrink-0">
             <CheckCircle2 className="w-2.5 h-2.5" /> Ready
           </span>
         ) : (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground shrink-0">
             {progress.monthsUntil != null ? `${progress.monthsUntil} mo to go` : 'Building'}
           </span>
         )}
       </div>
 
       <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">
+        <span className="text-muted-foreground min-w-0">
           {formatMoney(progress.currentAmount, { currency, decimals: 2 })} / {formatMoney(progress.annualCost, { currency, decimals: 2 })}
         </span>
-        <span className="font-medium text-foreground">{progress.progress.toFixed(0)}%</span>
+        <span className="font-medium text-foreground shrink-0">{progress.progress.toFixed(0)}%</span>
       </div>
       <Progress value={progress.progress} className="h-1.5" />
 
       {!progress.isFullyFunded && (
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded bg-muted/50 p-1.5">
+          <div className="rounded bg-muted/50 p-1.5 min-w-0">
             <p className="text-[10px] text-muted-foreground">Still needed</p>
             <p className="font-medium text-foreground">{formatMoney(progress.remaining, { currency, decimals: 2 })}</p>
           </div>
-          <div className="rounded bg-muted/50 p-1.5">
+          <div className="rounded bg-muted/50 p-1.5 min-w-0">
             <p className="text-[10px] text-muted-foreground">Required / month</p>
             <p className="font-medium text-primary">{formatMoney(progress.requiredMonthly, { currency, decimals: 2 })}</p>
           </div>
