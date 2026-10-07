@@ -14,6 +14,7 @@ import {
   getCurrentPaymentMethod,
   getRollingFundContribution,
   isEligibleForAnnualComparison,
+  getMonthlyCost,
 } from '@/lib/annualPayment';
 import { logActivity } from '@/lib/activityLog';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,10 @@ import { cn } from '@/lib/utils';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import AnnualPaymentScenario from '@/components/bills/AnnualPaymentScenario';
+import AnnualCostDialog from '@/components/bills/AnnualCostDialog';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { Plus, Receipt } from 'lucide-react';
 
 export default function AnnualPayments() {
   const queryClient = useQueryClient();
@@ -39,6 +43,7 @@ export default function AnnualPayments() {
 
   const [createFundFor, setCreateFundFor] = useState(null);
   const [fundName, setFundName] = useState('');
+  const [annualCostFor, setAnnualCostFor] = useState(null);
 
   const currency = user?.currency || '£';
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
@@ -76,6 +81,19 @@ export default function AnnualPayments() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goals'] }),
   });
 
+  const updateBillMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Bill.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bills'] });
+    },
+  });
+
+  // Bills that don't have annual payment info yet — candidates for the user to review
+  const candidates = useMemo(
+    () => regularBills.filter(b => !isEligibleForAnnualComparison(b) && getCurrentPaymentMethod(b) === 'monthly'),
+    [regularBills]
+  );
+
   const handleCreateFund = (bill) => {
     const comp = calculateAnnualComparison(bill);
     const name = fundName.trim() || `${bill.name} Annual Fund`;
@@ -108,6 +126,20 @@ export default function AnnualPayments() {
     toast.success(`Added ${formatMoney(amount, { currency, decimals: 2 })} to ${goal.name}`);
   };
 
+  const handleSaveAnnualCost = (data) => {
+    if (!annualCostFor) return;
+    updateBillMutation.mutate(
+      { id: annualCostFor.id, data },
+      {
+        onSuccess: () => {
+          toast.success(`Annual payment info saved for ${annualCostFor.name}`);
+          setAnnualCostFor(null);
+        },
+        onError: () => toast.error('Could not save'),
+      }
+    );
+  };
+
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
       <PageHeader
@@ -136,6 +168,49 @@ export default function AnnualPayments() {
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* Bills to review for annual savings */}
+      {candidates.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-muted-foreground" />
+              Review these bills for annual savings
+            </h2>
+            <Link to="/bills">
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1">
+                <Plus className="w-3.5 h-3.5" /> Add bill
+              </Button>
+            </Link>
+          </div>
+          <p className="text-xs text-muted-foreground -mt-1">
+            Many providers — insurance, car tax, subscriptions, memberships — offer a discount for paying annually. Add the annual cost to any bill below to see your potential saving and start building towards it.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {candidates.map(bill => {
+              const monthly = getMonthlyCost(bill);
+              return (
+                <div key={bill.id} className="rounded-xl border border-border bg-card p-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{bill.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatMoney(monthly, { currency, decimals: 0 })}/mo now
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs shrink-0"
+                    onClick={() => setAnnualCostFor(bill)}
+                  >
+                    Add annual cost
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Opportunities table */}
@@ -306,13 +381,18 @@ export default function AnnualPayments() {
       )}
 
       {/* No opportunities */}
-      {opportunities.length === 0 && rollingFunds.length === 0 && (
+      {opportunities.length === 0 && rollingFunds.length === 0 && candidates.length === 0 && (
         <div className="rounded-xl border border-border bg-card p-12 text-center">
           <TrendingDown className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground mb-1">No annual payment opportunities yet.</p>
-          <p className="text-xs text-muted-foreground">
-            Add both monthly and annual costs to a bill, and mark it as offering both options, to see savings here.
+          <p className="text-sm text-muted-foreground mb-1">No bills to review yet.</p>
+          <p className="text-xs text-muted-foreground mb-4">
+            Add bills like insurance, car tax, or subscriptions, then come back here to compare monthly vs annual costs.
           </p>
+          <Link to="/bills">
+            <Button size="sm" className="gap-1">
+              <Plus className="w-4 h-4" /> Add a bill
+            </Button>
+          </Link>
         </div>
       )}
 
@@ -328,6 +408,15 @@ export default function AnnualPayments() {
           />
         </div>
       )}
+
+      {/* Quick annual cost dialog */}
+      <AnnualCostDialog
+        bill={annualCostFor}
+        open={!!annualCostFor}
+        onOpenChange={(v) => { if (!v) setAnnualCostFor(null); }}
+        onSave={handleSaveAnnualCost}
+        currency={currency}
+      />
 
       {/* Create fund dialog */}
       <Dialog open={!!createFundFor} onOpenChange={(v) => { if (!v) { setCreateFundFor(null); setFundName(''); } }}>
