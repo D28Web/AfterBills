@@ -14,6 +14,9 @@ import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
 import UpcomingCommitments from '@/components/dashboard/UpcomingCommitments';
 import IncomeBreakdown from '@/components/dashboard/IncomeBreakdown';
 import RenewalAlerts from '@/components/dashboard/RenewalAlerts';
+import SafeToSpendCard from '@/components/payday-planner/SafeToSpendCard';
+import BufferIndicator from '@/components/payday-planner/BufferIndicator';
+import { getPaydayPlannerData } from '@/lib/paydayPlanner';
 import { getSignificantIncreases } from '@/lib/contracts';
 import { getForecastIncomeParams, getStreamMonthlyAmount, FREQ_TO_MONTHLY } from '@/lib/income';
 import { format, startOfMonth } from 'date-fns';
@@ -47,11 +50,18 @@ export default function Dashboard() {
     queryFn: () => base44.entities.SinkingFund.list(),
   });
 
+  const { data: tripExpenses = [] } = useQuery({
+    queryKey: ['trip-expenses'],
+    queryFn: () => base44.entities.TripExpense.list(),
+  });
+
   const [viewFrequency, setViewFrequency] = useState('monthly');
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
 
   const { monthlyIncome, incomeStreams: forecastStreams, primaryCtx } = getForecastIncomeParams(incomeStreams, user);
   const currency = user?.currency || '£';
+  const buffer = parseFloat(user?.preferred_buffer) || 0;
+  const safeToSpendCycle = getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, tripExpenses, 1)[0];
   const forecast = generateForecast(bills, monthlyIncome, new Date(startDate + '-01'), forecastStreams, primaryCtx, sinkingFunds);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const totalMonthlyIncome = roundMoney(sumMoney(incomeStreams.map(s => getStreamMonthlyAmount(s))));
@@ -126,6 +136,15 @@ export default function Dashboard() {
           icon={TrendingUp}
         />
       </div>
+
+      {safeToSpendCycle && (
+        <div className="grid lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <SafeToSpendCard data={safeToSpendCycle} currency={currency} />
+          </div>
+          <BufferIndicator amountLeft={safeToSpendCycle.amountLeft} buffer={buffer} currency={currency} />
+        </div>
+      )}
 
       <IncomeBreakdown incomeStreams={incomeStreams} currency={currency} />
 

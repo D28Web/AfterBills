@@ -21,6 +21,12 @@ const DEBT_CATEGORIES = ['loans', 'credit_cards'];
 const SAVINGS_SUGGESTION_RATE = 0.5;
 const AVG_DAYS_PER_MONTH = 30.44;
 
+export const CONFIDENCE_LABELS = {
+  mostly_confirmed: 'Mostly confirmed',
+  some_estimates: 'Some estimates',
+  highly_variable: 'Highly variable',
+};
+
 function getAdditionalIncomeInCycle(streams, cycleStart, cycleEnd) {
   let total = 0;
   const details = [];
@@ -56,7 +62,7 @@ function getAdditionalIncomeInCycle(streams, cycleStart, cycleEnd) {
   return { total: roundMoney(total), details };
 }
 
-export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, count = 6) {
+export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, oneOffExpenses = [], count = 6) {
   const freq = primaryCtx?.pay_frequency || 'monthly';
   const monthlyIncome = primaryCtx?.monthly_income || 0;
 
@@ -79,6 +85,7 @@ export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFu
           amount: getBillShare(bill),
           dueDate,
           category: bill.category,
+          intro_price_end_date: bill.intro_price_end_date || null,
         });
       });
     });
@@ -106,7 +113,20 @@ export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFu
     });
     const sinkingFundTotal = roundMoney(sinkingFundItems.reduce((s, f) => s + f.amount, 0));
 
-    const hardCommitments = roundMoney(regularBillsTotal + debtTotal + sinkingFundTotal);
+    // Known one-off expenses (unpaid trip expenses due in this cycle)
+    const oneOffItems = [];
+    (oneOffExpenses || []).forEach(exp => {
+      if (exp.is_paid || !exp.due_date) return;
+      const dueDate = startOfDay(new Date(exp.due_date));
+      if (isBefore(dueDate, cycle.start) || isAfter(dueDate, cycle.end)) return;
+      const amt = parseFloat(exp.amount) || 0;
+      const share = exp.is_split ? amt / (exp.split_between || 2) : amt;
+      oneOffItems.push({ name: exp.description || exp.trip_name, amount: roundMoney(share), dueDate });
+    });
+    oneOffItems.sort((a, b) => a.dueDate - b.dueDate);
+    const oneOffTotal = roundMoney(oneOffItems.reduce((s, e) => s + e.amount, 0));
+
+    const hardCommitments = roundMoney(regularBillsTotal + debtTotal + sinkingFundTotal + oneOffTotal);
     const availableAfterHard = totalIncome - hardCommitments;
     const plannedSavings = roundMoney(Math.max(0, availableAfterHard) * SAVINGS_SUGGESTION_RATE);
 
@@ -115,6 +135,17 @@ export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFu
 
     const weeksInCycle = cycleDays / 7;
     const perWeekAvailable = weeksInCycle > 0 ? roundMoney(amountLeft / weeksInCycle) : 0;
+    const perDayAvailable = cycleDays > 0 ? roundMoney(amountLeft / cycleDays) : 0;
+
+    // Forecast confidence — based on data reliability, not arbitrary percentages.
+    const hasVariableIncome = (incomeStreams || []).some(s => s.is_variable || s.frequency === 'irregular');
+    const introPriceCount = allBillsInCycle.filter(b => b.intro_price_end_date).length;
+    const estimatedCount = sinkingFundItems.length + oneOffItems.length + introPriceCount;
+    const confidence = hasVariableIncome
+      ? 'highly_variable'
+      : estimatedCount >= 2
+        ? 'some_estimates'
+        : 'mostly_confirmed';
 
     return {
       cycle,
@@ -123,15 +154,19 @@ export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFu
       regularBills,
       debtRepayments,
       sinkingFundItems,
+      oneOffItems,
       plannedSavings,
       totalCommitted,
       amountLeft,
       cycleDays,
       weeksInCycle,
       perWeekAvailable,
+      perDayAvailable,
       regularBillsTotal,
       debtTotal,
       sinkingFundTotal,
+      oneOffTotal,
+      confidence,
     };
   });
 }

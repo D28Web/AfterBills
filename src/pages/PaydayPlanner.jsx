@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { getPrimaryIncomeContext } from '@/lib/income';
 import { getPaydayPlannerData } from '@/lib/paydayPlanner';
-import { formatMoney } from '@/lib/money';
 import { motion } from 'framer-motion';
 import { Wallet } from 'lucide-react';
 import PaydayPlannerRow from '@/components/payday-planner/PaydayPlannerRow';
+import SafeToSpendCard from '@/components/payday-planner/SafeToSpendCard';
+import BufferIndicator from '@/components/payday-planner/BufferIndicator';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -18,10 +19,12 @@ export default function PaydayPlanner() {
   const { data: bills = [] } = useQuery({ queryKey: ['bills'], queryFn: () => base44.entities.Bill.list() });
   const { data: incomeStreams = [] } = useQuery({ queryKey: ['income-streams'], queryFn: () => base44.entities.IncomeStream.list() });
   const { data: sinkingFunds = [] } = useQuery({ queryKey: ['sinking-funds'], queryFn: () => base44.entities.SinkingFund.list() });
+  const { data: tripExpenses = [] } = useQuery({ queryKey: ['trip-expenses'], queryFn: () => base44.entities.TripExpense.list() });
 
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
   const currency = user?.currency || '£';
-  const plannerData = getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, 6);
+  const buffer = parseFloat(user?.preferred_buffer) || 0;
+  const plannerData = getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, tripExpenses, 6);
 
   if (!primaryCtx.monthly_income) {
     return (
@@ -45,24 +48,11 @@ export default function PaydayPlanner() {
       <PageHeader title="Payday Planner" subtitle="Plan your spending around each payday" />
 
       {firstCycle && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-card rounded-2xl border border-border p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Next payday</p>
-            <p className="text-2xl font-bold font-heading mt-1">{firstCycle.cycleDays}d</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{plannerData.length} cycles ahead</p>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <SafeToSpendCard data={firstCycle} currency={currency} />
           </div>
-          <div className="bg-card rounded-2xl border border-border p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Income / cycle</p>
-            <p className="text-2xl font-bold font-heading mt-1">{formatMoney(firstCycle.income.total, { currency, decimals: 2 })}</p>
-          </div>
-          <div className="bg-card rounded-2xl border border-border p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Committed</p>
-            <p className="text-2xl font-bold font-heading mt-1">{formatMoney(firstCycle.totalCommitted, { currency, decimals: 2 })}</p>
-          </div>
-          <div className="bg-card rounded-2xl border border-border p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Per week</p>
-            <p className="text-2xl font-bold font-heading mt-1 text-primary">{formatMoney(firstCycle.perWeekAvailable, { currency, decimals: 2 })}</p>
-          </div>
+          <BufferIndicator amountLeft={firstCycle.amountLeft} buffer={buffer} currency={currency} />
         </motion.div>
       )}
 
@@ -72,6 +62,7 @@ export default function PaydayPlanner() {
             key={data.index}
             data={data}
             currency={currency}
+            buffer={buffer}
             isOpen={expanded === data.index}
             onToggle={setExpanded}
           />

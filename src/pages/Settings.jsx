@@ -19,6 +19,7 @@ import { formatMoney, roundMoney } from '@/lib/money';
 import { FREQUENCY_LABELS } from '@/lib/forecast';
 import { Switch } from '@/components/ui/switch';
 import { getOtherStreams, FREQ_TO_MONTHLY } from '@/lib/income';
+import { cn } from '@/lib/utils';
 
 const DEFAULT_TAX_SETTINGS = {
   grossAnnual: '',
@@ -42,6 +43,7 @@ export default function Settings() {
     pay_start_date: '',
     pay_weekday: 'none',
     currency: '£',
+    preferred_buffer: '',
   });
 
   const [useStartDate, setUseStartDate] = useState(false);
@@ -72,6 +74,7 @@ export default function Settings() {
         pay_start_date: primary.start_date || '',
         pay_weekday: primary.pay_weekday || 'none',
         currency: user.currency || '£',
+        preferred_buffer: user.preferred_buffer ? String(user.preferred_buffer) : '',
       });
       setIncomeMode(primary.income_mode || 'net');
       setTaxSettings({ ...DEFAULT_TAX_SETTINGS, ...(primary.tax_settings || {}) });
@@ -89,6 +92,7 @@ export default function Settings() {
         pay_start_date: user.pay_start_date || '',
         pay_weekday: user.pay_weekday || 'none',
         currency: user.currency || '£',
+        preferred_buffer: user.preferred_buffer ? String(user.preferred_buffer) : '',
       });
       setIncomeMode(user.income_mode || 'net');
       setTaxSettings({ ...DEFAULT_TAX_SETTINGS, ...(user.tax_settings || {}) });
@@ -180,7 +184,7 @@ export default function Settings() {
       tax_settings: incomeMode === 'salary' ? cleanTaxSettings(taxSettings) : null,
     };
     savePrimary.mutate({ id: primaryStreamId, data: streamData });
-    saveCurrency.mutate({ currency: form.currency });
+    saveCurrency.mutate({ currency: form.currency, preferred_buffer: parseFloat(form.preferred_buffer) || 0 });
   };
 
   return (
@@ -360,6 +364,36 @@ export default function Settings() {
               <SelectItem value="C$">C$ CAD</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div>
+          <Label>Preferred Financial Buffer</Label>
+          <Input
+            type="number"
+            step="50"
+            min="0"
+            placeholder="e.g. 500"
+            value={form.preferred_buffer}
+            onChange={e => setForm({ ...form, preferred_buffer: e.target.value })}
+          />
+          <div className="flex gap-2 mt-2">
+            {[200, 500, 1000].map(v => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setForm({ ...form, preferred_buffer: String(v) })}
+                className={cn(
+                  'px-3 py-1 rounded-lg text-xs font-medium border transition-colors',
+                  form.preferred_buffer === String(v)
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-muted text-muted-foreground border-transparent hover:text-foreground'
+                )}
+              >
+                {form.currency || '£'}{v}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">A minimum cushion you'd like to keep. Highlights pay cycles where your forecast drops below it. Not treated as a bill or expense.</p>
         </div>
 
         <Button onClick={handleSave} disabled={savePrimary.isPending || saveCurrency.isPending} className="gap-2 w-full">

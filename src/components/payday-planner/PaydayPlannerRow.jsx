@@ -6,8 +6,9 @@ import {
 } from 'lucide-react';
 import { formatMoney, formatSignedMoney } from '@/lib/money';
 import { cn } from '@/lib/utils';
+import ConfidenceBadge from './ConfidenceBadge';
 
-export default function PaydayPlannerRow({ data, currency = '£', isOpen, onToggle }) {
+export default function PaydayPlannerRow({ data, currency = '£', isOpen, onToggle, buffer = 0 }) {
   const { cycle, index } = data;
   const isCurrent = index === 0;
   const daysAway = differenceInCalendarDays(cycle.start, new Date());
@@ -21,7 +22,8 @@ export default function PaydayPlannerRow({ data, currency = '£', isOpen, onTogg
     <div
       className={cn(
         'rounded-xl border transition-all',
-        isCurrent ? 'border-primary/40 bg-accent/20' : 'border-border bg-muted/20'
+        isCurrent ? 'border-primary/40 bg-accent/20' : 'border-border bg-muted/20',
+        buffer > 0 && data.amountLeft < buffer && 'border-red-300 dark:border-red-800/50'
       )}
     >
       <button className="w-full flex items-center gap-3 p-3 text-left" onClick={() => onToggle(isOpen ? -1 : index)}>
@@ -32,12 +34,15 @@ export default function PaydayPlannerRow({ data, currency = '£', isOpen, onTogg
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-medium text-foreground">
-              {isCurrent ? 'This payday' : format(cycle.start, 'EEE d MMM')}
-              {daysAway >= 0 && !isCurrent && daysAway <= 7 && (
-                <span className="ml-1.5 text-primary">· in {daysAway}d</span>
-              )}
-            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-medium text-foreground">
+                {isCurrent ? 'This payday' : format(cycle.start, 'EEE d MMM')}
+                {daysAway >= 0 && !isCurrent && daysAway <= 7 && (
+                  <span className="ml-1.5 text-primary">· in {daysAway}d</span>
+                )}
+              </span>
+              <ConfidenceBadge confidence={data.confidence} />
+            </div>
             <span className={cn('text-xs font-bold', leftClass)}>
               {formatSignedMoney(data.amountLeft, { currency, decimals: 2 })} left
             </span>
@@ -135,6 +140,25 @@ export default function PaydayPlannerRow({ data, currency = '£', isOpen, onTogg
                 ) : (
                   data.sinkingFundItems.map((f, i) => (
                     <Line key={i} label={f.name} amount={f.amount} currency={currency} />
+                  ))
+                )}
+              </div>
+
+              {/* One-off expenses */}
+              <Section
+                icon={CalendarClock}
+                iconClass="text-indigo-600 dark:text-indigo-400"
+                label="Known one-off expenses"
+                amount={data.oneOffTotal}
+                currency={currency}
+                count={data.oneOffItems?.length}
+              />
+              <div className="pl-6 space-y-1">
+                {!data.oneOffItems || data.oneOffItems.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">No one-off expenses this cycle</p>
+                ) : (
+                  data.oneOffItems.map((e, i) => (
+                    <Line key={i} label={`${e.name} (${format(e.dueDate, 'd MMM')})`} amount={e.amount} currency={currency} />
                   ))
                 )}
               </div>
