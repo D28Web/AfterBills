@@ -4,7 +4,7 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Name of the income stream (e.g. Salary, Freelance, Rental)"
+      "description": "Name of the income stream (e.g. Salary, Freelance, Overtime)"
     },
     "amount": {
       "type": "number",
@@ -18,7 +18,8 @@
         "four_weekly",
         "monthly",
         "quarterly",
-        "annually"
+        "annually",
+        "irregular"
       ],
       "description": "How often this income is received / the pay schedule"
     },
@@ -27,10 +28,40 @@
       "format": "date",
       "description": "Anchor date (YYYY-MM-DD). For the primary stream this is the first known payday."
     },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional end date \u2014 income stops after this date (YYYY-MM-DD)"
+    },
+    "next_payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Next expected payment date (YYYY-MM-DD). Required for irregular income; informational for regular income."
+    },
     "is_primary": {
       "type": "boolean",
       "default": false,
       "description": "True for the user's main income stream, which holds the pay schedule and tax settings."
+    },
+    "income_type": {
+      "type": "string",
+      "enum": [
+        "salary",
+        "overtime",
+        "second_job",
+        "freelance",
+        "benefits",
+        "pension",
+        "bonus",
+        "other"
+      ],
+      "default": "other",
+      "description": "Type of income source"
+    },
+    "is_variable": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if the amount varies from period to period (estimated amount)"
     },
     "pay_day": {
       "type": "number",
