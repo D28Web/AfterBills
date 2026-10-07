@@ -32,9 +32,9 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <div>
+            <div className="min-w-0">
               <h4 className="text-sm font-semibold text-foreground truncate">{bill.name}</h4>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[bill.category]}</p>
                 <span className={cn(
                   "text-[10px] px-1.5 py-0.5 rounded-full font-medium",

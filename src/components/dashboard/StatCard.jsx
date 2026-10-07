@@ -17,8 +17,8 @@ export default function StatCard({ title, value, subtitle, icon: Icon, variant =
         variants[variant]
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1 min-w-0">
           <p className={cn(
             "text-xs font-medium uppercase tracking-wider",
             variant === 'primary' ? 'text-primary-foreground/70' : 'text-muted-foreground'

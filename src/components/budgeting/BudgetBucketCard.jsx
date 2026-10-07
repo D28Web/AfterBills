@@ -17,13 +17,13 @@ export default function BudgetBucketCard({ bucket, currency = '£' }) {
   return (
     <div className="bg-card rounded-2xl border border-border p-4 sm:p-5">
       <div className="flex items-start justify-between gap-2 mb-3">
-        <div>
-          <h4 className="font-semibold text-sm">{bucket.label}</h4>
+        <div className="min-w-0">
+          <h4 className="font-semibold text-sm truncate">{bucket.label}</h4>
           <p className="text-xs text-muted-foreground mt-0.5">
             Target {Math.round(bucket.targetPct * 100)}% · {formatMoney(bucket.targetAmount, { currency, decimals: 2 })}
           </p>
         </div>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${TONE_STYLES[tone] || ''}`}>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border shrink-0 ${TONE_STYLES[tone] || ''}`}>
           {STATUS_LABELS[bucket.status]}
         </span>
       </div>

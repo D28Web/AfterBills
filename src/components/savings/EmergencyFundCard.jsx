@@ -43,12 +43,12 @@ export default function EmergencyFundCard({ goal, bills, monthlySpare, primaryCt
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-primary/30 p-5 space-y-4">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-primary/10">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
             <Shield className="w-5 h-5 text-primary" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h4 className="text-sm font-semibold">Emergency Fund</h4>
             <p className="text-xs text-muted-foreground">
               {goal.target_type === 'months'
@@ -57,7 +57,7 @@ export default function EmergencyFundCard({ goal, bills, monthlySpare, primaryCt
             </p>
           </div>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 shrink-0">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowForm(true)}>
             <Pencil className="w-3.5 h-3.5" />
           </Button>

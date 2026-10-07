@@ -37,14 +37,14 @@ export default function TripPlanCard({ trip, expenses, contributions, user, curr
       className="bg-card rounded-2xl border border-border p-5 space-y-4"
     >
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <h4 className="text-base font-bold font-heading text-foreground">{trip.name}</h4>
+        <div className="min-w-0">
+          <h4 className="text-base font-bold font-heading text-foreground truncate">{trip.name}</h4>
           <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
             <Calendar className="w-3 h-3" /> Save by {format(targetDate, 'd MMM yyyy')}
             {pastDue && <span className="text-destructive ml-1">· past due</span>}
           </p>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 shrink-0">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEditTrip(trip)}>
             <Pencil className="w-3.5 h-3.5" />
           </Button>
