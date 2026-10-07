@@ -5,10 +5,20 @@
     "role": {
       "type": "string",
       "enum": [
+        "user",
         "admin",
-        "user"
+        "owner"
       ],
       "default": "user"
+    },
+    "account_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "disabled"
+      ],
+      "default": "active",
+      "description": "Whether the account is active or disabled by an administrator"
     },
     "currency": {
       "type": "string",

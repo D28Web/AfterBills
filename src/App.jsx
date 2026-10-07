@@ -22,6 +22,12 @@ import TripPlanner from '@/pages/TripPlanner';
 import Settings from '@/pages/Settings';
 import AppLayout from '@/components/layout/AppLayout';
 import Onboarding from '@/pages/Onboarding';
+import AdminRoute from '@/components/admin/AdminRoute';
+import AdminLayout from '@/components/admin/AdminLayout';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AdminUsers from '@/pages/admin/AdminUsers';
+import AdminUserDetail from '@/pages/admin/AdminUserDetail';
+import AdminAuditLog from '@/pages/admin/AdminAuditLog';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -59,6 +65,15 @@ const AuthenticatedApp = () => {
           <Route path="/what-if" element={<WhatIf />} />
           <Route path="/trips" element={<TripPlanner />} />
           <Route path="/settings" element={<Settings />} />
+        </Route>
+
+        <Route element={<AdminRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/users/:id" element={<AdminUserDetail />} />
+            <Route path="/admin/audit-log" element={<AdminAuditLog />} />
+          </Route>
         </Route>
       </Route>
 

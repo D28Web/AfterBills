@@ -1,8 +1,9 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, FlaskConical, Plane, Settings, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, FlaskConical, Plane, Settings, Shield, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/lib/AuthContext';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -18,6 +19,9 @@ const NAV_ITEMS = [
 export default function AppLayout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user && (user.role === 'admin' || user.role === 'owner');
+  const navItems = isAdmin ? [...NAV_ITEMS, { path: '/admin', label: 'Admin', icon: Shield }] : NAV_ITEMS;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -30,8 +34,8 @@ export default function AppLayout() {
           <p className="text-xs text-muted-foreground mt-0.5">Know what's really left</p>
         </div>
         <nav className="flex-1 px-3 space-y-1">
-          {NAV_ITEMS.map(item => {
-            const active = location.pathname === item.path;
+          {navItems.map(item => {
+            const active = item.path === '/admin' ? location.pathname.startsWith('/admin') : location.pathname === item.path;
             return (
               <Link
                 key={item.path}
@@ -40,7 +44,8 @@ export default function AppLayout() {
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                   active
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                  item.path === '/admin' && !active && "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                 )}
               >
                 <item.icon className="w-4 h-4" />
@@ -82,8 +87,8 @@ export default function AppLayout() {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="lg:hidden fixed right-0 top-14 bottom-0 z-50 w-64 bg-card border-l border-border p-4 space-y-1"
             >
-              {NAV_ITEMS.map(item => {
-                const active = location.pathname === item.path;
+              {navItems.map(item => {
+                const active = item.path === '/admin' ? location.pathname.startsWith('/admin') : location.pathname === item.path;
                 return (
                   <Link
                     key={item.path}
@@ -93,7 +98,8 @@ export default function AppLayout() {
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                       active
                         ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                      item.path === '/admin' && !active && "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                     )}
                   >
                     <item.icon className="w-4 h-4" />

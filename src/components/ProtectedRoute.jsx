@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import AccountDisabled from '@/components/AccountDisabled';
 
 const DefaultFallback = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -10,7 +11,7 @@ const DefaultFallback = () => (
 );
 
 export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthenticatedElement }) {
-  const { isAuthenticated, isLoadingAuth, authChecked, authError, checkUserAuth } = useAuth();
+  const { user, isAuthenticated, isLoadingAuth, authChecked, authError, checkUserAuth } = useAuth();
 
   useEffect(() => {
     if (!authChecked && !isLoadingAuth) {
@@ -31,6 +32,10 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
 
   if (!isAuthenticated) {
     return unauthenticatedElement;
+  }
+
+  if (user && user.account_status === 'disabled') {
+    return <AccountDisabled />;
   }
 
   return <Outlet />;

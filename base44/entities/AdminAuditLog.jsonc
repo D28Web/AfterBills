@@ -1,0 +1,92 @@
+{
+  "name": "AdminAuditLog",
+  "type": "object",
+  "properties": {
+    "admin_id": {
+      "type": "string",
+      "description": "User ID of the administrator who performed the action"
+    },
+    "admin_email": {
+      "type": "string",
+      "description": "Email of the administrator who performed the action"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "view_account_detail",
+        "view_account_financial",
+        "disable_account",
+        "enable_account",
+        "delete_account",
+        "export_account_data"
+      ],
+      "description": "The administrative action performed"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "user"
+      ],
+      "default": "user",
+      "description": "Type of entity affected"
+    },
+    "target_id": {
+      "type": "string",
+      "description": "ID of the affected user/entity"
+    },
+    "target_email": {
+      "type": "string",
+      "description": "Email of the affected user (non-sensitive identifier)"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Non-sensitive contextual metadata about the action. Never stores passwords, tokens, or financial amounts."
+    }
+  },
+  "required": [
+    "admin_id",
+    "admin_email",
+    "action",
+    "target_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "owner"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "owner"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "immutable"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "immutable"
+      }
+    }
+  }
+}
