@@ -1,54 +1,104 @@
 /**
- * Dashboard section definitions and layout resolution.
+ * Dashboard section definitions, mode presets, and layout resolution.
  *
- * Users can toggle section visibility and reorder sections. The layout is
- * stored on the user entity via base44.auth.updateMe({ dashboard_layout }).
- * New sections added here are automatically appended to existing layouts.
+ * Three presets control which sections appear by default:
+ *   simple   — the default for new users; answers the 4 core questions
+ *   planning — adds income breakdown and period comparison
+ *   detailed — exposes the broader set of widgets
+ *
+ * Users can still toggle section visibility and reorder sections manually;
+ * doing so switches the mode to "custom". The layout is stored on the user
+ * entity via base44.auth.updateMe({ dashboard_layout, dashboard_mode }).
  */
 
 export const SECTION_KEYS = [
-  'left_after_bills',
-  'safe_to_spend',
-  'things_to_know',
-  'upcoming_commitments',
+  'hero',
   'payday_planner',
-  'savings',
-  'emergency_fund',
-  'sinking_funds',
+  'upcoming_commitments',
+  'things_to_know',
+  'goals_funds',
   'debt',
   'forecast',
+  'income_breakdown',
+  'period_comparison',
+  'pay_periods',
+  'full_insights',
 ];
 
 export const SECTION_LABELS = {
-  left_after_bills: 'Left After Bills',
-  safe_to_spend: 'Safe to Spend',
-  things_to_know: 'Things to Know',
-  upcoming_commitments: 'Upcoming Commitments',
+  hero: 'Overview',
   payday_planner: 'Payday Planner',
-  savings: 'Savings',
-  emergency_fund: 'Emergency Fund',
-  sinking_funds: 'Sinking Funds',
+  upcoming_commitments: 'Upcoming Commitments',
+  things_to_know: 'Things to Know',
+  goals_funds: 'Goals & Funds',
   debt: 'Debt',
-  forecast: 'Forecast',
+  forecast: '12 Month Forecast',
+  income_breakdown: 'Income Breakdown',
+  period_comparison: 'Period Comparison',
+  pay_periods: 'Higher Income Periods',
+  full_insights: 'Insights',
 };
 
-export const DEFAULT_LAYOUT = {
-  order: [...SECTION_KEYS],
-  hidden: [],
+export const DASHBOARD_MODES = ['simple', 'planning', 'detailed'];
+
+export const MODE_LABELS = {
+  simple: 'Simple',
+  planning: 'Planning',
+  detailed: 'Detailed',
+  custom: 'Custom',
+};
+
+export const MODE_PRESETS = {
+  simple: {
+    order: ['hero', 'payday_planner', 'upcoming_commitments', 'things_to_know', 'goals_funds', 'debt', 'forecast'],
+    hidden: ['income_breakdown', 'period_comparison', 'pay_periods', 'full_insights'],
+  },
+  planning: {
+    order: ['hero', 'payday_planner', 'upcoming_commitments', 'things_to_know', 'goals_funds', 'debt', 'forecast', 'income_breakdown', 'period_comparison'],
+    hidden: ['pay_periods', 'full_insights'],
+  },
+  detailed: {
+    order: [...SECTION_KEYS],
+    hidden: [],
+  },
+};
+
+export const DEFAULT_MODE = 'simple';
+
+// Maps retired section keys to their replacements so old saved layouts migrate.
+const KEY_MIGRATION = {
+  left_after_bills: 'hero',
+  safe_to_spend: 'hero',
+  savings: 'goals_funds',
+  emergency_fund: 'goals_funds',
+  sinking_funds: 'goals_funds',
 };
 
 /**
- * Resolve a saved layout, appending any new sections not yet known to the user.
+ * Resolve a saved layout + mode into the active { order, hidden }.
+ * Preset modes return their preset directly; custom/legacy layouts are
+ * migrated and appended with any new keys.
  */
-export function resolveLayout(saved) {
-  if (!saved || !Array.isArray(saved.order)) {
-    return { order: [...SECTION_KEYS], hidden: [] };
+export function resolveLayout(savedLayout, savedMode) {
+  if (savedMode && MODE_PRESETS[savedMode]) {
+    return MODE_PRESETS[savedMode];
   }
-  const known = new Set(SECTION_KEYS);
-  const order = saved.order.filter(k => known.has(k));
-  SECTION_KEYS.forEach(k => { if (!order.includes(k)) order.push(k); });
-  const hidden = (saved.hidden || []).filter(k => known.has(k) && order.includes(k));
-  return { order, hidden };
+
+  if (savedLayout && Array.isArray(savedLayout.order)) {
+    const known = new Set(SECTION_KEYS);
+    let order = savedLayout.order
+      .map(k => KEY_MIGRATION[k] || k)
+      .filter(k => known.has(k));
+    order = [...new Set(order)];
+    SECTION_KEYS.forEach(k => { if (!order.includes(k)) order.push(k); });
+    let hidden = (savedLayout.hidden || [])
+      .map(k => KEY_MIGRATION[k] || k)
+      .filter(k => known.has(k) && order.includes(k));
+    hidden = [...new Set(hidden)];
+    return { order, hidden };
+  }
+
+  return MODE_PRESETS.simple;
 }
 
 /**
