@@ -11,6 +11,8 @@ import TripExpenseCard, { getExpenseShare } from '@/components/trips/TripExpense
 import TripPlanCard from '@/components/trips/TripPlanCard';
 import TripForm from '@/components/trips/TripForm';
 import { getPayCycles } from '@/lib/payday';
+import PageContainer from '@/components/layout/PageContainer';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function TripPlanner() {
   const queryClient = useQueryClient();
@@ -97,11 +99,8 @@ export default function TripPlanner() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-foreground">Trip Planner</h2>
-        <p className="text-sm text-muted-foreground mt-1">Track what's paid and what's still to pay for your trips</p>
-      </div>
+    <PageContainer maxWidth="wide" className="space-y-6">
+      <PageHeader title="Trip Planner" subtitle="Track what's paid and what's still to pay for your trips" />
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -283,6 +282,6 @@ export default function TripPlanner() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

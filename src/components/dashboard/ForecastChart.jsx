@@ -58,7 +58,7 @@ export default function ForecastChart({ forecast, currency = '£', user }) {
           </div>
         )}
       </div>
-      <div className="h-64 md:h-72">
+      <div className="h-64 md:h-72 min-w-0 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
             <defs>

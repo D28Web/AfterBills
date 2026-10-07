@@ -11,6 +11,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addMonths, format } from 'date-fns';
+import PageContainer from '@/components/layout/PageContainer';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function Savings() {
   const [showForm, setShowForm] = useState(false);
@@ -61,16 +63,16 @@ export default function Savings() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-foreground">Savings Goals</h2>
-          <p className="text-sm text-muted-foreground mt-1">Track your progress towards financial goals</p>
-        </div>
-        <Button onClick={() => setShowForm(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> New Goal
-        </Button>
-      </div>
+    <PageContainer maxWidth="wide" className="space-y-6">
+      <PageHeader
+        title="Savings Goals"
+        subtitle="Track your progress towards financial goals"
+        actions={
+          <Button onClick={() => setShowForm(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> New Goal
+          </Button>
+        }
+      />
 
       {monthlySpare > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-accent rounded-2xl border border-border p-4">
@@ -170,6 +172,6 @@ export default function Savings() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

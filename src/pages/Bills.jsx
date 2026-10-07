@@ -9,6 +9,8 @@ import BillForm from '@/components/bills/BillForm';
 import BillCard from '@/components/bills/BillCard';
 import LoanPayoffCard from '@/components/bills/LoanPayoffCard';
 import { CATEGORY_LABELS } from '@/lib/forecast';
+import PageContainer from '@/components/layout/PageContainer';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function Bills() {
   const [showForm, setShowForm] = useState(false);
@@ -63,16 +65,16 @@ export default function Bills() {
   const filtered = filterCategory === 'all' ? regularBills : regularBills.filter(b => b.category === filterCategory);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-foreground">Bills</h2>
-          <p className="text-sm text-muted-foreground mt-1">Manage your recurring bills</p>
-        </div>
-        <Button onClick={() => { setEditingBill(null); setShowForm(true); }} className="gap-2">
-          <Plus className="w-4 h-4" /> Add Bill
-        </Button>
-      </div>
+    <PageContainer maxWidth="wide" className="space-y-6">
+      <PageHeader
+        title="Bills"
+        subtitle="Manage your recurring bills"
+        actions={
+          <Button onClick={() => { setEditingBill(null); setShowForm(true); }} className="gap-2">
+            <Plus className="w-4 h-4" /> Add Bill
+          </Button>
+        }
+      />
 
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
         <button
@@ -150,6 +152,6 @@ export default function Bills() {
           />
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

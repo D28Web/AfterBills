@@ -11,6 +11,8 @@ import PaydayCycles from '@/components/dashboard/PaydayCycles';
 import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
 import { getPrimaryIncomeContext, getOtherStreams } from '@/lib/income';
 import { format, startOfMonth } from 'date-fns';
+import PageContainer from '@/components/layout/PageContainer';
+import PageHeader from '@/components/layout/PageHeader';
 
 const FREQUENCY_OPTIONS = [
   { label: 'Weekly', value: 'weekly', multiplier: 12 / 52 },
@@ -50,44 +52,40 @@ export default function Dashboard() {
   const scale = (val) => (val * multiplier).toFixed(0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-foreground">
-            Dashboard
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Your financial overview at a glance
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-1.5">
-            <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
-            <label className="text-xs text-muted-foreground font-medium">From</label>
-            <input
-              type="month"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="bg-transparent text-xs font-medium text-foreground outline-none cursor-pointer"
-            />
-          </div>
-        <div className="flex items-center gap-1 bg-muted rounded-xl p-1 flex-wrap">
-          {FREQUENCY_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setViewFrequency(opt.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                viewFrequency === opt.value
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        </div>
-      </div>
+    <PageContainer maxWidth="wide" className="space-y-6">
+      <PageHeader
+        title="Dashboard"
+        subtitle="Your financial overview at a glance"
+        actions={
+          <>
+            <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-1.5">
+              <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+              <label className="text-xs text-muted-foreground font-medium">From</label>
+              <input
+                type="month"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="bg-transparent text-xs font-medium text-foreground outline-none cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center gap-1 bg-muted rounded-xl p-1 flex-wrap">
+              {FREQUENCY_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setViewFrequency(opt.value)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                    viewFrequency === opt.value
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard
@@ -126,6 +124,6 @@ export default function Dashboard() {
 
       <PaydayCycles user={primaryCtx} bills={bills} currency={currency} />
       <NoBillDuePeriods user={primaryCtx} bills={bills} currency={currency} />
-    </div>
+    </PageContainer>
   );
 }

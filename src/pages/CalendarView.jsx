@@ -8,6 +8,8 @@ import { CATEGORY_COLORS, CATEGORY_LABELS, getBillsForDay, getBillAmountForMonth
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { getPrimaryIncomeContext } from '@/lib/income';
+import PageContainer from '@/components/layout/PageContainer';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function CalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -51,11 +53,8 @@ export default function CalendarView() {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-foreground">Calendar</h2>
-        <p className="text-sm text-muted-foreground mt-1">See your bills throughout the month</p>
-      </div>
+    <PageContainer maxWidth="wide" className="space-y-6">
+      <PageHeader title="Calendar" subtitle="See your bills throughout the month" />
 
       <div className="bg-card rounded-2xl border border-border shadow-sm p-4 md:p-6">
         <div className="flex items-center justify-between mb-6">
@@ -145,6 +144,6 @@ export default function CalendarView() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageContainer>
   );
 }
