@@ -11,7 +11,8 @@ import UpcomingBills from '@/components/dashboard/UpcomingBills';
 import MonthHighlights from '@/components/dashboard/MonthHighlights';
 import PaydayCycles from '@/components/dashboard/PaydayCycles';
 import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
-import { getPrimaryIncomeContext, getOtherStreams, FREQ_TO_MONTHLY } from '@/lib/income';
+import IncomeBreakdown from '@/components/dashboard/IncomeBreakdown';
+import { getForecastIncomeParams, getStreamMonthlyAmount, FREQ_TO_MONTHLY } from '@/lib/income';
 import { format, startOfMonth } from 'date-fns';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -46,11 +47,11 @@ export default function Dashboard() {
   const [viewFrequency, setViewFrequency] = useState('monthly');
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
 
-  const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
-  const income = primaryCtx.monthly_income;
+  const { monthlyIncome, incomeStreams: forecastStreams, primaryCtx } = getForecastIncomeParams(incomeStreams, user);
   const currency = user?.currency || '£';
-  const forecast = generateForecast(bills, income, new Date(startDate + '-01'), getOtherStreams(incomeStreams), primaryCtx, sinkingFunds);
+  const forecast = generateForecast(bills, monthlyIncome, new Date(startDate + '-01'), forecastStreams, primaryCtx, sinkingFunds);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
+  const totalMonthlyIncome = roundMoney(sumMoney(incomeStreams.map(s => getStreamMonthlyAmount(s))));
   const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
 
   const multiplier = 1 / (FREQ_TO_MONTHLY[viewFrequency] || 1);
@@ -97,7 +98,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard
           title="Remaining"
-          value={scale(income - currentMonth.totalBills)}
+          value={scale(currentMonth.income - currentMonth.totalBills)}
           subtitle={freqLabel}
           icon={Wallet}
           variant="primary"
@@ -110,8 +111,8 @@ export default function Dashboard() {
         />
         <StatCard
           title="Income"
-          value={scale(income)}
-          subtitle={freqLabel}
+          value={scale(totalMonthlyIncome)}
+          subtitle={`${incomeStreams.length} ${incomeStreams.length === 1 ? 'source' : 'sources'}`}
           icon={PiggyBank}
         />
         <StatCard
@@ -121,6 +122,8 @@ export default function Dashboard() {
           icon={TrendingUp}
         />
       </div>
+
+      <IncomeBreakdown incomeStreams={incomeStreams} currency={currency} />
 
       {sinkingFunds.filter(f => f.status !== 'completed').length > 0 && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-xl p-3">

@@ -187,6 +187,19 @@ export function getBillAmountForMonth(bill, month, year) {
  * Calculate monthly income for an income stream (same logic as bills).
  */
 export function getIncomeStreamAmountForMonth(stream, month, year) {
+  // End date: no income after this date
+  if (stream.end_date) {
+    const endDate = new Date(stream.end_date);
+    if (year > endDate.getFullYear() || (year === endDate.getFullYear() && month > endDate.getMonth())) return 0;
+  }
+
+  // Irregular income: only in the month of next_payment_date
+  if (stream.frequency === 'irregular') {
+    if (!stream.next_payment_date) return 0;
+    const d = new Date(stream.next_payment_date);
+    return (d.getMonth() === month && d.getFullYear() === year) ? roundMoney(stream.amount) : 0;
+  }
+
   const { anchorMonth, anchorYear } = stream.start_date
     ? (() => { const d = new Date(stream.start_date); return { anchorMonth: d.getMonth(), anchorYear: d.getFullYear() }; })()
     : { anchorMonth: 0, anchorYear: new Date().getFullYear() - 10 };
@@ -198,6 +211,8 @@ export function getIncomeStreamAmountForMonth(stream, month, year) {
       return roundMoney(stream.amount * countOccurrencesInMonth(stream.start_date, 'weekly', month, year));
     case 'fortnightly':
       return roundMoney(stream.amount * countOccurrencesInMonth(stream.start_date, 'fortnightly', month, year));
+    case 'four_weekly':
+      return roundMoney(stream.amount * countOccurrencesInMonth(stream.start_date, 'four_weekly', month, year));
     case 'monthly': return roundMoney(stream.amount);
     case 'quarterly': {
       const elapsed = (year - anchorYear) * 12 + (month - anchorMonth);
@@ -397,6 +412,7 @@ export const FREQUENCY_LABELS = {
   monthly: 'Monthly',
   quarterly: 'Quarterly',
   annually: 'Annually',
+  irregular: 'Irregular',
 };
 
 export const CATEGORY_LABELS = {

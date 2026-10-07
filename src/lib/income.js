@@ -9,6 +9,18 @@ export const FREQ_TO_MONTHLY = {
   monthly: 1,
   quarterly: 4 / 12,
   annually: 1 / 12,
+  irregular: 0,
+};
+
+export const INCOME_TYPE_LABELS = {
+  salary: 'Salary',
+  overtime: 'Overtime',
+  second_job: 'Second Job',
+  freelance: 'Freelance',
+  benefits: 'Benefits',
+  pension: 'Pension',
+  bonus: 'Bonus',
+  other: 'Other',
 };
 
 // The user's main income stream (holds the pay schedule + tax settings).
@@ -42,6 +54,7 @@ export function getStreamMonthlyAmount(stream) {
     }).takeHomeMonthly);
   }
   const raw = parseFloat(stream.amount) || 0;
+  if (stream.frequency === 'irregular') return 0;
   return roundMoney(raw * (FREQ_TO_MONTHLY[stream.frequency] || 1));
 }
 
@@ -65,5 +78,25 @@ export function getPrimaryIncomeContext(incomeStreams = [], user = null) {
     pay_start_date: user?.pay_start_date || null,
     pay_day: user?.pay_day != null ? user?.pay_day : null,
     pay_weekday: user?.pay_weekday || 'none',
+  };
+}
+
+/**
+ * Resolve the income parameters for generateForecast.
+ *
+ * For a regular primary stream, the primary's monthly equivalent is passed
+ * as `monthlyIncome` (base) and only other streams go into `incomeStreams`.
+ * For an irregular primary stream, the base is 0 and ALL streams (including
+ * the primary) go into `incomeStreams` so the irregular payment lands in the
+ * correct month via getIncomeStreamAmountForMonth.
+ */
+export function getForecastIncomeParams(incomeStreams = [], user = null) {
+  const primary = getPrimaryStream(incomeStreams);
+  const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
+  const isIrregularPrimary = primary?.frequency === 'irregular';
+  return {
+    monthlyIncome: isIrregularPrimary ? 0 : primaryCtx.monthly_income,
+    incomeStreams: isIrregularPrimary ? (incomeStreams || []) : getOtherStreams(incomeStreams),
+    primaryCtx,
   };
 }
