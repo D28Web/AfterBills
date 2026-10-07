@@ -14,7 +14,7 @@ import { startOfDay, differenceInDays, isBefore, isAfter } from 'date-fns';
 import { getPayCycles, getBillOccurrencesInWindow } from './payday';
 import { getBillShare } from './forecast';
 import { getSinkingFundMonthlyContribution } from './sinkingFunds';
-import { FREQ_TO_MONTHLY, getOtherStreams } from './income';
+import { FREQ_TO_MONTHLY, getOtherStreams, getEffectiveStreamOccurrenceAmount, getEffectivePrimaryCycleIncome } from './income';
 import { roundMoney } from './money';
 
 const DEBT_CATEGORIES = ['loans', 'credit_cards'];
@@ -39,11 +39,23 @@ function getAdditionalIncomeInCycle(streams, cycleStart, cycleEnd) {
       if (isAfter(cycleStart, endDate)) return;
     }
 
+    // Scheduled one-off payments (bonuses) falling in this cycle
+    (stream.scheduled_changes || []).forEach(c => {
+      if (c.change_type === 'one_off' && c.effective_date) {
+        const d = startOfDay(new Date(c.effective_date));
+        if (!isBefore(d, cycleStart) && !isAfter(d, cycleEnd)) {
+          const amt = parseFloat(c.amount) || 0;
+          total += amt;
+          details.push({ name: c.label || stream.name, amount: amt, date: d });
+        }
+      }
+    });
+
     if (stream.frequency === 'irregular') {
       if (!stream.next_payment_date) return;
       const payDate = startOfDay(new Date(stream.next_payment_date));
       if (!isBefore(payDate, cycleStart) && !isAfter(payDate, cycleEnd)) {
-        const amt = parseFloat(stream.amount) || 0;
+        const amt = getEffectiveStreamOccurrenceAmount(stream, payDate);
         total += amt;
         details.push({ name: stream.name, amount: amt, date: payDate });
       }
@@ -54,7 +66,16 @@ function getAdditionalIncomeInCycle(streams, cycleStart, cycleEnd) {
 
     const occurrences = getBillOccurrencesInWindow(stream, cycleStart, cycleEnd);
     occurrences.forEach(date => {
-      const amt = parseFloat(stream.amount) || 0;
+      let amt = getEffectiveStreamOccurrenceAmount(stream, date);
+      // Scheduled additions (e.g. temporary overtime) active on this date
+      (stream.scheduled_changes || []).forEach(c => {
+        if (c.change_type === 'addition' && c.effective_date) {
+          const eff = startOfDay(new Date(c.effective_date));
+          const end = c.end_date ? startOfDay(new Date(c.end_date)) : null;
+          if (!isBefore(date, eff) && (!end || !isAfter(date, end))) amt += parseFloat(c.amount) || 0;
+        }
+      });
+      amt = roundMoney(amt);
       total += amt;
       details.push({ name: stream.name, amount: amt, date });
     });
@@ -72,7 +93,7 @@ export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFu
   const cycles = getPayCycles(primaryCtx, count);
 
   return cycles.map(cycle => {
-    const primaryAmount = roundMoney(cycleIncome);
+    const primaryAmount = roundMoney(getEffectivePrimaryCycleIncome(primaryCtx, cycle.start, monthlyIncome));
     const additional = getAdditionalIncomeInCycle(incomeStreams, cycle.start, cycle.end);
     const totalIncome = roundMoney(primaryAmount + additional.total);
 

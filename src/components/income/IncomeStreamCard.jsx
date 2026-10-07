@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, CalendarDays, Repeat, CalendarClock } from 'lucide-react';
+import { Pencil, Trash2, CalendarDays, Repeat, CalendarClock, TrendingUp } from 'lucide-react';
 import { formatMoney } from '@/lib/money';
 import { FREQUENCY_LABELS } from '@/lib/forecast';
 import { INCOME_TYPE_LABELS } from '@/lib/income';
@@ -19,6 +19,11 @@ export default function IncomeStreamCard({ stream, currency, onEdit, onDelete })
           </span>
           {stream.is_variable && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">Variable</span>
+          )}
+          {stream.scheduled_changes?.length > 0 && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium flex items-center gap-1">
+              <TrendingUp className="w-2.5 h-2.5" /> {stream.scheduled_changes.length} change{stream.scheduled_changes.length === 1 ? '' : 's'}
+            </span>
           )}
           {isEnded && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium">Ended</span>

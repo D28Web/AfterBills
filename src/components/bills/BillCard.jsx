@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CATEGORY_COLORS, CATEGORY_LABELS, FREQUENCY_LABELS, getBillDueDay, getBillShare, formatDueDay } from '@/lib/forecast';
 import { formatMoney } from '@/lib/money';
 import { isEssentialBill } from '@/lib/essential';
-import { Pencil, Trash2, CalendarDays, Repeat, Users, Target, ChevronDown, RefreshCw, TrendingUp } from 'lucide-react';
+import { Pencil, Trash2, CalendarDays, Repeat, Users, Target, ChevronDown, RefreshCw, TrendingUp, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { format, differenceInCalendarDays } from 'date-fns';
@@ -67,6 +67,16 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
               <Repeat className="w-3 h-3" />
               {FREQUENCY_LABELS[bill.frequency] || bill.frequency}
             </span>
+            {bill.end_date && (
+              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                <CalendarClock className="w-3 h-3" /> Until {format(new Date(bill.end_date), 'd MMM yyyy')}
+              </span>
+            )}
+            {bill.scheduled_changes?.length > 0 && (
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                <TrendingUp className="w-3 h-3" /> {bill.scheduled_changes.length} scheduled change{bill.scheduled_changes.length === 1 ? '' : 's'}
+              </span>
+            )}
           </div>
           {(bill.renewal_date || bill.intro_price_end_date) && (
             <div className="flex items-center gap-1.5 mt-2 text-xs flex-wrap">

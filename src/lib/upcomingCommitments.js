@@ -4,7 +4,7 @@
  * fund contributions) falling within a given number of days from today.
  */
 import { startOfDay, addDays, addWeeks, addMonths, startOfMonth } from 'date-fns';
-import { getBillShare } from './forecast';
+import { getBillShare, getEffectiveBillShare } from './forecast';
 import { roundMoney } from './money';
 import { getSinkingFundMonthlyContribution } from './sinkingFunds';
 import { FREQ_TO_MONTHLY } from './income';
@@ -51,10 +51,12 @@ export function getUpcomingCommitments(bills, sinkingFunds, days) {
     if (!bill.start_date) return;
     const isDebt = bill.category === 'loans' || bill.category === 'credit_cards';
     const isAnnual = bill.frequency === 'annually';
-    const amount = getBillShare(bill);
-    if (amount <= 0) return;
+    const endBound = bill.end_date ? startOfDay(new Date(bill.end_date)) : null;
     const occurrences = getOccurrencesInRange(bill.start_date, bill.frequency, today, windowEnd);
     occurrences.forEach(date => {
+      if (endBound && date > endBound) return;
+      const amount = getEffectiveBillShare(bill, date);
+      if (amount <= 0) return;
       events.push({
         type: isDebt ? 'debt' : (isAnnual ? 'annual' : 'bill'),
         name: bill.name,
@@ -73,7 +75,7 @@ export function getUpcomingCommitments(bills, sinkingFunds, days) {
       events.push({
         type: 'renewal',
         name: `${bill.name} renewal`,
-        amount: getBillShare(bill),
+        amount: getEffectiveBillShare(bill, renewalDate),
         date: renewalDate,
         category: bill.category,
         billId: `${bill.id}-renewal`,

@@ -1,5 +1,5 @@
 import { addDays, addWeeks, addMonths, startOfDay, isAfter, isBefore, format, getDay, getDaysInMonth } from 'date-fns';
-import { getBillShare } from '@/lib/forecast';
+import { getBillShare, getEffectiveBillShare } from '@/lib/forecast';
 
 const WEEKDAY_MAP = {
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
@@ -177,18 +177,18 @@ export function getPayCycles(user, count = 3) {
 export function getBillOccurrencesInWindow(bill, windowStart, windowEnd) {
   const start = startOfDay(new Date(windowStart));
   const end = startOfDay(new Date(windowEnd));
+  // Temporary bills: stop including occurrences past the end date.
+  const endBound = bill.end_date ? startOfDay(new Date(bill.end_date)) : null;
 
   // Legacy bills without start_date: use due_day to place a single occurrence in the window month
   if (!bill.start_date) {
     const dueDay = bill.due_day || 1;
-    // Place occurrence on the due day of the window's start month
     const occurrence = startOfDay(new Date(start.getFullYear(), start.getMonth(), Math.min(dueDay, 28)));
-    if (!isBefore(occurrence, start) && !isAfter(occurrence, end)) {
+    if (!isBefore(occurrence, start) && !isAfter(occurrence, end) && (!endBound || !isAfter(occurrence, endBound))) {
       return [occurrence];
     }
-    // Also check next month in case window spans two months
     const occurrence2 = startOfDay(new Date(end.getFullYear(), end.getMonth(), Math.min(dueDay, 28)));
-    if (!isBefore(occurrence2, start) && !isAfter(occurrence2, end) && occurrence2.getTime() !== occurrence.getTime()) {
+    if (!isBefore(occurrence2, start) && !isAfter(occurrence2, end) && (!endBound || !isAfter(occurrence2, endBound)) && occurrence2.getTime() !== occurrence.getTime()) {
       return [occurrence2];
     }
     return [];
@@ -198,17 +198,15 @@ export function getBillOccurrencesInWindow(bill, windowStart, windowEnd) {
   const MAX_ITER = 2000;
   let iter = 0;
 
-  // Walk cursor back to before the window so we don't miss occurrences
-  // whose anchor falls inside or after the window start
   while (!isBefore(cursor, start) && iter < MAX_ITER) {
     cursor = stepBack(cursor, bill.frequency);
     iter++;
   }
 
-  // Now walk forward and collect every occurrence inside the window
   const occurrences = [];
   iter = 0;
   while (!isAfter(cursor, end) && iter < MAX_ITER) {
+    if (endBound && isAfter(cursor, endBound)) break;
     if (!isBefore(cursor, start)) {
       occurrences.push(new Date(cursor));
     }
@@ -226,7 +224,7 @@ export function getBillsInCycle(bills, cycleStart, cycleEnd) {
   bills.forEach(bill => {
     const occurrences = getBillOccurrencesInWindow(bill, cycleStart, cycleEnd);
     occurrences.forEach(dueDate => {
-      result.push({ ...bill, dueDate, monthAmount: getBillShare(bill) });
+      result.push({ ...bill, dueDate, monthAmount: getEffectiveBillShare(bill, dueDate) });
     });
   });
   return result.sort((a, b) => a.dueDate - b.dueDate);

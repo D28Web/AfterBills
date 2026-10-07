@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import IncomeStreamForm from '@/components/income/IncomeStreamForm';
 import IncomeStreamCard from '@/components/income/IncomeStreamCard';
 import UKTaxSettings from '@/components/income/UKTaxSettings';
+import IncomeChangesEditor from '@/components/income/IncomeChangesEditor';
 import AccountDataSection from '@/components/settings/AccountDataSection';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -53,6 +54,7 @@ export default function Settings() {
   const [incomeMode, setIncomeMode] = useState('net');
   const [taxSettings, setTaxSettings] = useState(DEFAULT_TAX_SETTINGS);
   const [primaryStreamId, setPrimaryStreamId] = useState(null);
+  const [primaryChanges, setPrimaryChanges] = useState([]);
   const loadedRef = useRef(false);
 
   const { data: incomeStreams = [], isLoading: streamsLoading } = useQuery({
@@ -78,6 +80,7 @@ export default function Settings() {
       });
       setIncomeMode(primary.income_mode || 'net');
       setTaxSettings({ ...DEFAULT_TAX_SETTINGS, ...(primary.tax_settings || {}) });
+      setPrimaryChanges(primary.scheduled_changes || []);
     } else {
       // Legacy fallback: income still stored on the User entity
       setUseStartDate(!!user.pay_start_date);
@@ -96,6 +99,7 @@ export default function Settings() {
       });
       setIncomeMode(user.income_mode || 'net');
       setTaxSettings({ ...DEFAULT_TAX_SETTINGS, ...(user.tax_settings || {}) });
+      setPrimaryChanges([]);
     }
   }, [user, incomeStreams, streamsLoading]);
 
@@ -182,6 +186,15 @@ export default function Settings() {
       pay_day: (!isNonMonthly && !useStartDate) ? (parseInt(form.pay_day) || 1) : null,
       pay_weekday: form.pay_weekday || 'none',
       tax_settings: incomeMode === 'salary' ? cleanTaxSettings(taxSettings) : null,
+      scheduled_changes: (primaryChanges || [])
+        .map(c => ({
+          ...c,
+          amount: c.amount === '' ? undefined : parseFloat(c.amount),
+          gross_annual: c.gross_annual === '' ? undefined : parseFloat(c.gross_annual),
+          effective_date: c.effective_date || null,
+          end_date: c.end_date || null,
+        }))
+        .filter(c => c.effective_date),
     };
     savePrimary.mutate({ id: primaryStreamId, data: streamData });
     saveCurrency.mutate({ currency: form.currency, preferred_buffer: parseFloat(form.preferred_buffer) || 0 });
@@ -394,6 +407,14 @@ export default function Settings() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-1">A minimum cushion you'd like to keep. Highlights pay cycles where your forecast drops below it. Not treated as a bill or expense.</p>
+        </div>
+
+        <div className="border-t border-border pt-4">
+          <Label>Scheduled Future Income Changes</Label>
+          <div className="mt-2">
+            <IncomeChangesEditor changes={primaryChanges} onChange={setPrimaryChanges} incomeMode={incomeMode} />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Schedule pay rises/reductions, bonuses or temporary overtime. These apply automatically to forecasts from their effective date.</p>
         </div>
 
         <Button onClick={handleSave} disabled={savePrimary.isPending || saveCurrency.isPending} className="gap-2 w-full">

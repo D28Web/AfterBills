@@ -63,6 +63,80 @@
       "default": false,
       "description": "True if the amount varies from period to period (estimated amount)"
     },
+    "variable_forecast_percent": {
+      "type": "number",
+      "description": "Optional conservative forecast percentage (0-100). When set, expected (non-confirmed) variable amounts are forecast at this percentage of their expected value."
+    },
+    "variable_periods": {
+      "type": "array",
+      "description": "Per-period overrides for variable income. Each entry sets expected/confirmed/actual amounts for a specific pay period date.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "period_date": {
+            "type": "string",
+            "format": "date",
+            "description": "The pay period date this override applies to (YYYY-MM-DD)"
+          },
+          "expected_amount": {
+            "type": "number",
+            "description": "Expected amount for this period"
+          },
+          "confirmed_amount": {
+            "type": "number",
+            "description": "Confirmed amount (once known). Used at full value in forecasts."
+          },
+          "actual_amount": {
+            "type": "number",
+            "description": "Actual amount received (manually entered). Used at full value when present."
+          }
+        }
+      }
+    },
+    "scheduled_changes": {
+      "type": "array",
+      "description": "Future-dated income changes: pay rises/reductions (amount), one-off payments (one_off, e.g. bonuses), or temporary additions (addition, e.g. overtime).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique id for this change entry"
+          },
+          "label": {
+            "type": "string",
+            "description": "Optional label e.g. 'Pay rise', 'Christmas bonus'"
+          },
+          "change_type": {
+            "type": "string",
+            "enum": [
+              "amount",
+              "one_off",
+              "addition"
+            ],
+            "description": "amount = new per-occurrence amount from effective_date; one_off = single payment on effective_date; addition = extra amount added per occurrence from effective_date to end_date"
+          },
+          "amount": {
+            "type": "number",
+            "description": "For amount/addition: the new or extra per-occurrence amount. For one_off: the payment amount."
+          },
+          "gross_annual": {
+            "type": "number",
+            "description": "For salary-mode 'amount' changes: the new gross annual salary (take-home is recomputed)."
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date",
+            "description": "When the change takes effect (YYYY-MM-DD)"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Optional end date (YYYY-MM-DD). For 'amount' changes the base resumes after this; for 'addition' the extra stops after this."
+          }
+        }
+      }
+    },
     "pay_day": {
       "type": "number",
       "description": "Day of month for monthly pay (1-31). Primary stream only."

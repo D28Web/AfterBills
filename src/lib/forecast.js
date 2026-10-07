@@ -1,6 +1,6 @@
 import { addMonths, addWeeks, getDaysInMonth, startOfDay, startOfMonth, isSameMonth, format, addDays } from 'date-fns';
-import { roundMoney, getSplitShare } from './money';
-import { FREQ_TO_MONTHLY } from './income';
+import { roundMoney, getSplitShare, sumMoney } from './money';
+import { FREQ_TO_MONTHLY, getEffectiveStreamOccurrenceAmount, getEffectivePrimaryCycleIncome, getEffectivePrimaryMonthlyIncome } from './income';
 import { getSinkingFundMonthlyContribution } from './sinkingFunds';
 
 /**
@@ -81,14 +81,44 @@ function countOccurrencesInMonth(startDateStr, frequency, targetMonth, targetYea
 }
 
 /**
- * Convert a bill to its monthly equivalent cost.
+ * Resolve the active total amount for a bill on a given date, applying any
+ * scheduled future changes (rent increase, renewal price, etc.). The base
+ * `amount` applies until a change's effective_date; a change with an end_date
+ * reverts to the base afterwards. Historical amounts are preserved separately
+ * in amount_history and are not consulted here.
+ */
+export function getEffectiveBillAmount(bill, date) {
+  let amount = parseFloat(bill.amount) || 0;
+  const changes = (bill.scheduled_changes || [])
+    .filter(c => c.effective_date)
+    .sort((a, b) => new Date(a.effective_date) - new Date(b.effective_date));
+  const target = startOfDay(new Date(date));
+  for (const c of changes) {
+    const eff = startOfDay(new Date(c.effective_date));
+    const end = c.end_date ? startOfDay(new Date(c.end_date)) : null;
+    if (target >= eff && (!end || target <= end)) amount = parseFloat(c.amount) || 0;
+  }
+  return amount;
+}
+
+/** A person's share of the effective amount on a given date. */
+export function getEffectiveBillShare(bill, date) {
+  const amount = getEffectiveBillAmount(bill, date);
+  if (bill.is_split && bill.split_between > 1) return amount / bill.split_between;
+  return amount;
+}
+
+/**
+ * Convert a bill to its monthly equivalent cost (current, as of today).
+ * Uses today's effective amount so scheduled future changes are not averaged
+ * in — date-specific forecasts use getBillAmountForMonth instead.
  */
 export function getBillShare(bill) {
   return getSplitShare(bill);
 }
 
 export function billToMonthlyCost(bill) {
-  const amount = getBillShare(bill);
+  const amount = getEffectiveBillShare(bill, new Date());
   switch (bill.frequency) {
     case 'weekly': return roundMoney(amount * 52 / 12);
     case 'fortnightly': return roundMoney(amount * 26 / 12);
@@ -162,68 +192,149 @@ export function getBillDueDay(bill) {
 }
 
 /**
- * Get the actual bill amount for a given month.
+ * Generate the actual occurrence dates for a bill within a calendar month,
+ * respecting its start date, frequency, and optional end date (temporary
+ * bills stop after end_date). Used to resolve per-occurrence effective
+ * amounts so date-specific changes are never collapsed into a monthly average.
  */
-export function getBillAmountForMonth(bill, month, year) {
-  const { anchorMonth, anchorYear } = getBillAnchor(bill);
-  if (year < anchorYear || (year === anchorYear && month < anchorMonth)) return 0;
+export function getBillOccurrencesInMonth(bill, month, year) {
+  const { anchorMonth, anchorYear, dueDay } = getBillAnchor(bill);
+  if (year < anchorYear || (year === anchorYear && month < anchorMonth)) return [];
+  const endBound = bill.end_date ? startOfDay(new Date(bill.end_date)) : null;
+  const monthStart = startOfMonth(new Date(year, month));
+  if (endBound && endBound < monthStart) return [];
 
-  const amount = getBillShare(bill);
+  const daysInMonth = getDaysInMonth(new Date(year, month));
+  const occDay = Math.min(dueDay, daysInMonth);
+  const occDate = startOfDay(new Date(year, month, occDay));
+
   switch (bill.frequency) {
     case 'weekly':
-      return roundMoney(amount * countOccurrencesInMonth(bill.start_date, 'weekly', month, year));
     case 'fortnightly':
-      return roundMoney(amount * countOccurrencesInMonth(bill.start_date, 'fortnightly', month, year));
-    case 'four_weekly':
-      return roundMoney(amount * countOccurrencesInMonth(bill.start_date, 'four_weekly', month, year));
-    case 'monthly': return roundMoney(amount);
-    case 'quarterly': return roundMoney(isBillDueInMonth(bill, month, year) ? amount : 0);
-    case 'annually': return roundMoney(isBillDueInMonth(bill, month, year) ? amount : 0);
-    default: return roundMoney(amount);
+    case 'four_weekly': {
+      const monthEnd = startOfMonth(addMonths(monthStart, 1));
+      if (!bill.start_date) return [];
+      let cur = startOfDay(new Date(bill.start_date));
+      const step = (d) => {
+        if (bill.frequency === 'weekly') return addWeeks(d, 1);
+        if (bill.frequency === 'fortnightly') return addWeeks(d, 2);
+        return addWeeks(d, 4);
+      };
+      if (cur >= monthEnd) return [];
+      while (cur < monthStart) cur = step(cur);
+      const dates = [];
+      while (cur < monthEnd) {
+        if (endBound && cur > endBound) break;
+        dates.push(new Date(cur));
+        cur = step(cur);
+      }
+      return dates;
+    }
+    case 'quarterly':
+      if (!isBillDueInMonth(bill, month, year)) return [];
+      if (endBound && occDate > endBound) return [];
+      return [occDate];
+    case 'annually':
+      if (!isBillDueInMonth(bill, month, year)) return [];
+      if (endBound && occDate > endBound) return [];
+      return [occDate];
+    default:
+      if (endBound && occDate > endBound) return [];
+      return [occDate];
   }
 }
 
 /**
- * Calculate monthly income for an income stream (same logic as bills).
+ * Get the actual bill amount for a given month, summing the per-occurrence
+ * effective amounts (scheduled changes applied per occurrence) and excluding
+ * occurrences past an optional end date.
+ */
+export function getBillAmountForMonth(bill, month, year) {
+  const occurrences = getBillOccurrencesInMonth(bill, month, year);
+  return roundMoney(sumMoney(occurrences.map(d => getEffectiveBillShare(bill, d))));
+}
+
+/**
+ * Generate occurrence dates for an income stream within a calendar month,
+ * respecting start date, frequency, and optional end date.
+ */
+function getStreamOccurrencesInMonth(stream, month, year) {
+  const monthStart = startOfMonth(new Date(year, month));
+  const monthEnd = startOfMonth(addMonths(monthStart, 1));
+  const endBound = stream.end_date ? startOfDay(new Date(stream.end_date)) : null;
+  let cur;
+  if (stream.start_date) {
+    cur = startOfDay(new Date(stream.start_date));
+  } else {
+    // Legacy fallback for monthly/quarterly/annual streams without a start
+    // date: treat as always started, anchored on the 1st far in the past.
+    // Weekly/fortnightly need a real anchor to place occurrences.
+    if (['weekly', 'fortnightly', 'four_weekly'].includes(stream.frequency)) return [];
+    cur = startOfDay(new Date(new Date().getFullYear() - 10, 0, 1));
+  }
+  const step = (d) => {
+    switch (stream.frequency) {
+      case 'weekly': return addWeeks(d, 1);
+      case 'fortnightly': return addWeeks(d, 2);
+      case 'four_weekly': return addWeeks(d, 4);
+      case 'quarterly': return addMonths(d, 3);
+      case 'annually': return addMonths(d, 12);
+      default: return addMonths(d, 1);
+    }
+  };
+  if (cur >= monthEnd) return [];
+  while (cur < monthStart) cur = step(cur);
+  const dates = [];
+  while (cur < monthEnd) {
+    if (endBound && cur > endBound) break;
+    dates.push(new Date(cur));
+    cur = step(cur);
+  }
+  return dates;
+}
+
+/**
+ * Calculate monthly income for an income stream, applying scheduled changes
+ * (amount changes, one-off payments, additions) and variable per-period
+ * amounts per occurrence — never as a flat monthly average.
  */
 export function getIncomeStreamAmountForMonth(stream, month, year) {
-  // End date: no income after this date
   if (stream.end_date) {
     const endDate = new Date(stream.end_date);
     if (year > endDate.getFullYear() || (year === endDate.getFullYear() && month > endDate.getMonth())) return 0;
   }
 
-  // Irregular income: only in the month of next_payment_date
+  const addOneOffsAndAdditions = (occurrences, base) => {
+    let total = base;
+    (stream.scheduled_changes || []).forEach(c => {
+      if (c.change_type === 'one_off' && c.effective_date) {
+        const d = new Date(c.effective_date);
+        if (d.getMonth() === month && d.getFullYear() === year) total += parseFloat(c.amount) || 0;
+      }
+      if (c.change_type === 'addition' && c.effective_date) {
+        const eff = startOfDay(new Date(c.effective_date));
+        const end = c.end_date ? startOfDay(new Date(c.end_date)) : null;
+        const inRange = occurrences.filter(d => d >= eff && (!end || d <= end));
+        total += roundMoney(inRange.length * (parseFloat(c.amount) || 0));
+      }
+    });
+    return roundMoney(total);
+  };
+
   if (stream.frequency === 'irregular') {
-    if (!stream.next_payment_date) return 0;
-    const d = new Date(stream.next_payment_date);
-    return (d.getMonth() === month && d.getFullYear() === year) ? roundMoney(stream.amount) : 0;
+    let total = 0;
+    if (stream.next_payment_date) {
+      const d = new Date(stream.next_payment_date);
+      if (d.getMonth() === month && d.getFullYear() === year) {
+        total += getEffectiveStreamOccurrenceAmount(stream, d);
+      }
+    }
+    return addOneOffsAndAdditions([], total);
   }
 
-  const { anchorMonth, anchorYear } = stream.start_date
-    ? (() => { const d = new Date(stream.start_date); return { anchorMonth: d.getMonth(), anchorYear: d.getFullYear() }; })()
-    : { anchorMonth: 0, anchorYear: new Date().getFullYear() - 10 };
-
-  if (year < anchorYear || (year === anchorYear && month < anchorMonth)) return 0;
-
-  switch (stream.frequency) {
-    case 'weekly':
-      return roundMoney(stream.amount * countOccurrencesInMonth(stream.start_date, 'weekly', month, year));
-    case 'fortnightly':
-      return roundMoney(stream.amount * countOccurrencesInMonth(stream.start_date, 'fortnightly', month, year));
-    case 'four_weekly':
-      return roundMoney(stream.amount * countOccurrencesInMonth(stream.start_date, 'four_weekly', month, year));
-    case 'monthly': return roundMoney(stream.amount);
-    case 'quarterly': {
-      const elapsed = (year - anchorYear) * 12 + (month - anchorMonth);
-      return roundMoney(elapsed % 3 === 0 ? stream.amount : 0);
-    }
-    case 'annually': {
-      const elapsed = (year - anchorYear) * 12 + (month - anchorMonth);
-      return roundMoney(elapsed % 12 === 0 ? stream.amount : 0);
-    }
-    default: return roundMoney(stream.amount);
-  }
+  const occurrences = getStreamOccurrencesInMonth(stream, month, year);
+  const base = sumMoney(occurrences.map(d => getEffectiveStreamOccurrenceAmount(stream, d)));
+  return addOneOffsAndAdditions(occurrences, base);
 }
 
 /**
@@ -235,16 +346,17 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date(), i
   const start = startOfMonth(startDate);
   const months = [];
 
-  // Pre-compute payday-aware income per month if user has non-monthly pay frequency
+  // Pre-compute payday-aware income per month if user has non-monthly pay
+  // frequency. Each payday resolves its own effective cycle income so
+  // scheduled pay rises / variable amounts apply on the correct date.
   let paydayIncomeByMonth = null;
   if (user?.pay_frequency && user.pay_frequency !== 'monthly' && monthlyIncome > 0) {
     const multiplier = FREQ_TO_MONTHLY[user.pay_frequency];
     if (multiplier) {
-      const cycleIncome = monthlyIncome / multiplier;
-      // Inline payday stepping to avoid circular import with payday.js
       const payCycles = computePayCycles(user, 16);
       paydayIncomeByMonth = {};
       payCycles.forEach(cycleStart => {
+        const cycleIncome = getEffectivePrimaryCycleIncome(user, cycleStart, monthlyIncome);
         const key = `${cycleStart.getFullYear()}-${cycleStart.getMonth()}`;
         paydayIncomeByMonth[key] = (paydayIncomeByMonth[key] || 0) + cycleIncome;
       });
@@ -275,10 +387,11 @@ export function generateForecast(bills, monthlyIncome, startDate = new Date(), i
       extraIncome += getIncomeStreamAmountForMonth(stream, month, year);
     });
 
-    // Use payday-accurate income if available, otherwise flat monthly
+    // Use payday-accurate income if available, otherwise the effective monthly
+    // income for this month (scheduled changes resolved by month start).
     const baseIncome = paydayIncomeByMonth
       ? (paydayIncomeByMonth[`${year}-${month}`] || 0)
-      : monthlyIncome;
+      : getEffectivePrimaryMonthlyIncome(user, month, year, monthlyIncome);
 
     const totalIncome = baseIncome + extraIncome;
 

@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { addMonths, subMonths, getDaysInMonth, startOfMonth, getDay, format } from 'date-fns';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CATEGORY_COLORS, CATEGORY_LABELS, getBillsForDay, getBillAmountForMonth } from '@/lib/forecast';
+import { CATEGORY_COLORS, CATEGORY_LABELS, getBillsForDay, getBillAmountForMonth, getEffectiveBillShare } from '@/lib/forecast';
 import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -43,8 +43,9 @@ export default function CalendarView() {
     const data = {};
     let runningBalance = primaryCtx.monthly_income || 0;
     for (let day = 1; day <= daysInMonth; day++) {
+      const dayDate = new Date(year, month, day);
       const dayBills = getBillsForDay(bills, day, month, year);
-      const dayTotal = sumMoney(dayBills.map(b => b.amount));
+      const dayTotal = sumMoney(dayBills.map(b => getEffectiveBillShare(b, dayDate)));
       runningBalance = roundMoney(runningBalance - dayTotal);
       const dayRenewals = getRenewalsForDay(bills, day, month, year);
       data[day] = { bills: dayBills, total: dayTotal, balance: runningBalance, renewals: dayRenewals };
@@ -144,16 +145,19 @@ export default function CalendarView() {
             )}
             {dayBills.bills.length > 0 ? (
               <div className="space-y-2">
-                {dayBills.bills.map((b, i) => (
+                {dayBills.bills.map((b, i) => {
+                  const billDate = new Date(year, month, selectedDay);
+                  return (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-2 h-6 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[b.category] }} />
                     <div className="flex-1">
                       <p className="text-sm font-medium">{b.name}</p>
                       <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[b.category]}</p>
                     </div>
-                    <p className="text-sm font-semibold">{formatMoney(b.amount, { currency, decimals: 2 })}</p>
+                    <p className="text-sm font-semibold">{formatMoney(getEffectiveBillShare(b, billDate), { currency, decimals: 2 })}</p>
                   </div>
-                ))}
+                  );
+                })}
                 <div className="border-t border-border pt-2 mt-2 flex justify-between">
                   <span className="text-xs text-muted-foreground">Est. balance after</span>
                   <span className={cn("text-sm font-bold", dayBills.balance < 0 ? "text-destructive" : "text-primary")}>

@@ -15,6 +15,11 @@
       "format": "date",
       "description": "The date the bill first started / is anchored to (YYYY-MM-DD). The day-of-month is used as the due day each period."
     },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional end date (YYYY-MM-DD). When set, the bill stops being included in forecasts after this date (temporary bills)."
+    },
     "category": {
       "type": "string",
       "enum": [
@@ -52,6 +57,37 @@
     "essential": {
       "type": "boolean",
       "description": "Whether this bill is an essential expense (true) or non-essential (false). Null means unclassified \u2014 the category-based default is used until the user sets it. Used in affordability and emergency fund calculations."
+    },
+    "scheduled_changes": {
+      "type": "array",
+      "description": "Future-dated amount changes for this bill (e.g. rent increase, renewal price). Each change overrides the base amount from its effective date until its optional end date. Historical amounts are preserved in amount_history.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique id for this change entry"
+          },
+          "label": {
+            "type": "string",
+            "description": "Optional label e.g. 'Rent increase'"
+          },
+          "amount": {
+            "type": "number",
+            "description": "New total amount (full price) for this period"
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date",
+            "description": "When the new amount takes effect (YYYY-MM-DD)"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Optional end date (YYYY-MM-DD). When set, the base amount resumes after this date."
+          }
+        }
+      }
     },
     "target_end_date": {
       "type": "string",

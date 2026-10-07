@@ -2,14 +2,14 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { getPayCycles } from '@/lib/payday';
 import { formatMoney } from '@/lib/money';
-import { FREQ_TO_MONTHLY } from '@/lib/income';
+import { FREQ_TO_MONTHLY, getEffectivePrimaryCycleIncome } from '@/lib/income';
 import PayCycleRow from '@/components/dashboard/PayCycleRow';
 
 export default function PaydayCycles({ user, bills, currency = '£' }) {
   const [expanded, setExpanded] = useState(0);
   const monthlyIncome = user?.monthly_income || 0;
   const freq = user?.pay_frequency || 'monthly';
-  const cycleIncome = monthlyIncome / (FREQ_TO_MONTHLY[freq] || 1);
+  const baseCycleIncome = monthlyIncome / (FREQ_TO_MONTHLY[freq] || 1);
 
   // Show 13 cycles to cover a full year of pay periods
   const cycles = getPayCycles(user, 13);
@@ -35,7 +35,7 @@ export default function PaydayCycles({ user, bills, currency = '£' }) {
         <div>
           <h3 className="text-sm font-semibold text-foreground font-heading">Pay Cycle Forecast</h3>
           <p className="text-xs text-muted-foreground mt-0.5 capitalize">
-            {freq.replace('_', '-')} pay · {formatMoney(cycleIncome, { currency })} per cycle
+            {freq.replace('_', '-')} pay · {formatMoney(baseCycleIncome, { currency })} per cycle
           </p>
         </div>
         <span className="text-xs text-muted-foreground">{cycles.length} cycles ahead</span>
@@ -47,7 +47,7 @@ export default function PaydayCycles({ user, bills, currency = '£' }) {
             key={i}
             cycle={cycle}
             index={i}
-            cycleIncome={cycleIncome}
+            cycleIncome={getEffectivePrimaryCycleIncome(user, cycle.start, monthlyIncome)}
             housingBills={housingBills}
             bills={bills}
             currency={currency}

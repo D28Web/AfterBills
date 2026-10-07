@@ -6,6 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, X } from 'lucide-react';
 import { INCOME_TYPE_LABELS } from '@/lib/income';
+import IncomeChangesEditor from '@/components/income/IncomeChangesEditor';
+import VariablePeriodsEditor from '@/components/income/VariablePeriodsEditor';
 
 const INCOME_TYPES = Object.entries(INCOME_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
@@ -28,6 +30,9 @@ const DEFAULT = {
   end_date: '',
   next_payment_date: '',
   is_variable: false,
+  variable_forecast_percent: '',
+  scheduled_changes: [],
+  variable_periods: [],
   notes: '',
 };
 
@@ -40,6 +45,9 @@ export default function IncomeStreamForm({ stream, onSubmit, onCancel }) {
     next_payment_date: stream.next_payment_date || '',
     is_variable: stream.is_variable || false,
     income_type: stream.income_type || 'other',
+    variable_forecast_percent: stream.variable_forecast_percent ?? '',
+    scheduled_changes: stream.scheduled_changes || [],
+    variable_periods: stream.variable_periods || [],
     notes: stream.notes || '',
   } : DEFAULT);
 
@@ -54,6 +62,24 @@ export default function IncomeStreamForm({ stream, onSubmit, onCancel }) {
       end_date: form.end_date || null,
       next_payment_date: form.next_payment_date || null,
       start_date: form.start_date || null,
+      variable_forecast_percent: form.variable_forecast_percent === '' ? null : parseFloat(form.variable_forecast_percent),
+      scheduled_changes: (form.scheduled_changes || [])
+        .map(c => ({
+          ...c,
+          amount: c.amount === '' ? undefined : parseFloat(c.amount),
+          gross_annual: c.gross_annual === '' ? undefined : parseFloat(c.gross_annual),
+          effective_date: c.effective_date || null,
+          end_date: c.end_date || null,
+        }))
+        .filter(c => c.effective_date),
+      variable_periods: (form.variable_periods || [])
+        .map(p => ({
+          period_date: p.period_date || null,
+          expected_amount: p.expected_amount === '' ? undefined : parseFloat(p.expected_amount),
+          confirmed_amount: p.confirmed_amount === '' ? undefined : parseFloat(p.confirmed_amount),
+          actual_amount: p.actual_amount === '' ? undefined : parseFloat(p.actual_amount),
+        }))
+        .filter(p => p.period_date),
     });
   };
 
@@ -110,6 +136,36 @@ export default function IncomeStreamForm({ stream, onSubmit, onCancel }) {
           </div>
           <Switch checked={form.is_variable} onCheckedChange={setSelect('is_variable')} />
         </div>
+
+        {form.is_variable && (
+          <>
+            <div className="col-span-2">
+              <Label>Conservative Forecast % (optional)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                placeholder="e.g. 80"
+                value={form.variable_forecast_percent}
+                onChange={set('variable_forecast_percent')}
+              />
+              <p className="text-xs text-muted-foreground mt-0.5">Forecast expected (non-confirmed) amounts at this percentage of their value. Confirmed/actual amounts are used at full value.</p>
+            </div>
+            <div className="col-span-2">
+              <Label>Per-Period Amounts</Label>
+              <VariablePeriodsEditor periods={form.variable_periods || []} onChange={p => setForm(prev => ({ ...prev, variable_periods: p }))} />
+            </div>
+          </>
+        )}
+
+        <div className="col-span-2 border-t border-border pt-3">
+          <Label>Scheduled Future Changes</Label>
+          <div className="mt-2">
+            <IncomeChangesEditor changes={form.scheduled_changes || []} onChange={c => setForm(prev => ({ ...prev, scheduled_changes: c }))} incomeMode="net" />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Schedule pay rises/reductions, bonuses or temporary overtime for this stream.</p>
+        </div>
+
         <div className="col-span-2">
           <Label>Notes (optional)</Label>
           <Input placeholder="Optional notes" value={form.notes} onChange={set('notes')} />

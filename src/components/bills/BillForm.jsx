@@ -8,21 +8,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { CATEGORY_LABELS } from '@/lib/forecast';
 import { formatMoney } from '@/lib/money';
 import { getDefaultEssential } from '@/lib/essential';
+import ScheduledChangesEditor from '@/components/bills/ScheduledChangesEditor';
 import { X } from 'lucide-react';
 
 export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) {
   const [form, setForm] = useState(() => {
     if (bill) {
-      return { ...bill, essential: bill.essential ?? getDefaultEssential(bill.category) };
+      return {
+        ...bill,
+        essential: bill.essential ?? getDefaultEssential(bill.category),
+        end_date: bill.end_date || '',
+        scheduled_changes: bill.scheduled_changes || [],
+      };
     }
     return {
       name: '',
       amount: '',
       start_date: new Date().toISOString().slice(0, 10),
+      end_date: '',
       category: 'other',
       frequency: 'monthly',
       is_recurring: true,
       essential: getDefaultEssential('other'),
+      scheduled_changes: [],
       is_split: false,
       split_between: 2,
       target_end_date: '',
@@ -49,6 +57,15 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       notice_period_days: form.notice_period_days ? parseInt(form.notice_period_days) : null,
       intro_price_end_date: form.intro_price_end_date || null,
       expected_new_price: form.expected_new_price === '' ? undefined : parseFloat(form.expected_new_price),
+      end_date: form.end_date || null,
+      scheduled_changes: (form.scheduled_changes || [])
+        .map(c => ({
+          ...c,
+          amount: c.amount === '' ? undefined : parseFloat(c.amount),
+          effective_date: c.effective_date || null,
+          end_date: c.end_date || null,
+        }))
+        .filter(c => c.effective_date),
     });
   };
 
@@ -92,6 +109,16 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
             onChange={e => setForm({ ...form, start_date: e.target.value })}
             required
           />
+        </div>
+
+        <div>
+          <Label>End Date (optional)</Label>
+          <Input
+            type="date"
+            value={form.end_date || ''}
+            onChange={e => setForm({ ...form, end_date: e.target.value })}
+          />
+          <p className="text-xs text-muted-foreground mt-1">For temporary bills — stops after this date.</p>
         </div>
 
         <div>
@@ -233,6 +260,15 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">Track renewals and introductory price expiries. The bill amount won't change automatically — you'll be prompted to confirm any new price.</p>
+        </div>
+
+        <div className="col-span-2 border-t border-border pt-3 mt-1">
+          <p className="text-xs font-semibold text-foreground mb-2">Scheduled Future Changes</p>
+          <ScheduledChangesEditor
+            changes={form.scheduled_changes || []}
+            onChange={c => setForm({ ...form, scheduled_changes: c })}
+          />
+          <p className="text-xs text-muted-foreground mt-2">Schedule future amount changes (rent increases, renewal prices). Historical amounts are preserved separately.</p>
         </div>
       </div>
 
