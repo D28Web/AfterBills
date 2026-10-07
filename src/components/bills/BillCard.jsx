@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { CATEGORY_COLORS, CATEGORY_LABELS, FREQUENCY_LABELS, getBillDueDay, getBillShare, formatDueDay } from '@/lib/forecast';
 import { formatMoney } from '@/lib/money';
-import { Pencil, Trash2, CalendarDays, Repeat, Users, Target, ChevronDown } from 'lucide-react';
+import { Pencil, Trash2, CalendarDays, Repeat, Users, Target, ChevronDown, RefreshCw, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { format } from 'date-fns';
+import { format, differenceInCalendarDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 import BillSubcategoryList from '@/components/bills/BillSubcategoryList';
 
 export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
@@ -55,6 +56,31 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
               {FREQUENCY_LABELS[bill.frequency] || bill.frequency}
             </span>
           </div>
+          {(bill.renewal_date || bill.intro_price_end_date) && (
+            <div className="flex items-center gap-1.5 mt-2 text-xs flex-wrap">
+              {bill.renewal_date && (() => {
+                const daysLeft = differenceInCalendarDays(new Date(bill.renewal_date), new Date());
+                const isUrgent = daysLeft >= 0 && daysLeft <= 30;
+                return (
+                  <span className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded", isUrgent ? "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400" : "bg-muted text-muted-foreground")}>
+                    <RefreshCw className="w-3 h-3" />
+                    Renews {format(new Date(bill.renewal_date), 'd MMM yyyy')}
+                    {isUrgent && daysLeft <= 7 && <span className="font-medium">· {daysLeft === 0 ? 'today' : `${daysLeft}d`}</span>}
+                  </span>
+                );
+              })()}
+              {bill.intro_price_end_date && (() => {
+                const daysLeft = differenceInCalendarDays(new Date(bill.intro_price_end_date), new Date());
+                const isUrgent = daysLeft <= 30;
+                return (
+                  <span className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded", isUrgent ? "bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400" : "bg-muted text-muted-foreground")}>
+                    <TrendingUp className="w-3 h-3" />
+                    {daysLeft < 0 ? 'Intro expired' : `Intro ends ${format(new Date(bill.intro_price_end_date), 'd MMM')}`}
+                  </span>
+                );
+              })()}
+            </div>
+          )}
           {hasPayoffTarget && (
             <div className="flex items-center gap-1 mt-2 text-xs text-primary">
               <Target className="w-3 h-3" />

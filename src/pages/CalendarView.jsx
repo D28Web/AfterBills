@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { addMonths, subMonths, getDaysInMonth, startOfMonth, getDay, format } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORY_COLORS, CATEGORY_LABELS, getBillsForDay, getBillAmountForMonth } from '@/lib/forecast';
 import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { getPrimaryIncomeContext } from '@/lib/income';
+import { getRenewalsForDay } from '@/lib/contracts';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -45,7 +46,8 @@ export default function CalendarView() {
       const dayBills = getBillsForDay(bills, day, month, year);
       const dayTotal = sumMoney(dayBills.map(b => b.amount));
       runningBalance = roundMoney(runningBalance - dayTotal);
-      data[day] = { bills: dayBills, total: dayTotal, balance: runningBalance };
+      const dayRenewals = getRenewalsForDay(bills, day, month, year);
+      data[day] = { bills: dayBills, total: dayTotal, balance: runningBalance, renewals: dayRenewals };
     }
     return data;
   }, [bills, month, year, primaryCtx.monthly_income, daysInMonth]);
@@ -92,6 +94,9 @@ export default function CalendarView() {
                 )}
               >
                 <span className={cn("text-xs md:text-sm font-medium", isToday && !isSelected && "text-primary")}>{day}</span>
+                {data.renewals?.length > 0 && (
+                  <RefreshCw className="absolute top-1 right-1 w-2.5 h-2.5 text-amber-500" />
+                )}
                 {hasBills && (
                   <div className="flex gap-0.5 justify-center mt-1 flex-wrap">
                     {data.bills.slice(0, 3).map((b, j) => (
@@ -120,6 +125,23 @@ export default function CalendarView() {
             <h3 className="text-sm font-semibold font-heading mb-3">
               {format(new Date(year, month, selectedDay), 'EEEE, do MMMM')}
             </h3>
+            {dayBills.renewals?.length > 0 && (
+              <div className="space-y-1.5 mb-3">
+                <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <RefreshCw className="w-3 h-3" /> Renewals
+                </p>
+                {dayBills.renewals.map((b, i) => (
+                  <div key={`r-${i}`} className="flex items-center gap-3 p-2 rounded-lg bg-amber-50/50 border border-amber-200/50 dark:bg-amber-900/10 dark:border-amber-800/30">
+                    <RefreshCw className="w-3 h-3 text-amber-500 shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{b.name}</p>
+                      <p className="text-xs text-muted-foreground">{CATEGORY_LABELS[b.category]}</p>
+                    </div>
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Renewal</p>
+                  </div>
+                ))}
+              </div>
+            )}
             {dayBills.bills.length > 0 ? (
               <div className="space-y-2">
                 {dayBills.bills.map((b, i) => (

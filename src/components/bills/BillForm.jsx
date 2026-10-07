@@ -22,6 +22,12 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
     target_end_date: '',
     remaining_balance: '',
     notes: '',
+    contract_start_date: '',
+    contract_end_date: '',
+    renewal_date: '',
+    notice_period_days: '',
+    intro_price_end_date: '',
+    expected_new_price: '',
   });
 
   const handleSubmit = (e) => {
@@ -30,6 +36,12 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       ...form,
       amount: parseFloat(form.amount),
       remaining_balance: form.remaining_balance === '' ? undefined : parseFloat(form.remaining_balance),
+      contract_start_date: form.contract_start_date || null,
+      contract_end_date: form.contract_end_date || null,
+      renewal_date: form.renewal_date || null,
+      notice_period_days: form.notice_period_days ? parseInt(form.notice_period_days) : null,
+      intro_price_end_date: form.intro_price_end_date || null,
+      expected_new_price: form.expected_new_price === '' ? undefined : parseFloat(form.expected_new_price),
     });
   };
 
@@ -171,6 +183,37 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
             onChange={e => setForm({ ...form, notes: e.target.value })}
             rows={2}
           />
+        </div>
+
+        <div className="col-span-2 border-t border-border pt-3 mt-1">
+          <p className="text-xs font-semibold text-foreground mb-2">Contract & Renewal (optional)</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Contract Start</Label>
+              <Input type="date" value={form.contract_start_date || ''} onChange={e => setForm({ ...form, contract_start_date: e.target.value })} />
+            </div>
+            <div>
+              <Label>Contract End</Label>
+              <Input type="date" value={form.contract_end_date || ''} onChange={e => setForm({ ...form, contract_end_date: e.target.value })} />
+            </div>
+            <div>
+              <Label>Renewal Date</Label>
+              <Input type="date" value={form.renewal_date || ''} onChange={e => setForm({ ...form, renewal_date: e.target.value })} />
+            </div>
+            <div>
+              <Label>Notice Period (days)</Label>
+              <Input type="number" min="0" placeholder="e.g. 30" value={form.notice_period_days ?? ''} onChange={e => setForm({ ...form, notice_period_days: e.target.value ? parseInt(e.target.value) : '' })} />
+            </div>
+            <div>
+              <Label>Intro Price Ends</Label>
+              <Input type="date" value={form.intro_price_end_date || ''} onChange={e => setForm({ ...form, intro_price_end_date: e.target.value })} />
+            </div>
+            <div>
+              <Label>Expected New Price</Label>
+              <Input type="number" step="0.01" placeholder="0.00" value={form.expected_new_price ?? ''} onChange={e => setForm({ ...form, expected_new_price: e.target.value })} />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Track renewals and introductory price expiries. The bill amount won't change automatically — you'll be prompted to confirm any new price.</p>
         </div>
       </div>
 

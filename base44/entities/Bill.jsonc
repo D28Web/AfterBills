@@ -68,6 +68,34 @@
       "default": 2,
       "description": "Number of people the bill is split between (your share = amount / split_between)"
     },
+    "contract_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Contract start date (YYYY-MM-DD). Optional."
+    },
+    "contract_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Contract end date (YYYY-MM-DD). Optional."
+    },
+    "renewal_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Next renewal date for the contract (YYYY-MM-DD). Optional."
+    },
+    "notice_period_days": {
+      "type": "number",
+      "description": "Notice period in days required to cancel before renewal. Optional."
+    },
+    "intro_price_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When the introductory price ends (YYYY-MM-DD). Optional."
+    },
+    "expected_new_price": {
+      "type": "number",
+      "description": "Expected price after the introductory period ends. The bill amount is NOT changed automatically \u2014 the user must confirm. Optional."
+    },
     "notes": {
       "type": "string",
       "description": "Optional notes"

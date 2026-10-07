@@ -12,6 +12,7 @@ import MonthHighlights from '@/components/dashboard/MonthHighlights';
 import PaydayCycles from '@/components/dashboard/PaydayCycles';
 import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
 import IncomeBreakdown from '@/components/dashboard/IncomeBreakdown';
+import RenewalAlerts from '@/components/dashboard/RenewalAlerts';
 import { getForecastIncomeParams, getStreamMonthlyAmount, FREQ_TO_MONTHLY } from '@/lib/income';
 import { format, startOfMonth } from 'date-fns';
 import PageContainer from '@/components/layout/PageContainer';
@@ -124,6 +125,8 @@ export default function Dashboard() {
       </div>
 
       <IncomeBreakdown incomeStreams={incomeStreams} currency={currency} />
+
+      <RenewalAlerts bills={bills} currency={currency} />
 
       {sinkingFunds.filter(f => f.status !== 'completed').length > 0 && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-xl p-3">
