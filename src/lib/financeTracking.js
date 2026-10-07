@@ -100,6 +100,18 @@ export function hasBalloonPayment(financeType) {
   return financeType === 'pcp' || financeType === 'hp';
 }
 
+// Whether the regular payments will never pay off the balance (e.g. PCP,
+// where a large balloon/GMFV is due at the end and the monthly payments
+// only cover depreciation + interest). These should not show a projected
+// payoff date from balance ÷ payment.
+export function isBalloonFinance(bill) {
+  if (!bill?.finance_type) return false;
+  if (bill.finance_type === 'pcp') return true;
+  // HP with a balloon payment set also has a lump sum at the end
+  if (bill.finance_type === 'hp' && bill.balloon_payment > 0) return true;
+  return false;
+}
+
 // Which finance types use interest_type (rate type) instead of just APR
 export function usesInterestType(financeType) {
   return financeType === 'mortgage' || financeType === 'student_loan';
@@ -187,9 +199,11 @@ export function calculateFinanceTracking(bill) {
     overpaymentMonthly = round2((bill.overpayment_amount * oppPerYear) / 12);
   }
 
-  // Estimated payoff date
+  // Estimated payoff date — not shown for balloon finance (PCP etc.) since
+  // the regular payments never clear the balance; the balloon is due at the
+  // agreement end date instead.
   let estimatedPayoffDate = null;
-  if (remainingTermMonths != null && remainingTermMonths > 0) {
+  if (!isBalloonFinance(bill) && remainingTermMonths != null && remainingTermMonths > 0) {
     const payoff = new Date();
     payoff.setMonth(payoff.getMonth() + remainingTermMonths);
     estimatedPayoffDate = payoff;

@@ -1,10 +1,11 @@
-import { Pencil, Trash2, Target, TrendingDown } from 'lucide-react';
+import { Pencil, Trash2, Target, TrendingDown, CalendarClock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { addDays, addMonths, addYears, format } from 'date-fns';
 import { CATEGORY_COLORS, CATEGORY_LABELS, getBillShare } from '@/lib/forecast';
 import { formatMoney, roundMoney } from '@/lib/money';
+import { isBalloonFinance, FINANCE_TYPE_LABELS } from '@/lib/financeTracking';
 
 function addPeriod(date, freq) {
   switch (freq) {
@@ -28,7 +29,11 @@ export default function LoanPayoffCard({ bill, currency = '£', onEdit, onDelete
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const hasData = payment > 0 && balance > 0;
+  const balloon = isBalloonFinance(bill);
+  const balloonAmount = bill.balloon_payment || 0;
+  const agreementEnd = bill.agreement_end_date ? new Date(bill.agreement_end_date) : null;
+
+  const hasData = !balloon && payment > 0 && balance > 0;
   const periodsToPayoff = hasData ? Math.ceil(balance / payment) : 0;
   const cap = Math.min(periodsToPayoff, 600);
 
@@ -103,20 +108,46 @@ export default function LoanPayoffCard({ bill, currency = '£', onEdit, onDelete
           <p className="text-xs text-muted-foreground">Payment / {bill.frequency}</p>
           <p className="text-lg font-bold font-heading text-foreground">{formatMoney(payment, { currency, decimals: 2 })}</p>
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingDown className="w-3 h-3" /> Projected payoff</p>
-          <p className="text-sm font-semibold text-foreground">{projectedDate ? format(projectedDate, 'd MMM yyyy') : '—'}</p>
-          {hasData && <p className="text-xs text-muted-foreground">{paymentsLeft} payments left</p>}
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground flex items-center gap-1"><Target className="w-3 h-3" /> Target date</p>
-          <p className="text-sm font-semibold text-foreground">{targetDate ? format(targetDate, 'd MMM yyyy') : 'Not set'}</p>
-          {targetDate && <p className="text-xs text-muted-foreground">{Math.max(0, monthDiff(targetDate, today))} mo from now</p>}
-        </div>
+        {balloon ? (
+          <>
+            <div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><CalendarClock className="w-3 h-3" /> Agreement ends</p>
+              <p className="text-sm font-semibold text-foreground">{agreementEnd ? format(agreementEnd, 'd MMM yyyy') : 'Not set'}</p>
+              {agreementEnd && <p className="text-xs text-muted-foreground">{Math.max(0, monthDiff(agreementEnd, today))} mo from now</p>}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Balloon payment</p>
+              <p className="text-sm font-semibold text-foreground">{formatMoney(balloonAmount, { currency, decimals: 2 })}</p>
+              <p className="text-xs text-muted-foreground">Due at agreement end</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingDown className="w-3 h-3" /> Projected payoff</p>
+              <p className="text-sm font-semibold text-foreground">{projectedDate ? format(projectedDate, 'd MMM yyyy') : '—'}</p>
+              {hasData && <p className="text-xs text-muted-foreground">{paymentsLeft} payments left</p>}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><Target className="w-3 h-3" /> Target date</p>
+              <p className="text-sm font-semibold text-foreground">{targetDate ? format(targetDate, 'd MMM yyyy') : 'Not set'}</p>
+              {targetDate && <p className="text-xs text-muted-foreground">{Math.max(0, monthDiff(targetDate, today))} mo from now</p>}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="mt-4">
-        {hasData ? (
+        {balloon ? (
+          <div className="h-[150px] flex flex-col items-center justify-center text-center px-4 gap-1.5 rounded-lg bg-muted/30 border border-border">
+            <p className="text-xs font-medium text-foreground">
+              {FINANCE_TYPE_LABELS[bill.finance_type] || 'Balloon finance'}
+            </p>
+            <p className="text-xs text-muted-foreground max-w-[220px]">
+              Regular payments don't clear the balance. At the end you can pay the balloon, hand the car back, or trade it in.
+            </p>
+          </div>
+        ) : hasData ? (
           <ResponsiveContainer width="100%" height={150}>
             <AreaChart data={points} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
               <defs>
