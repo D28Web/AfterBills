@@ -20,6 +20,7 @@ import Savings from '@/pages/Savings';
 import WhatIf from '@/pages/WhatIf';
 import TripPlanner from '@/pages/TripPlanner';
 import SinkingFunds from '@/pages/SinkingFunds';
+import PaydayPlanner from '@/pages/PaydayPlanner';
 import Settings from '@/pages/Settings';
 import AppLayout from '@/components/layout/AppLayout';
 import Onboarding from '@/pages/Onboarding';
@@ -64,6 +65,7 @@ const AuthenticatedApp = () => {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/savings" element={<Savings />} />
           <Route path="/sinking-funds" element={<SinkingFunds />} />
+          <Route path="/payday-planner" element={<PaydayPlanner />} />
           <Route path="/what-if" element={<WhatIf />} />
           <Route path="/trips" element={<TripPlanner />} />
           <Route path="/settings" element={<Settings />} />
