@@ -141,6 +141,19 @@ export default function Savings() {
     return format(addMonths(new Date(), monthsNeeded), 'MMM yyyy');
   };
 
+  const getTargetDateInfo = (goal) => {
+    if (!goal.target_date) return null;
+    const remaining = (goal.target_amount || 0) - (goal.current_amount || 0);
+    if (remaining <= 0) return { isAchieved: true };
+    const today = new Date();
+    const targetDate = new Date(goal.target_date);
+    const daysUntilTarget = differenceInDays(targetDate, today);
+    if (daysUntilTarget <= 0) return { isOverdue: true, requiredMonthly: remaining, isAchieved: false };
+    const monthsUntilTarget = Math.max(1, Math.ceil(daysUntilTarget / 30.44));
+    const requiredMonthly = roundMoney(remaining / monthsUntilTarget);
+    return { requiredMonthly, isOverdue: false, isAchieved: false, daysUntilTarget };
+  };
+
   const getTripInfo = (goal) => {
     if (goal.type !== 'trip' || !goal.travel_date) return null;
     const today = new Date();
@@ -196,6 +209,7 @@ export default function Savings() {
             const pct = goal.target_amount > 0 ? Math.min(100, ((goal.current_amount || 0) / goal.target_amount) * 100) : 0;
             const Icon = TYPE_ICONS[goal.type || 'general'] || Target;
             const tripInfo = getTripInfo(goal);
+            const targetInfo = getTargetDateInfo(goal);
             return (
               <motion.div
                 key={goal.id}
@@ -256,6 +270,21 @@ export default function Savings() {
                     <span className={monthlySpare >= tripInfo.requiredMonthly ? 'text-primary font-medium' : 'text-destructive font-medium'}>
                       {monthlySpare >= tripInfo.requiredMonthly ? 'On track' : 'Behind'}
                     </span>
+                  </div>
+                )}
+
+                {!tripInfo && targetInfo && !targetInfo.isAchieved && (
+                  <div className="flex items-center justify-between text-xs bg-muted/50 rounded-lg p-2">
+                    <span className="text-muted-foreground">
+                      {targetInfo.isOverdue
+                        ? 'Overdue — needed now'
+                        : `Required: ${formatMoney(targetInfo.requiredMonthly, { currency, decimals: 2 })}/mo`}
+                    </span>
+                    {!targetInfo.isOverdue && (
+                      <span className={monthlySpare >= targetInfo.requiredMonthly ? 'text-primary font-medium' : 'text-destructive font-medium'}>
+                        {monthlySpare >= targetInfo.requiredMonthly ? 'On track' : 'Behind'}
+                      </span>
+                    )}
                   </div>
                 )}
 

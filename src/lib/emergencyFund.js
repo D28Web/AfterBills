@@ -5,7 +5,7 @@
  * amount or N months of essential expenses. All figures are planning data —
  * nothing connects to real financial accounts.
  */
-import { addMonths, startOfMonth } from 'date-fns';
+import { addMonths, startOfMonth, differenceInDays } from 'date-fns';
 import { roundMoney } from './money';
 import { FREQ_TO_MONTHLY } from './income';
 import { getMonthlyEssentialExpenses } from './essential';
@@ -47,6 +47,20 @@ export function getEmergencyFundStats(goal, bills, monthlySpare, primaryCtx) {
     estimatedCompletion = addMonths(startOfMonth(new Date()), monthsNeeded);
   }
 
+  // Required monthly to hit the user's target date (if set)
+  let requiredMonthly = null;
+  let targetOverdue = false;
+  if (remaining > 0 && goal.target_date) {
+    const daysUntilTarget = differenceInDays(new Date(goal.target_date), new Date());
+    if (daysUntilTarget <= 0) {
+      targetOverdue = true;
+      requiredMonthly = remaining;
+    } else {
+      const monthsUntilTarget = Math.max(1, Math.ceil(daysUntilTarget / 30.44));
+      requiredMonthly = roundMoney(remaining / monthsUntilTarget);
+    }
+  }
+
   return {
     monthlyEssential,
     target,
@@ -57,5 +71,7 @@ export function getEmergencyFundStats(goal, bills, monthlySpare, primaryCtx) {
     suggestedMonthly,
     suggestedPerCycle,
     estimatedCompletion,
+    requiredMonthly,
+    targetOverdue,
   };
 }

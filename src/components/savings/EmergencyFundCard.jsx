@@ -92,14 +92,28 @@ export default function EmergencyFundCard({ goal, bills, monthlySpare, primaryCt
 
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="bg-muted/50 rounded-xl p-3">
-          <p className="text-muted-foreground">Suggested / month</p>
-          <p className="text-sm font-semibold mt-0.5 text-primary">{formatMoney(stats.suggestedMonthly, { currency, decimals: 2 })}</p>
+          <p className="text-muted-foreground">{stats.requiredMonthly != null ? 'Required / month' : 'Suggested / month'}</p>
+          <p className="text-sm font-semibold mt-0.5 text-primary">
+            {formatMoney(stats.requiredMonthly != null ? stats.requiredMonthly : stats.suggestedMonthly, { currency, decimals: 2 })}
+          </p>
         </div>
         <div className="bg-muted/50 rounded-xl p-3">
           <p className="text-muted-foreground">Suggested / cycle</p>
           <p className="text-sm font-semibold mt-0.5 text-primary">{formatMoney(stats.suggestedPerCycle, { currency, decimals: 2 })}</p>
         </div>
       </div>
+
+      {stats.requiredMonthly != null && !stats.targetOverdue && (
+        <div className="flex items-center justify-between text-xs bg-muted/50 rounded-lg p-2">
+          <span className="text-muted-foreground">Pace to target date</span>
+          <span className={monthlySpare >= stats.requiredMonthly ? 'text-primary font-medium' : 'text-destructive font-medium'}>
+            {monthlySpare >= stats.requiredMonthly ? 'On track' : 'Behind'}
+          </span>
+        </div>
+      )}
+      {stats.targetOverdue && (
+        <p className="text-xs text-destructive">Target date passed — full amount still needed.</p>
+      )}
 
       {goal.target_date && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
