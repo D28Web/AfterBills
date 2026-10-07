@@ -40,10 +40,10 @@ export default function AdminAuditLog() {
     let active = true;
     (async () => {
       try {
-        const res = await base44.entities.AdminAuditLog.filter({}, { sort: '-created_date', limit: 200 });
-        if (active) setItems(res.items || []);
+        const res = await base44.functions.invoke('admin_list_audit_logs', { limit: 200 });
+        if (active) setItems(res.data.items || []);
       } catch (e) {
-        if (active) setError(e?.message || 'Failed to load audit log');
+        if (active) setError(e?.response?.data?.error || e?.message || 'Failed to load audit log');
       } finally {
         if (active) setLoading(false);
       }
