@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { path: '/savings', label: 'Savings', icon: Target },
   { path: '/sinking-funds', label: 'Sinking Funds', icon: PiggyBank },
   { path: '/payday-planner', label: 'Payday Planner', icon: Wallet },
-  { path: '/what-if', label: 'What If', icon: FlaskConical },
+  { path: '/what-if', label: 'Planning', icon: FlaskConical },
   { path: '/trips', label: 'Trips', icon: Plane },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];

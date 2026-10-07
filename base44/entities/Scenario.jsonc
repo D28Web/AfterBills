@@ -1,0 +1,70 @@
+{
+  "name": "Scenario",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "User-given name for this saved scenario"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "what_if",
+        "affordability",
+        "purchase"
+      ],
+      "description": "Which planning tool this scenario belongs to"
+    },
+    "data": {
+      "type": "object",
+      "description": "Scenario parameters (simulation inputs). Never modifies live data automatically \u2014 applying is an explicit user action with a preview."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes"
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "data"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
