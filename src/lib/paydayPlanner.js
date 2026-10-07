@@ -185,7 +185,6 @@ export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFu
       amountLeft,
       cycleDays,
       daysUntilPayday,
-      weeksInCycle,
       perWeekAvailable,
       perDayAvailable,
       regularBillsTotal,
