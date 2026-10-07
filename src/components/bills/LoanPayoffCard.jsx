@@ -32,6 +32,11 @@ export default function LoanPayoffCard({ bill, currency = '£', onEdit, onDelete
   const periodsToPayoff = hasData ? Math.ceil(balance / payment) : 0;
   const cap = Math.min(periodsToPayoff, 600);
 
+  const originalBalance = parseFloat(bill.original_balance) || 0;
+  const pctRepaid = originalBalance > 0
+    ? Math.min(100, Math.max(0, ((originalBalance - balance) / originalBalance) * 100))
+    : null;
+
   const points = [{ date: today.getTime(), label: format(today, 'MMM yy'), balance: roundMoney(balance) }];
   for (let i = 1; i <= cap; i++) {
     const nd = addPeriod(new Date(points[i - 1].date), bill.frequency);
@@ -70,6 +75,11 @@ export default function LoanPayoffCard({ bill, currency = '£', onEdit, onDelete
             {status && (
               <span className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${status.tone === 'good' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
                 {status.label}
+              </span>
+            )}
+            {pctRepaid != null && (
+              <span className="inline-block mt-1 ml-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800/40">
+                {balance <= 0 ? 'Cleared' : `${Math.round(pctRepaid)}% repaid`}
               </span>
             )}
           </div>

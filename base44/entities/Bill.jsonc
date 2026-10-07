@@ -98,6 +98,10 @@
       "type": "number",
       "description": "Outstanding balance still owed on a loan / credit card. Optional."
     },
+    "original_balance": {
+      "type": "number",
+      "description": "Original balance when the loan / credit card was taken out. Optional. Used with remaining_balance to recognise debt-repaid milestones (25%, 50%, 75%, cleared)."
+    },
     "is_split": {
       "type": "boolean",
       "default": false,

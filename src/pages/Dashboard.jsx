@@ -19,6 +19,10 @@ import BufferIndicator from '@/components/payday-planner/BufferIndicator';
 import { getPaydayPlannerData } from '@/lib/paydayPlanner';
 import { getSignificantIncreases } from '@/lib/contracts';
 import { getForecastIncomeParams, getStreamMonthlyAmount, FREQ_TO_MONTHLY } from '@/lib/income';
+import { getPeriodComparisons, getMilestones, getInsights } from '@/lib/insights';
+import PeriodComparisonCard from '@/components/insights/PeriodComparisonCard';
+import MilestonesStrip from '@/components/insights/MilestonesStrip';
+import InsightsList from '@/components/insights/InsightsList';
 import { format, startOfMonth } from 'date-fns';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -55,18 +59,30 @@ export default function Dashboard() {
     queryFn: () => base44.entities.TripExpense.list(),
   });
 
+  const { data: goals = [] } = useQuery({
+    queryKey: ['goals'],
+    queryFn: () => base44.entities.SavingsGoal.list(),
+  });
+
   const [viewFrequency, setViewFrequency] = useState('monthly');
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
 
   const { monthlyIncome, incomeStreams: forecastStreams, primaryCtx } = getForecastIncomeParams(incomeStreams, user);
   const currency = user?.currency || '£';
   const buffer = parseFloat(user?.preferred_buffer) || 0;
-  const safeToSpendCycle = getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, tripExpenses, 1)[0];
+  const plannerData = getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, tripExpenses, 6);
+  const safeToSpendCycle = plannerData[0];
   const forecast = generateForecast(bills, monthlyIncome, new Date(startDate + '-01'), forecastStreams, primaryCtx, sinkingFunds);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const totalMonthlyIncome = roundMoney(sumMoney(incomeStreams.map(s => getStreamMonthlyAmount(s))));
   const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
   const significantIncreases = getSignificantIncreases(bills);
+
+  const monthlySpare = roundMoney(currentMonth.income - currentMonth.totalBills);
+  const comparisons = getPeriodComparisons({ bills, incomeStreams, sinkingFunds, primaryCtx, monthlyIncome, currency });
+  const emergencyGoal = goals.find(g => g.is_emergency_fund);
+  const milestones = getMilestones({ goals, sinkingFunds, bills, emergencyGoal, primaryCtx, monthlySpare, currency });
+  const insights = getInsights({ plannerData, forecast, bills, goals, monthlySpare, currency });
 
   const multiplier = 1 / (FREQ_TO_MONTHLY[viewFrequency] || 1);
   const freqLabel = FREQUENCY_OPTIONS.find(f => f.value === viewFrequency)?.label ?? 'Monthly';
@@ -137,6 +153,10 @@ export default function Dashboard() {
         />
       </div>
 
+      {milestones.length > 0 && (
+        <MilestonesStrip milestones={milestones} />
+      )}
+
       {safeToSpendCycle && (
         <div className="grid lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
@@ -169,6 +189,11 @@ export default function Dashboard() {
           </span>
         </div>
       )}
+
+      <div className="grid lg:grid-cols-2 gap-4">
+        <PeriodComparisonCard comparisons={comparisons} currency={currency} />
+        <InsightsList insights={insights} />
+      </div>
 
       <ForecastChart forecast={forecast} currency={currency} user={primaryCtx} />
 

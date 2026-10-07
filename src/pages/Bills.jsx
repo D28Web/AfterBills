@@ -9,6 +9,8 @@ import BillForm from '@/components/bills/BillForm';
 import BillCard from '@/components/bills/BillCard';
 import LoanPayoffCard from '@/components/bills/LoanPayoffCard';
 import { CATEGORY_LABELS } from '@/lib/forecast';
+import { getMilestones } from '@/lib/insights';
+import MilestonesStrip from '@/components/insights/MilestonesStrip';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 
@@ -74,6 +76,7 @@ export default function Bills() {
   const loanBills = bills.filter(b => LOAN_CATS.includes(b.category));
   const regularBills = bills.filter(b => !LOAN_CATS.includes(b.category));
   const filtered = filterCategory === 'all' ? regularBills : regularBills.filter(b => b.category === filterCategory);
+  const debtMilestones = getMilestones({ bills, goals: [], sinkingFunds: [] }).filter(m => m.type === 'debt');
 
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
@@ -140,6 +143,7 @@ export default function Bills() {
             <h3 className="text-xl font-bold font-heading tracking-tight text-foreground">Loans & Credit Cards</h3>
             <p className="text-sm text-muted-foreground mt-1">Track payoff progress toward your target dates</p>
           </div>
+          {debtMilestones.length > 0 && <MilestonesStrip milestones={debtMilestones} />}
           <div className="grid gap-4 lg:grid-cols-2">
             {loanBills.map(bill => (
               <LoanPayoffCard

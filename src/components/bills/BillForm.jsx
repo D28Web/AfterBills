@@ -34,8 +34,9 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       is_split: false,
       split_between: 2,
       target_end_date: '',
-      remaining_balance: '',
-      notes: '',
+        remaining_balance: '',
+        original_balance: '',
+        notes: '',
       contract_start_date: '',
       contract_end_date: '',
       renewal_date: '',
@@ -51,6 +52,7 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
       ...form,
       amount: parseFloat(form.amount),
       remaining_balance: form.remaining_balance === '' ? undefined : parseFloat(form.remaining_balance),
+      original_balance: form.original_balance === '' ? undefined : parseFloat(form.original_balance),
       contract_start_date: form.contract_start_date || null,
       contract_end_date: form.contract_end_date || null,
       renewal_date: form.renewal_date || null,
@@ -191,6 +193,20 @@ export default function BillForm({ bill, onSubmit, onCancel, currency = '£' }) 
               onChange={e => setForm({ ...form, remaining_balance: e.target.value })}
             />
             <p className="text-xs text-muted-foreground mt-1">The amount you still owe today. Used to project your payoff timeline.</p>
+          </div>
+        )}
+
+        {(form.category === 'loans' || form.category === 'credit_cards') && (
+          <div className="col-span-2">
+            <Label>Original balance (optional)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={form.original_balance || ''}
+              onChange={e => setForm({ ...form, original_balance: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground mt-1">What you originally borrowed. Used with the remaining balance to track how far you've repaid.</p>
           </div>
         )}
 

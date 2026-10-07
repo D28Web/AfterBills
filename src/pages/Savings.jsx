@@ -7,6 +7,8 @@ import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import { Plus, Target, Calendar, Trash2 } from 'lucide-react';
 import EmergencyFundCard from '@/components/savings/EmergencyFundCard';
 import { getMonthlyEssentialExpenses } from '@/lib/essential';
+import { getMilestones } from '@/lib/insights';
+import MilestonesStrip from '@/components/insights/MilestonesStrip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +37,8 @@ export default function Savings() {
   const monthlyEssential = getMonthlyEssentialExpenses(bills);
   const emergencyGoal = goals.find(g => g.is_emergency_fund);
   const regularGoals = goals.filter(g => !g.is_emergency_fund);
+  const allMilestones = getMilestones({ goals, bills, emergencyGoal, primaryCtx, monthlySpare, currency });
+  const savingsMilestones = allMilestones.filter(m => m.type === 'savings' || m.type === 'emergency');
 
   const createMutation = useMutation({
     mutationFn: data => base44.entities.SavingsGoal.create(data),
@@ -87,6 +91,8 @@ export default function Savings() {
           </p>
         </motion.div>
       )}
+
+      {savingsMilestones.length > 0 && <MilestonesStrip milestones={savingsMilestones} />}
 
       <EmergencyFundCard
         goal={emergencyGoal}

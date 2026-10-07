@@ -18,6 +18,8 @@ import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import SinkingFundCard from '@/components/sinking-funds/SinkingFundCard';
 import SinkingFundForm from '@/components/sinking-funds/SinkingFundForm';
+import { getMilestones } from '@/lib/insights';
+import MilestonesStrip from '@/components/insights/MilestonesStrip';
 
 export default function SinkingFunds() {
   const [showForm, setShowForm] = useState(false);
@@ -77,6 +79,7 @@ export default function SinkingFunds() {
   const completedFunds = funds.filter(f => f.status === 'completed' || getSinkingFundStats(f).remaining <= 0);
 
   const linkedBillMap = new Map(bills.map(b => [b.id, b]));
+  const sinkingMilestones = getMilestones({ sinkingFunds: funds, goals: [], bills: [] }).filter(m => m.type === 'sinking');
 
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
@@ -139,6 +142,8 @@ export default function SinkingFunds() {
           <p className="text-xs text-muted-foreground mt-0.5">{funds.length} total funds</p>
         </div>
       </div>
+
+      {sinkingMilestones.length > 0 && <MilestonesStrip milestones={sinkingMilestones} />}
 
       {/* Active funds */}
       {activeFunds.length > 0 && (
