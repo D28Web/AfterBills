@@ -96,6 +96,32 @@
       "type": "number",
       "description": "Expected price after the introductory period ends. The bill amount is NOT changed automatically \u2014 the user must confirm. Optional."
     },
+    "amount_history": {
+      "type": "array",
+      "description": "History of amount changes for this bill. Each entry records the previous and new amount, effective date, and percentage change.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "previous_amount": {
+            "type": "number",
+            "description": "Amount before the change"
+          },
+          "new_amount": {
+            "type": "number",
+            "description": "Amount after the change"
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date",
+            "description": "When the new amount took effect (YYYY-MM-DD)"
+          },
+          "percentage_change": {
+            "type": "number",
+            "description": "Percentage change from previous to new amount"
+          }
+        }
+      }
+    },
     "notes": {
       "type": "string",
       "description": "Optional notes"

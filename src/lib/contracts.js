@@ -45,6 +45,29 @@ export function getIntroPriceExpiries(bills, daysAhead = 30) {
 }
 
 /**
+ * Get bills with significant price increases (percentage_change >= minPct)
+ * within the last `daysBack` days.
+ * Returns array of { bill, entry } sorted by most recent first.
+ */
+export function getSignificantIncreases(bills, minPct = 10, daysBack = 90) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - daysBack);
+  const results = [];
+  bills.forEach(bill => {
+    if (!bill.amount_history) return;
+    bill.amount_history.forEach(entry => {
+      if (entry.percentage_change >= minPct) {
+        const effectiveDate = new Date(entry.effective_date);
+        if (effectiveDate >= cutoff) {
+          results.push({ bill, entry });
+        }
+      }
+    });
+  });
+  return results.sort((a, b) => new Date(b.entry.effective_date) - new Date(a.entry.effective_date));
+}
+
+/**
  * Get bills whose renewal_date falls on a specific calendar day.
  */
 export function getRenewalsForDay(bills, day, month, year) {

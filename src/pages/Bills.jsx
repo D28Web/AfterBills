@@ -52,6 +52,17 @@ export default function Bills() {
 
   const handleSubmit = (data) => {
     if (editingBill) {
+      const oldAmount = editingBill.amount;
+      const newAmount = data.amount;
+      if (Number.isFinite(oldAmount) && Number.isFinite(newAmount) && Math.abs(newAmount - oldAmount) > 0.001) {
+        const pctChange = oldAmount > 0 ? Math.round(((newAmount - oldAmount) / oldAmount) * 10000) / 100 : 0;
+        data.amount_history = [...(editingBill.amount_history || []), {
+          previous_amount: oldAmount,
+          new_amount: newAmount,
+          effective_date: new Date().toISOString().slice(0, 10),
+          percentage_change: pctChange,
+        }];
+      }
       updateMutation.mutate({ id: editingBill.id, data });
     } else {
       createMutation.mutate(data);

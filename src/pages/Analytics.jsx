@@ -2,9 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateForecast, getCategoryTotals, CATEGORY_COLORS, CATEGORY_LABELS, billToMonthlyCost } from '@/lib/forecast';
 import { getPrimaryIncomeContext, getOtherStreams } from '@/lib/income';
+import { getSignificantIncreases } from '@/lib/contracts';
 import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
 import MoneyTooltip from '@/components/charts/MoneyTooltip';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
+import { TrendingUp } from 'lucide-react';
+import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -36,6 +39,7 @@ export default function Analytics() {
   const billToIncomeRatio = income > 0 ? Math.round((totalMonthlyBills / income) * 100) : 0;
 
   const pieColors = categoryTotals.map(c => CATEGORY_COLORS[c.category]);
+  const significantIncreases = getSignificantIncreases(bills);
 
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
@@ -55,6 +59,32 @@ export default function Analytics() {
           <p className="text-2xl font-bold font-heading mt-1">{billToIncomeRatio}%</p>
         </motion.div>
       </div>
+
+      {significantIncreases.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-4 h-4 text-red-500" />
+            <h3 className="text-sm font-semibold font-heading">Significant Price Increases</h3>
+            <span className="text-xs text-muted-foreground">last 90 days</span>
+          </div>
+          <div className="space-y-2">
+            {significantIncreases.map(({ bill, entry }, i) => (
+              <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-red-50/50 border border-red-200/50 dark:bg-red-900/10 dark:border-red-800/30">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{bill.name}</p>
+                  <p className="text-xs text-muted-foreground">{format(new Date(entry.effective_date), 'd MMM yyyy')}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-muted-foreground line-through">{formatMoney(entry.previous_amount, { currency, decimals: 2 })}</span>
+                  <span>→</span>
+                  <span className="text-sm font-medium text-foreground">{formatMoney(entry.new_amount, { currency, decimals: 2 })}</span>
+                  <span className="text-xs font-medium text-red-600 dark:text-red-400">+{entry.percentage_change.toFixed(1)}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 min-w-0">

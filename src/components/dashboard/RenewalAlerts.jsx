@@ -14,11 +14,21 @@ export default function RenewalAlerts({ bills, currency = '£' }) {
   const introExpiries = getIntroPriceExpiries(bills, 30);
 
   const applyPrice = useMutation({
-    mutationFn: ({ id, newPrice }) => base44.entities.Bill.update(id, {
-      amount: newPrice,
-      intro_price_end_date: null,
-      expected_new_price: null,
-    }),
+    mutationFn: ({ id, oldAmount, newPrice, existingHistory }) => {
+      const pctChange = oldAmount > 0 ? Math.round(((newPrice - oldAmount) / oldAmount) * 10000) / 100 : 0;
+      const historyEntry = {
+        previous_amount: oldAmount,
+        new_amount: newPrice,
+        effective_date: new Date().toISOString().slice(0, 10),
+        percentage_change: pctChange,
+      };
+      return base44.entities.Bill.update(id, {
+        amount: newPrice,
+        intro_price_end_date: null,
+        expected_new_price: null,
+        amount_history: [...(existingHistory || []), historyEntry],
+      });
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bills'] }),
   });
 
@@ -94,7 +104,7 @@ export default function RenewalAlerts({ bills, currency = '£' }) {
                   size="sm"
                   className="h-7 text-xs shrink-0 gap-1"
                   disabled={applyPrice.isPending}
-                  onClick={() => applyPrice.mutate({ id: bill.id, newPrice: bill.expected_new_price })}
+                  onClick={() => applyPrice.mutate({ id: bill.id, oldAmount: bill.amount, newPrice: bill.expected_new_price, existingHistory: bill.amount_history })}
                 >
                   <Check className="w-3 h-3" /> Apply
                 </Button>

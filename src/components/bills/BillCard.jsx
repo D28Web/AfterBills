@@ -14,6 +14,7 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
     ? Math.max(0, (new Date(bill.target_end_date).getFullYear() * 12 + new Date(bill.target_end_date).getMonth()) - (new Date().getFullYear() * 12 + new Date().getMonth()))
     : 0;
   const [expanded, setExpanded] = useState(false);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -98,6 +99,31 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
             Subcategories
           </button>
           {expanded && <BillSubcategoryList bill={bill} currency={currency} />}
+          {bill.amount_history?.length > 0 && (
+            <>
+              <button type="button" onClick={() => setHistoryExpanded(e => !e)} className="flex items-center gap-1 text-xs text-primary mt-2 hover:underline">
+                <ChevronDown className={`w-3 h-3 transition-transform ${historyExpanded ? 'rotate-180' : ''}`} />
+                Price History ({bill.amount_history.length})
+              </button>
+              {historyExpanded && (
+                <div className="mt-2 space-y-1.5">
+                  {bill.amount_history.slice().reverse().map((entry, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/50">
+                      <span className="text-muted-foreground">{format(new Date(entry.effective_date), 'd MMM yyyy')}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground line-through">{formatMoney(entry.previous_amount, { currency, decimals: 2 })}</span>
+                        <span>→</span>
+                        <span className="font-medium text-foreground">{formatMoney(entry.new_amount, { currency, decimals: 2 })}</span>
+                        <span className={entry.percentage_change >= 0 ? 'text-destructive' : 'text-primary'}>
+                          {entry.percentage_change >= 0 ? '+' : ''}{entry.percentage_change.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
         <div className="flex gap-1 shrink-0">
           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(bill)}>

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { generateForecast } from '@/lib/forecast';
 import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
-import { Wallet, Receipt, PiggyBank, TrendingUp, CalendarDays } from 'lucide-react';
+import { Wallet, Receipt, PiggyBank, TrendingUp, CalendarDays, AlertCircle } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import ForecastChart from '@/components/dashboard/ForecastChart';
 import UpcomingBills from '@/components/dashboard/UpcomingBills';
@@ -13,6 +13,7 @@ import PaydayCycles from '@/components/dashboard/PaydayCycles';
 import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
 import IncomeBreakdown from '@/components/dashboard/IncomeBreakdown';
 import RenewalAlerts from '@/components/dashboard/RenewalAlerts';
+import { getSignificantIncreases } from '@/lib/contracts';
 import { getForecastIncomeParams, getStreamMonthlyAmount, FREQ_TO_MONTHLY } from '@/lib/income';
 import { format, startOfMonth } from 'date-fns';
 import PageContainer from '@/components/layout/PageContainer';
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const totalMonthlyIncome = roundMoney(sumMoney(incomeStreams.map(s => getStreamMonthlyAmount(s))));
   const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
+  const significantIncreases = getSignificantIncreases(bills);
 
   const multiplier = 1 / (FREQ_TO_MONTHLY[viewFrequency] || 1);
   const freqLabel = FREQUENCY_OPTIONS.find(f => f.value === viewFrequency)?.label ?? 'Monthly';
@@ -127,6 +129,16 @@ export default function Dashboard() {
       <IncomeBreakdown incomeStreams={incomeStreams} currency={currency} />
 
       <RenewalAlerts bills={bills} currency={currency} />
+
+      {significantIncreases.length > 0 && (
+        <div className="flex items-center gap-2 text-sm bg-red-50 border border-red-200 rounded-xl p-3 dark:bg-red-900/10 dark:border-red-800/30">
+          <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+          <span>
+            <span className="font-medium text-foreground">{significantIncreases.length} bill{significantIncreases.length === 1 ? '' : 's'} had significant price increases</span>
+            {' '}— see <Link to="/analytics" className="font-medium underline underline-offset-2">Analytics</Link> for details
+          </span>
+        </div>
+      )}
 
       {sinkingFunds.filter(f => f.status !== 'completed').length > 0 && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-xl p-3">
