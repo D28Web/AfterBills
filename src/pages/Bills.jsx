@@ -78,7 +78,7 @@ export default function Bills() {
       const cur = user?.currency || '£';
       if (Number.isFinite(oldAmount) && Number.isFinite(newAmount) && Math.abs(newAmount - oldAmount) > 0.001) {
         const pctChange = oldAmount > 0 ? Math.round(((newAmount - oldAmount) / oldAmount) * 10000) / 100 : 0;
-        data.amount_history = [...(editingBill.amount_history || []), {
+        data.amount_history = [...(data.amount_history || editingBill.amount_history || []), {
           previous_amount: oldAmount,
           new_amount: newAmount,
           effective_date: new Date().toISOString().slice(0, 10),

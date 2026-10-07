@@ -41,7 +41,7 @@ export default function Analytics() {
   const billToIncomeRatio = income > 0 ? Math.round((totalMonthlyBills / income) * 100) : 0;
 
   const pieColors = categoryTotals.map(c => CATEGORY_COLORS[c.category]);
-  const significantIncreases = getSignificantIncreases(bills);
+  const significantIncreases = getSignificantIncreases(regularBills);
 
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
