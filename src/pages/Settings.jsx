@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import IncomeStreamCard from '@/components/income/IncomeStreamCard';
 import UKTaxSettings from '@/components/income/UKTaxSettings';
 import { ukTaxBreakdown } from '@/lib/ukTax';
 import { Switch } from '@/components/ui/switch';
+import { getOtherStreams } from '@/lib/income';
 
 const DEFAULT_TAX_SETTINGS = {
   grossAnnual: '',
@@ -44,20 +45,37 @@ export default function Settings() {
   const [useUkTax, setUseUkTax] = useState(false);
   const [incomeMode, setIncomeMode] = useState('net');
   const [taxSettings, setTaxSettings] = useState(DEFAULT_TAX_SETTINGS);
+  const [primaryStreamId, setPrimaryStreamId] = useState(null);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
-    if (user) {
-      const hasStartDate = !!user.pay_start_date;
-      setUseStartDate(hasStartDate);
+    if (!user || streamsLoading || loadedRef.current) return;
+    loadedRef.current = true;
+    const primary = incomeStreams.find(s => s.is_primary);
+    if (primary) {
+      setPrimaryStreamId(primary.id);
+      setUseStartDate(!!primary.start_date);
+      setForm({
+        monthly_income: primary.amount ? String(primary.amount) : '',
+        pay_frequency: primary.frequency || 'monthly',
+        pay_day: primary.pay_day != null ? String(primary.pay_day) : '',
+        pay_start_date: primary.start_date || '',
+        pay_weekday: primary.pay_weekday || 'none',
+        currency: user.currency || '£',
+      });
+      setIncomeMode(primary.income_mode || 'net');
+      setTaxSettings({ ...DEFAULT_TAX_SETTINGS, ...(primary.tax_settings || {}) });
+    } else {
+      // Legacy fallback: income still stored on the User entity
+      setUseStartDate(!!user.pay_start_date);
       const freq = user.pay_frequency || 'monthly';
       const freqToMonthly = { weekly: 52 / 12, fortnightly: 26 / 12, monthly: 1, four_weekly: 13 / 12, annually: 1 / 12 };
       const stored = user.monthly_income || 0;
-      // Convert stored monthly back to per-frequency amount
       const perFreq = stored / (freqToMonthly[freq] || 1);
       setForm({
         monthly_income: perFreq ? perFreq.toFixed(2) : '',
         pay_frequency: freq,
-        pay_day: user.pay_day || '',
+        pay_day: user.pay_day != null ? String(user.pay_day) : '',
         pay_start_date: user.pay_start_date || '',
         pay_weekday: user.pay_weekday || 'none',
         currency: user.currency || '£',
@@ -65,9 +83,9 @@ export default function Settings() {
       setIncomeMode(user.income_mode || 'net');
       setTaxSettings({ ...DEFAULT_TAX_SETTINGS, ...(user.tax_settings || {}) });
     }
-  }, [user]);
+  }, [user, incomeStreams, streamsLoading]);
 
-  const { data: incomeStreams = [] } = useQuery({
+  const { data: incomeStreams = [], isLoading: streamsLoading } = useQuery({
     queryKey: ['income-streams'],
     queryFn: () => base44.entities.IncomeStream.list(),
   });
@@ -87,12 +105,20 @@ export default function Settings() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['income-streams'] }); toast.success('Income stream deleted'); },
   });
 
-  const mutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['me'] });
+  const savePrimary = useMutation({
+    mutationFn: ({ id, data }) => id
+      ? base44.entities.IncomeStream.update(id, data)
+      : base44.entities.IncomeStream.create(data),
+    onSuccess: (res, vars) => {
+      if (!vars.id) setPrimaryStreamId(res.id);
+      queryClient.invalidateQueries({ queryKey: ['income-streams'] });
       toast.success('Settings saved');
     },
+  });
+
+  const saveCurrency = useMutation({
+    mutationFn: (data) => base44.auth.updateMe(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me'] }),
   });
 
   const FREQ_TO_MONTHLY = {
@@ -142,16 +168,19 @@ export default function Settings() {
 
   const handleSave = () => {
     const isNonMonthly = ['weekly', 'fortnightly', 'four_weekly'].includes(form.pay_frequency);
-    mutation.mutate({
-      monthly_income: monthlyEquivalent,
-      pay_frequency: form.pay_frequency,
-      pay_day: (!isNonMonthly && !useStartDate) ? (parseInt(form.pay_day) || 1) : null,
-      pay_start_date: (isNonMonthly || useStartDate) ? (form.pay_start_date || null) : null,
-      pay_weekday: form.pay_weekday || 'none',
-      currency: form.currency,
+    const streamData = {
+      is_primary: true,
+      name: incomeMode === 'salary' ? 'Salary' : 'Take-home pay',
       income_mode: incomeMode,
+      amount: incomeMode === 'net' ? (parseFloat(form.monthly_income) || 0) : 0,
+      frequency: form.pay_frequency,
+      start_date: (isNonMonthly || useStartDate) ? (form.pay_start_date || null) : null,
+      pay_day: (!isNonMonthly && !useStartDate) ? (parseInt(form.pay_day) || 1) : null,
+      pay_weekday: form.pay_weekday || 'none',
       tax_settings: incomeMode === 'salary' ? taxSettings : null,
-    });
+    };
+    savePrimary.mutate({ id: primaryStreamId, data: streamData });
+    saveCurrency.mutate({ currency: form.currency });
   };
 
   return (
@@ -336,7 +365,7 @@ export default function Settings() {
           </Select>
         </div>
 
-        <Button onClick={handleSave} disabled={mutation.isPending} className="gap-2 w-full">
+        <Button onClick={handleSave} disabled={savePrimary.isPending || saveCurrency.isPending} className="gap-2 w-full">
           <Save className="w-4 h-4" /> Save Settings
         </Button>
       </motion.div>
@@ -364,7 +393,7 @@ export default function Settings() {
         )}
 
         <div>
-          {incomeStreams.map(stream => (
+          {getOtherStreams(incomeStreams).map(stream => (
             editingStream?.id === stream.id ? (
               <IncomeStreamForm
                 key={stream.id}
@@ -382,7 +411,7 @@ export default function Settings() {
               />
             )
           ))}
-          {incomeStreams.length === 0 && !showAddStream && (
+          {getOtherStreams(incomeStreams).length === 0 && !showAddStream && (
             <p className="text-sm text-muted-foreground text-center py-3">No additional income streams yet</p>
           )}
         </div>

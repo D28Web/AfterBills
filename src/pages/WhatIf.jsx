@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateForecast, billToMonthlyCost } from '@/lib/forecast';
+import { getPrimaryIncomeContext } from '@/lib/income';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -15,8 +16,10 @@ import { ukTaxBreakdown } from '@/lib/ukTax';
 export default function WhatIf() {
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
   const { data: bills = [] } = useQuery({ queryKey: ['bills'], queryFn: () => base44.entities.Bill.list() });
+  const { data: incomeStreams = [] } = useQuery({ queryKey: ['income-streams'], queryFn: () => base44.entities.IncomeStream.list() });
 
-  const realIncome = user?.monthly_income || 0;
+  const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
+  const realIncome = primaryCtx.monthly_income;
   const currency = user?.currency || '£';
 
   const [simIncome, setSimIncome] = useState(null);
@@ -53,8 +56,8 @@ export default function WhatIf() {
   const activeBills = bills.filter(b => !removedBillIds.includes(b.id));
   const allBills = [...activeBills, ...extraBills];
 
-  const realForecast = useMemo(() => generateForecast(bills, realIncome, new Date(), [], user), [bills, realIncome, user]);
-  const simForecast = useMemo(() => generateForecast(allBills, effectiveIncome, new Date(), [], user), [allBills, effectiveIncome, user]);
+  const realForecast = useMemo(() => generateForecast(bills, realIncome, new Date(), [], primaryCtx), [bills, realIncome, primaryCtx]);
+  const simForecast = useMemo(() => generateForecast(allBills, effectiveIncome, new Date(), [], primaryCtx), [allBills, effectiveIncome, primaryCtx]);
 
   const chartData = realForecast.map((m, i) => ({
     name: m.shortLabel,

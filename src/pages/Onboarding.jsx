@@ -93,12 +93,20 @@ export default function Onboarding() {
 
   const handleFinish = async () => {
     setSaving(true);
-    // Save income / settings
-    await base44.auth.updateMe({
-      monthly_income: monthlyIncome,
-      pay_frequency: income.pay_frequency,
+    // Currency lives on the user; income is stored as the primary IncomeStream
+    await base44.auth.updateMe({ currency: income.currency });
+    await base44.entities.IncomeStream.create({
+      is_primary: true,
+      name: income.useUkTax ? 'Salary' : 'Take-home pay',
+      income_mode: income.useUkTax ? 'salary' : 'net',
+      amount: income.useUkTax ? 0 : (parseFloat(income.amount) || 0),
+      frequency: income.pay_frequency,
+      start_date: null,
       pay_day: income.pay_day ? parseInt(income.pay_day) : 1,
-      currency: income.currency,
+      pay_weekday: 'none',
+      tax_settings: income.useUkTax
+        ? { grossAnnual: parseFloat(income.amount) || 0, taxCode: '1257L', studentLoanPlan: 'none', pensionType: 'percent', pensionValue: 0, pensionIsSalarySacrifice: false, salarySacrificeMonthly: 0, otherDeductionsMonthly: 0 }
+        : null,
     });
 
     // Save bills

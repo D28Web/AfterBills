@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { CATEGORY_COLORS, CATEGORY_LABELS, getBillsForDay, getBillAmountForMonth } from '@/lib/forecast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { getPrimaryIncomeContext } from '@/lib/income';
 
 export default function CalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -22,6 +23,12 @@ export default function CalendarView() {
     queryFn: () => base44.entities.Bill.list(),
   });
 
+  const { data: incomeStreams = [] } = useQuery({
+    queryKey: ['income-streams'],
+    queryFn: () => base44.entities.IncomeStream.list(),
+  });
+
+  const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
   const currency = user?.currency || '£';
   const month = currentDate.getMonth();
   const year = currentDate.getFullYear();
@@ -30,7 +37,7 @@ export default function CalendarView() {
 
   const dailyData = useMemo(() => {
     const data = {};
-    let runningBalance = user?.monthly_income || 0;
+    let runningBalance = primaryCtx.monthly_income || 0;
     for (let day = 1; day <= daysInMonth; day++) {
       const dayBills = getBillsForDay(bills, day, month, year);
       const dayTotal = dayBills.reduce((sum, b) => sum + b.amount, 0);
@@ -38,7 +45,7 @@ export default function CalendarView() {
       data[day] = { bills: dayBills, total: dayTotal, balance: runningBalance };
     }
     return data;
-  }, [bills, month, year, user?.monthly_income, daysInMonth]);
+  }, [bills, month, year, primaryCtx.monthly_income, daysInMonth]);
 
   const dayBills = selectedDay ? dailyData[selectedDay] : null;
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateForecast, getCategoryTotals, CATEGORY_COLORS, CATEGORY_LABELS, billToMonthlyCost } from '@/lib/forecast';
+import { getPrimaryIncomeContext, getOtherStreams } from '@/lib/income';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -20,9 +21,10 @@ export default function Analytics() {
     queryFn: () => base44.entities.IncomeStream.list(),
   });
 
-  const income = user?.monthly_income || 0;
+  const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
+  const income = primaryCtx.monthly_income;
   const currency = user?.currency || '£';
-  const forecast = generateForecast(bills, income, new Date(), incomeStreams, user);
+  const forecast = generateForecast(bills, income, new Date(), getOtherStreams(incomeStreams), primaryCtx);
   const categoryTotals = getCategoryTotals(bills);
   const avgSpare = forecast.reduce((sum, m) => sum + m.remaining, 0) / 12;
   const totalMonthlyBills = bills.reduce((sum, b) => sum + billToMonthlyCost(b), 0);

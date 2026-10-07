@@ -9,6 +9,7 @@ import UpcomingBills from '@/components/dashboard/UpcomingBills';
 import MonthHighlights from '@/components/dashboard/MonthHighlights';
 import PaydayCycles from '@/components/dashboard/PaydayCycles';
 import NoBillDuePeriods from '@/components/dashboard/NoBillDuePeriods';
+import { getPrimaryIncomeContext, getOtherStreams } from '@/lib/income';
 import { format, startOfMonth } from 'date-fns';
 
 const FREQUENCY_OPTIONS = [
@@ -36,9 +37,10 @@ export default function Dashboard() {
   const [viewFrequency, setViewFrequency] = useState('monthly');
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
 
-  const income = user?.monthly_income || 0;
+  const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
+  const income = primaryCtx.monthly_income;
   const currency = user?.currency || '£';
-  const forecast = generateForecast(bills, income, new Date(startDate + '-01'), incomeStreams, user);
+  const forecast = generateForecast(bills, income, new Date(startDate + '-01'), getOtherStreams(incomeStreams), primaryCtx);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const avgSpare = forecast.reduce((sum, m) => sum + m.remaining, 0) / 12;
 
@@ -115,15 +117,15 @@ export default function Dashboard() {
         />
       </div>
 
-      <ForecastChart forecast={forecast} currency={currency} user={user} />
+      <ForecastChart forecast={forecast} currency={currency} user={primaryCtx} />
 
       <div className="grid md:grid-cols-2 gap-4">
         <UpcomingBills bills={bills} currency={currency} />
         <MonthHighlights forecast={forecast} currency={currency} />
       </div>
 
-      <PaydayCycles user={user} bills={bills} currency={currency} />
-      <NoBillDuePeriods user={user} bills={bills} currency={currency} />
+      <PaydayCycles user={primaryCtx} bills={bills} currency={currency} />
+      <NoBillDuePeriods user={primaryCtx} bills={bills} currency={currency} />
     </div>
   );
 }
