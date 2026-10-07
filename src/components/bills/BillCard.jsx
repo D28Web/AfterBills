@@ -26,9 +26,9 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete, goal
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="bg-card rounded-xl border border-border p-4 hover:shadow-md transition-shadow"
+      className="bg-card rounded-xl border border-border p-4 hover:shadow-md transition-shadow h-full flex flex-col"
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 flex-1">
         <div
           className="w-3 h-full min-h-[3rem] rounded-full shrink-0"
           style={{ backgroundColor: CATEGORY_COLORS[bill.category] }}
