@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster"
+import ThemeProvider from "@/components/ThemeProvider"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
@@ -19,6 +20,7 @@ import Analytics from '@/pages/Analytics';
 import Savings from '@/pages/Savings';
 import WhatIf from '@/pages/WhatIf';
 import TripPlanner from '@/pages/TripPlanner';
+import Household from '@/pages/Household';
 import SinkingFunds from '@/pages/SinkingFunds';
 import PaydayPlanner from '@/pages/PaydayPlanner';
 import Settings from '@/pages/Settings';
@@ -70,6 +72,7 @@ const AuthenticatedApp = () => {
           <Route path="/payday-planner" element={<PaydayPlanner />} />
           <Route path="/what-if" element={<WhatIf />} />
           <Route path="/trips" element={<TripPlanner />} />
+          <Route path="/household" element={<Household />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/reminders" element={<Reminders />} />
           <Route path="/activity" element={<ActivityHistory />} />
@@ -92,14 +95,16 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 

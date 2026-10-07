@@ -1,11 +1,12 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Plane, Settings, Shield, Menu, X, Wallet, Bell, History } from 'lucide-react';
+import { LayoutDashboard, Receipt, Calendar, BarChart3, Target, PiggyBank, FlaskConical, Users, Settings, Shield, Menu, X, Wallet, Bell, History } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
 import QuickAddDialog from '@/components/quick-add/QuickAddDialog';
 import GlobalSearch from '@/components/search/GlobalSearch';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -16,7 +17,7 @@ const NAV_ITEMS = [
   { path: '/sinking-funds', label: 'Sinking Funds', icon: PiggyBank },
   { path: '/payday-planner', label: 'Payday Planner', icon: Wallet },
   { path: '/what-if', label: 'Planning', icon: FlaskConical },
-  { path: '/trips', label: 'Trips', icon: Plane },
+  { path: '/household', label: 'Household', icon: Users },
   { path: '/settings', label: 'Settings', icon: Settings },
   { path: '/reminders', label: 'Reminders', icon: Bell },
   { path: '/activity', label: 'Activity', icon: History },
@@ -64,6 +65,9 @@ export default function AppLayout() {
             );
           })}
         </nav>
+        <div className="px-3 pb-4">
+          <ThemeToggle variant="sidebar" />
+        </div>
       </aside>
 
       {/* Mobile Header */}
@@ -74,6 +78,7 @@ export default function AppLayout() {
         <div className="flex items-center gap-1">
           <GlobalSearch variant="header" />
           <QuickAddDialog variant="header" />
+          <ThemeToggle variant="header" />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-2 rounded-lg hover:bg-muted transition-colors"

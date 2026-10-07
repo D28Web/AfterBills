@@ -28,6 +28,8 @@ import PageHeader from '@/components/layout/PageHeader';
 import DashboardSection from '@/components/dashboard/DashboardSection';
 import DashboardCustomize from '@/components/dashboard/DashboardCustomize';
 import { resolveLayout, getVisibleSections } from '@/lib/dashboardSections';
+import { useDisplayPeriod, DISPLAY_PERIOD_OPTIONS } from '@/lib/displayPeriod';
+import { getRegularBills, getMonthlySalarySacrifice } from '@/lib/salarySacrifice';
 import { SlidersHorizontal } from 'lucide-react';
 
 const FREQUENCY_OPTIONS = [
@@ -68,7 +70,7 @@ export default function Dashboard() {
   });
 
   const queryClient = useQueryClient();
-  const [viewFrequency, setViewFrequency] = useState('monthly');
+  const [viewFrequency, setViewFrequency] = useDisplayPeriod(user);
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM'));
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const layout = resolveLayout(user?.dashboard_layout);
@@ -79,7 +81,9 @@ export default function Dashboard() {
   const buffer = parseFloat(user?.preferred_buffer) || 0;
   const plannerData = getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFunds, tripExpenses, 6);
   const safeToSpendCycle = plannerData[0];
-  const forecast = generateForecast(bills, monthlyIncome, new Date(startDate + '-01'), forecastStreams, primaryCtx, sinkingFunds);
+  const regularBills = getRegularBills(bills);
+  const salarySacrificeMonthly = getMonthlySalarySacrifice(bills);
+  const forecast = generateForecast(regularBills, monthlyIncome, new Date(startDate + '-01'), forecastStreams, primaryCtx, sinkingFunds);
   const currentMonth = forecast[0] || { totalBills: 0, remaining: 0, income: 0 };
   const totalMonthlyIncome = roundMoney(sumMoney(incomeStreams.map(s => getStreamMonthlyAmount(s))));
   const avgSpare = roundMoney(sumMoney(forecast.map(m => m.remaining)) / 12);
@@ -97,9 +101,9 @@ export default function Dashboard() {
 
   const dashData = {
     monthlySpare, currentMonth, currency, incomeStreams,
-    safeToSpendCycle, buffer, bills, sinkingFunds, goals,
+    safeToSpendCycle, buffer, bills: regularBills, sinkingFunds, goals,
     forecast, plannerData, primaryCtx, emergencyGoal,
-    comparisons, insights,
+    comparisons, insights, salarySacrificeMonthly,
   };
 
   const handleSaveLayout = async (newLayout) => {

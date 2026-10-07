@@ -27,7 +27,7 @@ export default function DashboardSection({ sectionKey, data }) {
     case 'left_after_bills':
       return (
         <div className="space-y-4">
-          <LeftAfterBillsCard monthlySpare={data.monthlySpare} currentMonth={data.currentMonth} currency={data.currency} />
+          <LeftAfterBillsCard monthlySpare={data.monthlySpare} currentMonth={data.currentMonth} currency={data.currency} salarySacrificeMonthly={data.salarySacrificeMonthly} />
           <IncomeBreakdown incomeStreams={data.incomeStreams} currency={data.currency} />
         </div>
       );

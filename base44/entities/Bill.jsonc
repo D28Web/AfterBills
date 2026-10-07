@@ -58,6 +58,24 @@
       "type": "boolean",
       "description": "Whether this bill is an essential expense (true) or non-essential (false). Null means unclassified \u2014 the category-based default is used until the user sets it. Used in affordability and emergency fund calculations."
     },
+    "is_salary_sacrifice": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this bill is a salary sacrifice deduction (pre-tax). Salary sacrifice items are shown separately and NOT deducted again from take-home income \u2014 in salary (gross) mode they are already in the tax calculation; in net mode they are already deducted by the employer."
+    },
+    "bill_assignment": {
+      "type": "string",
+      "enum": [
+        "personal",
+        "shared"
+      ],
+      "default": "personal",
+      "description": "Whether this bill is a personal bill or a shared household bill. Shared bills are counted once in household totals."
+    },
+    "household_member_id": {
+      "type": "string",
+      "description": "ID of the household member this bill belongs to (optional, for household support)"
+    },
     "scheduled_changes": {
       "type": "array",
       "description": "Future-dated amount changes for this bill (e.g. rent increase, renewal price). Each change overrides the base amount from its effective date until its optional end date. Historical amounts are preserved in amount_history.",
@@ -142,7 +160,7 @@
     },
     "amount_history": {
       "type": "array",
-      "description": "History of amount changes for this bill. Each entry records the previous and new amount, effective date, and percentage change.",
+      "description": "History of amount changes for this bill. Each entry records the previous and new amount, effective date, and percentage change. Individual entries can be deleted if entered incorrectly.",
       "items": {
         "type": "object",
         "properties": {

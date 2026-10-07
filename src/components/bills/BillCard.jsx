@@ -42,6 +42,11 @@ export default function BillCard({ bill, currency = '£', onEdit, onDelete }) {
                 )}>
                   {isEssentialBill(bill) ? 'Essential' : 'Non-essential'}
                 </span>
+                {bill.is_salary_sacrifice && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400">
+                    Salary Sacrifice
+                  </span>
+                )}
               </div>
             </div>
             <div className="text-right whitespace-nowrap">

@@ -81,7 +81,7 @@ export default function QuickAddDialog({ variant = 'sidebar' }) {
           break;
         case 'savings_goal':
           result = await base44.entities.SavingsGoal.create({
-            name: form.name, target_amount: parseFloat(form.target_amount), current_amount: 0,
+            name: form.name, type: 'general', target_amount: parseFloat(form.target_amount), current_amount: 0, is_emergency_fund: false,
           });
           queryClient.invalidateQueries({ queryKey: ['goals'] });
           logActivity('savings_target_changed', 'savings_goal', result.name, `Created savings goal "${result.name}"`);

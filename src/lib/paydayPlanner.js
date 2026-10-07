@@ -122,6 +122,10 @@ export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFu
     const debtTotal = roundMoney(debtRepayments.reduce((s, b) => s + b.amount, 0));
 
     const cycleDays = differenceInDays(cycle.end, cycle.start) + 1;
+    const today = startOfDay(new Date());
+    const daysUntilPayday = cycle.index === 0
+      ? Math.max(1, differenceInDays(cycle.end, today) + 1)
+      : cycleDays;
     const sinkingFundItems = [];
     (sinkingFunds || []).forEach(fund => {
       if (fund.status === 'completed') return;
@@ -154,9 +158,9 @@ export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFu
     const totalCommitted = roundMoney(hardCommitments + plannedSavings);
     const amountLeft = roundMoney(totalIncome - totalCommitted);
 
-    const weeksInCycle = cycleDays / 7;
-    const perWeekAvailable = weeksInCycle > 0 ? roundMoney(amountLeft / weeksInCycle) : 0;
-    const perDayAvailable = cycleDays > 0 ? roundMoney(amountLeft / cycleDays) : 0;
+    const weeksUntilPayday = daysUntilPayday / 7;
+    const perWeekAvailable = weeksUntilPayday > 0 ? roundMoney(amountLeft / weeksUntilPayday) : 0;
+    const perDayAvailable = daysUntilPayday > 0 ? roundMoney(amountLeft / daysUntilPayday) : 0;
 
     // Forecast confidence — based on data reliability, not arbitrary percentages.
     const hasVariableIncome = (incomeStreams || []).some(s => s.is_variable || s.frequency === 'irregular');
@@ -180,6 +184,7 @@ export function getPaydayPlannerData(primaryCtx, bills, incomeStreams, sinkingFu
       totalCommitted,
       amountLeft,
       cycleDays,
+      daysUntilPayday,
       weeksInCycle,
       perWeekAvailable,
       perDayAvailable,

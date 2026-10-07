@@ -1,36 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { generateForecast, billToMonthlyCost } from '@/lib/forecast';
+import { billToMonthlyCost } from '@/lib/forecast';
 import { getPrimaryIncomeContext } from '@/lib/income';
-import { formatMoney, sumMoney, roundMoney } from '@/lib/money';
-import { Plus, Target, Calendar, Trash2 } from 'lucide-react';
+import { formatMoney, sumMoney, roundMoney, getSplitShare } from '@/lib/money';
+import { Plus, Target, Calendar, Trash2, Pencil, Plane } from 'lucide-react';
 import EmergencyFundCard from '@/components/savings/EmergencyFundCard';
+import SavingsGoalForm from '@/components/savings/SavingsGoalForm';
 import { getMonthlyEssentialExpenses } from '@/lib/essential';
 import { getMilestones } from '@/lib/insights';
 import MilestonesStrip from '@/components/insights/MilestonesStrip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
-import { addMonths, format } from 'date-fns';
+import { addMonths, format, differenceInDays } from 'date-fns';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
-import { Textarea } from '@/components/ui/textarea';
-import AttachmentsField from '@/components/common/AttachmentsField';
 import { logActivity } from '@/lib/activityLog';
+import { toast } from 'sonner';
+
+const TYPE_ICONS = {
+  general: Target, emergency_fund: Target, trip: Plane,
+  car: Target, home: Target, christmas: Target,
+  annual_expense: Target, other: Target,
+};
+
+const TYPE_LABELS = {
+  general: 'General', emergency_fund: 'Emergency Fund', trip: 'Trip',
+  car: 'Car', home: 'Home', christmas: 'Christmas',
+  annual_expense: 'Annual Expense', other: 'Other',
+};
 
 export default function Savings() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', target_amount: '', current_amount: '', notes: '', attachments: [] });
+  const [editingGoal, setEditingGoal] = useState(null);
   const queryClient = useQueryClient();
+  const migrationRef = useRef(false);
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
   const { data: goals = [] } = useQuery({ queryKey: ['goals'], queryFn: () => base44.entities.SavingsGoal.list() });
   const { data: bills = [] } = useQuery({ queryKey: ['bills'], queryFn: () => base44.entities.Bill.list() });
   const { data: incomeStreams = [] } = useQuery({ queryKey: ['income-streams'], queryFn: () => base44.entities.IncomeStream.list() });
+
+  // Trip migration queries
+  const { data: trips = [] } = useQuery({ queryKey: ['trips'], queryFn: () => base44.entities.Trip.list() });
+  const { data: tripExpenses = [] } = useQuery({ queryKey: ['trip-expenses'], queryFn: () => base44.entities.TripExpense.list() });
+  const { data: tripContributions = [] } = useQuery({ queryKey: ['trip-contributions'], queryFn: () => base44.entities.TripContribution.list() });
 
   const primaryCtx = getPrimaryIncomeContext(incomeStreams, user);
   const income = primaryCtx.monthly_income;
@@ -38,8 +55,8 @@ export default function Savings() {
   const monthlyBills = sumMoney(bills.map(b => billToMonthlyCost(b)));
   const monthlySpare = roundMoney(income - monthlyBills);
   const monthlyEssential = getMonthlyEssentialExpenses(bills);
-  const emergencyGoal = goals.find(g => g.is_emergency_fund);
-  const regularGoals = goals.filter(g => !g.is_emergency_fund);
+  const emergencyGoal = goals.find(g => g.is_emergency_fund || g.type === 'emergency_fund');
+  const regularGoals = goals.filter(g => !g.is_emergency_fund && g.type !== 'emergency_fund');
   const allMilestones = getMilestones({ goals, bills, emergencyGoal, primaryCtx, monthlySpare, currency });
   const savingsMilestones = allMilestones.filter(m => m.type === 'savings' || m.type === 'emergency');
 
@@ -47,9 +64,15 @@ export default function Savings() {
     mutationFn: data => base44.entities.SavingsGoal.create(data),
     onSuccess: (_res, data) => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
-      setShowForm(false);
-      setForm({ name: '', target_amount: '', current_amount: '', notes: '', attachments: [] });
-      logActivity('savings_target_changed', 'savings_goal', data.name, `Created savings goal "${data.name}" with target ${formatMoney(data.target_amount, { currency })}`);
+      logActivity('savings_target_changed', 'savings_goal', data.name, `Created savings goal "${data.name}"`);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.SavingsGoal.update(id, data),
+    onSuccess: (_res, { data }) => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      logActivity('savings_target_changed', 'savings_goal', data.name, `Updated savings goal "${data.name}"`);
     },
   });
 
@@ -58,20 +81,37 @@ export default function Savings() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goals'] }),
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SavingsGoal.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goals'] }),
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    createMutation.mutate({
-      name: form.name,
-      target_amount: parseFloat(form.target_amount),
-      current_amount: parseFloat(form.current_amount) || 0,
-      notes: form.notes || null,
-      attachments: form.attachments || [],
+  // Trip migration: move existing Trip records into SavingsGoal with type='trip'
+  useEffect(() => {
+    if (migrationRef.current) return;
+    if (!trips || trips.length === 0) return;
+    migrationRef.current = true;
+    const existingTripGoals = goals.filter(g => g.type === 'trip');
+    const tripsToMigrate = trips.filter(trip => !existingTripGoals.some(g => g.name === trip.name));
+    if (tripsToMigrate.length === 0) return;
+    tripsToMigrate.forEach(trip => {
+      const exp = tripExpenses.filter(e => e.trip_name === trip.name);
+      const contribs = tripContributions.filter(c => c.trip_name === trip.name);
+      const totalCost = roundMoney(sumMoney(exp.map(e => getSplitShare(e))));
+      const totalSaved = roundMoney(sumMoney(contribs.map(c => parseFloat(c.amount) || 0)));
+      createMutation.mutate({
+        name: trip.name, type: 'trip', target_amount: totalCost || 0,
+        current_amount: totalSaved, travel_date: trip.target_date || null,
+        notes: trip.notes || null, is_emergency_fund: false,
+      });
     });
+    toast.success(`${tripsToMigrate.length} trip(s) migrated to Savings`);
+  }, [trips, goals, tripExpenses, tripContributions]);
+
+  const handleSubmit = (data) => {
+    if (editingGoal) {
+      updateMutation.mutate({ id: editingGoal.id, data });
+      setEditingGoal(null);
+      setShowForm(false);
+    } else {
+      createMutation.mutate(data);
+      setShowForm(false);
+    }
   };
 
   const getProjectedDate = (goal) => {
@@ -82,13 +122,28 @@ export default function Savings() {
     return format(addMonths(new Date(), monthsNeeded), 'MMM yyyy');
   };
 
+  const getTripInfo = (goal) => {
+    if (goal.type !== 'trip' || !goal.travel_date) return null;
+    const today = new Date();
+    const travelDate = new Date(goal.travel_date);
+    const daysUntilTravel = differenceInDays(travelDate, today);
+    const remaining = (goal.target_amount || 0) - (goal.current_amount || 0);
+    const monthsUntilTravel = Math.max(0, (travelDate.getFullYear() - today.getFullYear()) * 12 + (travelDate.getMonth() - today.getMonth()));
+    const requiredMonthly = monthsUntilTravel > 0 ? roundMoney(remaining / monthsUntilTravel) : remaining;
+    return {
+      daysUntilTravel, requiredMonthly,
+      isOverdue: daysUntilTravel < 0 && remaining > 0,
+      isAchieved: remaining <= 0,
+    };
+  };
+
   return (
     <PageContainer maxWidth="wide" className="space-y-6">
       <PageHeader
         title="Savings Goals"
         subtitle="Track your progress towards financial goals"
         actions={
-          <Button onClick={() => setShowForm(true)} className="gap-2">
+          <Button onClick={() => { setEditingGoal(null); setShowForm(true); }} className="gap-2">
             <Plus className="w-4 h-4" /> New Goal
           </Button>
         }
@@ -120,6 +175,8 @@ export default function Savings() {
         <AnimatePresence>
           {regularGoals.map(goal => {
             const pct = goal.target_amount > 0 ? Math.min(100, ((goal.current_amount || 0) / goal.target_amount) * 100) : 0;
+            const Icon = TYPE_ICONS[goal.type || 'general'] || Target;
+            const tripInfo = getTripInfo(goal);
             return (
               <motion.div
                 key={goal.id}
@@ -131,19 +188,31 @@ export default function Savings() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-xl bg-accent">
-                      <Target className="w-5 h-5 text-primary" />
+                      <Icon className="w-5 h-5 text-primary" />
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold">{goal.name}</h4>
-                      <p className="text-xs text-muted-foreground">
-                        {formatMoney(goal.current_amount || 0, { currency })} of {formatMoney(goal.target_amount, { currency })}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
+                          {TYPE_LABELS[goal.type || 'general'] || 'General'}
+                        </span>
+                        {goal.destination && <span className="text-xs text-muted-foreground">· {goal.destination}</span>}
+                      </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteMutation.mutate(goal.id)}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingGoal(goal); setShowForm(true); }}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteMutation.mutate(goal.id)}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
+
+                <p className="text-xs text-muted-foreground">
+                  {formatMoney(goal.current_amount || 0, { currency, decimals: 2 })} of {formatMoney(goal.target_amount, { currency, decimals: 2 })}
+                </p>
 
                 <Progress value={pct} className="h-2" />
 
@@ -151,26 +220,35 @@ export default function Savings() {
                   <span className="text-primary font-medium">{pct.toFixed(0)}% complete</span>
                   <span className="text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    {getProjectedDate(goal)}
+                    {tripInfo
+                      ? (tripInfo.isAchieved ? 'Achieved!' : tripInfo.isOverdue ? 'Overdue' : `${tripInfo.daysUntilTravel} days to go`)
+                      : getProjectedDate(goal)}
                   </span>
                 </div>
 
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder={`Add ${currency}`}
-                    className="h-8 text-xs"
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        const val = parseFloat(e.target.value);
-                        if (val > 0) {
-                          updateMutation.mutate({ id: goal.id, data: { current_amount: (goal.current_amount || 0) + val } });
-                          e.target.value = '';
-                        }
+                {tripInfo && !tripInfo.isAchieved && !tripInfo.isOverdue && tripInfo.requiredMonthly > 0 && (
+                  <div className="flex items-center justify-between text-xs bg-muted/50 rounded-lg p-2">
+                    <span className="text-muted-foreground">Required: {formatMoney(tripInfo.requiredMonthly, { currency, decimals: 2 })}/mo</span>
+                    <span className={monthlySpare >= tripInfo.requiredMonthly ? 'text-primary font-medium' : 'text-destructive font-medium'}>
+                      {monthlySpare >= tripInfo.requiredMonthly ? 'On track' : 'Behind'}
+                    </span>
+                  </div>
+                )}
+
+                <Input
+                  type="number"
+                  placeholder={`Add ${currency}`}
+                  className="h-8 text-xs"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const val = parseFloat(e.target.value);
+                      if (val > 0) {
+                        updateMutation.mutate({ id: goal.id, data: { current_amount: (goal.current_amount || 0) + val } });
+                        e.target.value = '';
                       }
-                    }}
-                  />
-                </div>
+                    }
+                  }}
+                />
               </motion.div>
             );
           })}
@@ -183,35 +261,14 @@ export default function Savings() {
         )}
       </div>
 
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      <Dialog open={showForm} onOpenChange={v => { setShowForm(v); if (!v) setEditingGoal(null); }}>
         <DialogContent className="max-w-sm">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <h3 className="text-lg font-semibold font-heading">New Savings Goal</h3>
-            <div>
-              <Label>Goal Name</Label>
-              <Input placeholder="e.g. Holiday Fund" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
-            </div>
-            <div>
-              <Label>Target Amount</Label>
-              <Input type="number" step="0.01" placeholder="0.00" value={form.target_amount} onChange={e => setForm({ ...form, target_amount: e.target.value })} required />
-            </div>
-            <div>
-              <Label>Already Saved (optional)</Label>
-              <Input type="number" step="0.01" placeholder="0.00" value={form.current_amount} onChange={e => setForm({ ...form, current_amount: e.target.value })} />
-            </div>
-            <div>
-              <Label>Notes (optional)</Label>
-              <Textarea placeholder="Any extra details…" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
-            </div>
-            <AttachmentsField
-              attachments={form.attachments || []}
-              onChange={atts => setForm({ ...form, attachments: atts })}
-            />
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button type="submit">Create Goal</Button>
-            </div>
-          </form>
+          <SavingsGoalForm
+            goal={editingGoal}
+            onSubmit={handleSubmit}
+            onCancel={() => { setShowForm(false); setEditingGoal(null); }}
+            currency={currency}
+          />
         </DialogContent>
       </Dialog>
     </PageContainer>

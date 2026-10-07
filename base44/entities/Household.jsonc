@@ -1,0 +1,85 @@
+{
+  "name": "Household",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the household"
+    },
+    "members": {
+      "type": "array",
+      "description": "Members of this household. The creator is implicitly the primary member.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique member ID within this household"
+          },
+          "name": {
+            "type": "string",
+            "description": "Member's name"
+          },
+          "relationship": {
+            "type": "string",
+            "description": "Relationship or role (e.g. Partner, Child, Lodger)"
+          },
+          "is_dependant": {
+            "type": "boolean",
+            "default": false,
+            "description": "True if this member is a dependant (e.g. child). Dependants can have associated costs without a full financial profile."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes about this member"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

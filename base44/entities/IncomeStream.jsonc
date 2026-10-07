@@ -164,7 +164,7 @@
         "salary"
       ],
       "default": "net",
-      "description": "net = take-home amount per cycle; salary = gross before tax, with UK tax applied via tax_settings."
+      "description": "net = take-home amount per cycle; salary = gross before tax, with UK tax applied via tax_settings. Determines whether salary sacrifice bills should be shown as pre-tax deductions (salary mode) or not re-subtracted (net mode)."
     },
     "tax_settings": {
       "type": "object",
@@ -197,6 +197,10 @@
           "type": "number"
         }
       }
+    },
+    "household_member_id": {
+      "type": "string",
+      "description": "ID of the household member this income belongs to (optional, for household support)"
     },
     "notes": {
       "type": "string",

@@ -6,6 +6,21 @@
       "type": "string",
       "description": "Name of the savings goal"
     },
+    "type": {
+      "type": "string",
+      "enum": [
+        "general",
+        "emergency_fund",
+        "trip",
+        "car",
+        "home",
+        "christmas",
+        "annual_expense",
+        "other"
+      ],
+      "default": "general",
+      "description": "Category of this savings goal. Trip-type goals can have destination and travel date."
+    },
     "target_amount": {
       "type": "number",
       "description": "Target amount to save"
@@ -14,6 +29,15 @@
       "type": "number",
       "default": 0,
       "description": "Amount saved so far"
+    },
+    "destination": {
+      "type": "string",
+      "description": "Destination for trip-type savings goals"
+    },
+    "travel_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Travel or start date for trip-type savings goals (YYYY-MM-DD)"
     },
     "icon": {
       "type": "string",
@@ -36,6 +60,20 @@
     "target_months": {
       "type": "number",
       "description": "For target_type 'months': number of months of essential expenses to cover"
+    },
+    "savings_scope": {
+      "type": "string",
+      "enum": [
+        "personal",
+        "household",
+        "family"
+      ],
+      "default": "personal",
+      "description": "Who this savings goal belongs to: an individual, the household, or a family goal"
+    },
+    "household_member_id": {
+      "type": "string",
+      "description": "ID of the household member this goal belongs to (optional, for household support)"
     },
     "notes": {
       "type": "string",

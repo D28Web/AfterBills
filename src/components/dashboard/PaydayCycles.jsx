@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { getPayCycles } from '@/lib/payday';
+import { getPayCycles, getDaysUntilPayday } from '@/lib/payday';
 import { formatMoney } from '@/lib/money';
 import { FREQ_TO_MONTHLY, getEffectivePrimaryCycleIncome } from '@/lib/income';
 import PayCycleRow from '@/components/dashboard/PayCycleRow';
@@ -13,6 +13,7 @@ export default function PaydayCycles({ user, bills, currency = '£' }) {
 
   // Show 13 cycles to cover a full year of pay periods
   const cycles = getPayCycles(user, 13);
+  const daysUntilPayday = getDaysUntilPayday(user);
 
   // Find the housing/mortgage bill (if any) to detect "mortgage-free" cycles
   const housingBills = bills.filter(b => b.category === 'housing');
@@ -35,7 +36,7 @@ export default function PaydayCycles({ user, bills, currency = '£' }) {
         <div>
           <h3 className="text-sm font-semibold text-foreground font-heading">Pay Cycle Forecast</h3>
           <p className="text-xs text-muted-foreground mt-0.5 capitalize">
-            {freq.replace('_', '-')} pay · {formatMoney(baseCycleIncome, { currency })} per cycle
+            {freq.replace('_', '-')} pay · {formatMoney(baseCycleIncome, { currency })} per cycle · {daysUntilPayday ?? 0} days to payday
           </p>
         </div>
         <span className="text-xs text-muted-foreground">{cycles.length} cycles ahead</span>

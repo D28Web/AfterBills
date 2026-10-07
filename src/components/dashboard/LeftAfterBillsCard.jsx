@@ -3,7 +3,7 @@ import { formatMoney, roundMoney } from '@/lib/money';
 import { motion } from 'framer-motion';
 
 // Prominent card showing the core AfterBills value: what's left after bills.
-export default function LeftAfterBillsCard({ monthlySpare, currentMonth, currency }) {
+export default function LeftAfterBillsCard({ monthlySpare, currentMonth, currency, salarySacrificeMonthly = 0 }) {
   const income = currentMonth?.income || 0;
   const bills = currentMonth?.totalBills || 0;
   const left = monthlySpare != null ? monthlySpare : roundMoney(income - bills);
@@ -42,6 +42,11 @@ export default function LeftAfterBillsCard({ monthlySpare, currentMonth, currenc
           {formatMoney(left, { currency, decimals: 2 })}
         </span>
       </div>
+      {salarySacrificeMonthly > 0 && (
+        <p className="text-xs text-muted-foreground mt-2">
+          Plus <span className="font-medium text-foreground">{formatMoney(salarySacrificeMonthly, { currency, decimals: 2 })}</span>/mo salary sacrifice (pre-tax, not deducted again)
+        </p>
+      )}
     </motion.div>
   );
 }

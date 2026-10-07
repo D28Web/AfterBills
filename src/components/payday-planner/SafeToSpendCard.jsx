@@ -13,7 +13,7 @@ export default function SafeToSpendCard({ data, currency = '£' }) {
           </div>
           <div>
             <h3 className="text-sm font-semibold font-heading">Safe to Spend</h3>
-            <p className="text-[11px] text-muted-foreground">Until next payday · {data.cycleDays} days</p>
+            <p className="text-[11px] text-muted-foreground">Until next payday · {data.daysUntilPayday || data.cycleDays} days</p>
           </div>
         </div>
         <ConfidenceBadge confidence={data.confidence} />

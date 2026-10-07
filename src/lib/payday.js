@@ -1,4 +1,4 @@
-import { addDays, addWeeks, addMonths, startOfDay, isAfter, isBefore, format, getDay, getDaysInMonth } from 'date-fns';
+import { addDays, addWeeks, addMonths, startOfDay, isAfter, isBefore, format, getDay, getDaysInMonth, differenceInDays } from 'date-fns';
 import { getBillShare, getEffectiveBillShare } from '@/lib/forecast';
 
 const WEEKDAY_MAP = {
@@ -242,4 +242,54 @@ export function formatCycleLabel(cycle, index) {
   if (index === 0) return 'This Pay Cycle';
   if (index === 1) return 'Next Pay Cycle';
   return format(cycle.start, 'd MMM') + ' – ' + format(cycle.end, 'd MMM');
+}
+
+/**
+ * Returns the next payday date strictly after today.
+ * Uses the same pay cycle logic as getPayCycles, respecting weekday
+ * snapping and last-working-day rules.
+ */
+export function getNextPayday(user) {
+  const cycles = getPayCycles(user, 2);
+  if (cycles.length >= 2) return cycles[1].start;
+  if (cycles.length === 1) {
+    const freq = user?.pay_frequency || 'monthly';
+    return stepForward(cycles[0].start, freq);
+  }
+  return null;
+}
+
+/**
+ * Exact calendar days until the next payday.
+ * Returns 0 if today is payday. Handles 28/29/30/31-day months,
+ * leap years, and year boundaries via date-fns differenceInDays.
+ * If weekday snapping or last-working-day rules are configured,
+ * the adjusted payday date is used.
+ */
+export function getDaysUntilPayday(user) {
+  const cycles = getPayCycles(user, 2);
+  if (cycles.length === 0) return null;
+  const today = startOfDay(new Date());
+  const currentPayday = cycles[0].start;
+  // If today is payday, return 0
+  if (today.getTime() === currentPayday.getTime()) return 0;
+  // Next payday is the start of the next cycle
+  if (cycles.length >= 2) return differenceInDays(cycles[1].start, today);
+  // Fallback: calculate from current payday
+  const freq = user?.pay_frequency || 'monthly';
+  const nextPayday = stepForward(currentPayday, freq);
+  return differenceInDays(nextPayday, today);
+}
+
+/**
+ * Exact days remaining in the current pay cycle (from today to cycle end).
+ * Used for per-day availability calculations like "£X per day until payday".
+ */
+export function getDaysRemainingInCycle(user) {
+  const cycles = getPayCycles(user, 1);
+  if (cycles.length === 0) return null;
+  const today = startOfDay(new Date());
+  const cycleEnd = cycles[0].end;
+  const days = differenceInDays(cycleEnd, today) + 1; // inclusive of today
+  return Math.max(1, days);
 }

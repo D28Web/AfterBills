@@ -21,6 +21,7 @@ import { FREQUENCY_LABELS } from '@/lib/forecast';
 import { Switch } from '@/components/ui/switch';
 import { getOtherStreams, FREQ_TO_MONTHLY } from '@/lib/income';
 import { cn } from '@/lib/utils';
+import { useDisplayPeriod, DISPLAY_PERIOD_OPTIONS } from '@/lib/displayPeriod';
 import { logActivity } from '@/lib/activityLog';
 
 const DEFAULT_TAX_SETTINGS = {
@@ -57,6 +58,7 @@ export default function Settings() {
   const [primaryStreamId, setPrimaryStreamId] = useState(null);
   const [primaryChanges, setPrimaryChanges] = useState([]);
   const loadedRef = useRef(false);
+  const [displayPeriod, setDisplayPeriod] = useDisplayPeriod(user);
 
   const { data: incomeStreams = [], isLoading: streamsLoading } = useQuery({
     queryKey: ['income-streams'],
@@ -389,6 +391,17 @@ export default function Settings() {
               <SelectItem value="C$">C$ CAD</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div>
+          <Label>Preferred Display Period</Label>
+          <Select value={displayPeriod} onValueChange={v => setDisplayPeriod(v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {DISPLAY_PERIOD_OPTIONS.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-1">Used as the default across all pages. Change it anywhere to update globally.</p>
         </div>
 
         <div>
