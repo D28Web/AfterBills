@@ -38,11 +38,10 @@ export default function AppLayout() {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card fixed inset-y-0 left-0 z-30">
         <div className="p-6">
-          <img
-            src="https://media.base44.com/images/public/6a15b395982311e4dee2664c/324ef054e_AfterBills-Logo.png"
-            alt="AfterBills"
-            className="h-9 w-auto rounded-md"
-          />
+          <h1 className="font-heading text-xl font-bold text-foreground tracking-tight">
+            After<span className="text-primary">Bills</span>
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Know what's really left</p>
         </div>
         <div className="px-3 pb-2 space-y-2">
           <QuickAddDialog variant="sidebar" />
@@ -83,11 +82,9 @@ export default function AppLayout() {
 
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border h-14 flex items-center justify-between px-4">
-        <img
-          src="https://media.base44.com/images/public/6a15b395982311e4dee2664c/324ef054e_AfterBills-Logo.png"
-          alt="AfterBills"
-          className="h-7 w-auto rounded-md"
-        />
+        <h1 className="font-heading text-lg font-bold text-foreground tracking-tight">
+          After<span className="text-primary">Bills</span>
+        </h1>
         <div className="flex items-center gap-1">
           <GlobalSearch variant="header" />
           <QuickAddDialog variant="header" />
