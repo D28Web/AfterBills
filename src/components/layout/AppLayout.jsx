@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
+import QuickAddDialog from '@/components/quick-add/QuickAddDialog';
+import GlobalSearch from '@/components/search/GlobalSearch';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -37,6 +39,10 @@ export default function AppLayout() {
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Know what's really left</p>
         </div>
+        <div className="px-3 pb-2 space-y-2">
+          <QuickAddDialog variant="sidebar" />
+          <GlobalSearch variant="sidebar" />
+        </div>
         <nav className="flex-1 px-3 space-y-1">
           {navItems.map(item => {
             const active = item.path === '/admin' ? location.pathname.startsWith('/admin') : location.pathname === item.path;
@@ -65,12 +71,16 @@ export default function AppLayout() {
         <h1 className="font-heading text-lg font-bold text-foreground tracking-tight">
           After<span className="text-primary">Bills</span>
         </h1>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-1">
+          <GlobalSearch variant="header" />
+          <QuickAddDialog variant="header" />
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </header>
 
       {/* Mobile Menu Overlay */}
