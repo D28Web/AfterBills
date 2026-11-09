@@ -42,7 +42,10 @@ export default function ScenarioManager({ onLoad, currency = '£' }) {
   const queryClient = useQueryClient();
   const { data: scenarios = [], isLoading } = useQuery({
     queryKey: ['scenarios'],
-    queryFn: () => base44.entities.Scenario.filter({}, { sort: '-created_date', limit: 100 }),
+    queryFn: async () => {
+      const page = await base44.entities.Scenario.filter({}, { sort: '-created_date', limit: 100 });
+      return page?.items ?? [];
+    },
   });
 
   const applyMutation = useMutation({
